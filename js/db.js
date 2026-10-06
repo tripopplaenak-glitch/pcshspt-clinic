@@ -113,9 +113,15 @@ class LocalDB {
   }
 
   // Clinics (schedule slots)
-  static getClinics()             { return LocalDB.getList('clinics'); }
+  static getClinics()             {
+    return LocalDB.getList('clinics').map(c => ({
+      ...c,
+      time: c.time || '18:30–20:30'
+    }));
+  }
   static saveClinic(c)            {
-    const list = LocalDB.getClinics();
+    c.time = c.time || '18:30–20:30';
+    const list = LocalDB.getList('clinics');
     const idx = list.findIndex(x => String(x.id) === String(c.id));
     if (idx >= 0) list[idx] = c;
     else { c.id = LocalDB.nextId('clinic'); list.push(c); }

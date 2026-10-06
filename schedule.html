@@ -262,10 +262,10 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/firebase-config.js?v=2569_8"></script>
-<script src="js/supabase-api.js?v=2569_8"></script>
-<script src="js/db.js?v=2569_8"></script>
-<script src="js/auth.js?v=2569_8"></script>
+<script src="js/firebase-config.js?v=2569_9"></script>
+<script src="js/supabase-api.js?v=2569_9"></script>
+<script src="js/db.js?v=2569_9"></script>
+<script src="js/auth.js?v=2569_9"></script>
 <script>
 // ─── INIT ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -738,6 +738,16 @@ async function renderMultiWeek() {
 }
 
 // ─── RENDER DAY CARD ──────────────────────────────────────
+function formatClinicTime(timeStr) {
+  if (!timeStr || timeStr === 'undefined' || timeStr === 'null') return '18:30–20:30 น.';
+  let t = String(timeStr).trim();
+  if (!t || t === '–' || t === '-') return '18:30–20:30 น.';
+  if (!t.endsWith('น.') && !t.endsWith('น')) {
+    return `${t} น.`;
+  }
+  return t;
+}
+
 function renderDayCard(day, clinics, teacherMap, dutyOfficer) {
   const isToday = day.isToday;
   const slotsHtml = clinics.length
@@ -750,7 +760,7 @@ function renderDayCard(day, clinics, teacherMap, dutyOfficer) {
             <div class="clinic-subject">${getSubjectIcon(c.subject)} ${c.subject}</div>
             <div class="clinic-meta">
               <span>👩‍🏫 ${t.name || '–'}</span>
-              <span>🕐 ${c.time}</span>
+              <span>🕐 ${formatClinicTime(c.time)}</span>
               ${c.room ? `<span>📍 ${c.room}</span>` : ''}
             </div>
             <div class="clinic-slot-footer">
@@ -801,9 +811,10 @@ async function openClinicStudentsModal(clinicId) {
   // Set modal header
   document.getElementById('cs-subject-title').textContent = `${c.subject} (ม.${c.grade})`;
   const dateStr = formatDateThai(c.date);
+  const timeStr = formatClinicTime(c.time);
   document.getElementById('cs-modal-subtitle').innerHTML = `
     <span>👩‍🏫 ครูผู้สอน: <strong>${escapeHtml(teacherName)}</strong></span> &bull; 
-    <span>📅 ${escapeHtml(dateStr)} (${escapeHtml(c.time)})</span>
+    <span>📅 ${escapeHtml(dateStr)} (${escapeHtml(timeStr)})</span>
     ${c.room ? ` &bull; <span>📍 ${escapeHtml(c.room)}</span>` : ''}
   `;
 
@@ -863,7 +874,7 @@ async function openClinicStudentsModal(clinicId) {
           <div><span style="color:#64748b;">วิชา:</span> <strong>${escapeHtml(c.subject)}</strong></div>
           <div><span style="color:#64748b;">ระดับชั้น:</span> <strong>ม.${c.grade}</strong></div>
           <div><span style="color:#64748b;">วันที่:</span> <strong>${escapeHtml(dateStr)}</strong></div>
-          <div><span style="color:#64748b;">เวลา:</span> <strong>${escapeHtml(c.time)}</strong></div>
+          <div><span style="color:#64748b;">เวลา:</span> <strong>${escapeHtml(timeStr)}</strong></div>
           <div><span style="color:#64748b;">ห้องเรียน:</span> <strong>${escapeHtml(c.room || '–')}</strong></div>
           <div><span style="color:#64748b;">ครูผู้สอน:</span> <strong>${escapeHtml(teacherName)}</strong></div>
         </div>

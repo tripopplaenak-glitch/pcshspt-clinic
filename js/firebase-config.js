@@ -148,3 +148,15 @@ function formatDormitory(dorm) {
   if (raw.includes('นิลปัทม์') || raw.includes('นิลุบล')) return 'D6 นิลปัทม์';
   return raw;
 }
+
+// Helper: Format clinic time nicely with fallback to standard evening clinic time (18:30–20:30 น.)
+function formatClinicTime(timeStr) {
+  if (!timeStr || timeStr === 'undefined' || timeStr === 'null') return '18:30–20:30 น.';
+  let t = String(timeStr).trim();
+  if (!t || t === '–' || t === '-') return '18:30–20:30 น.';
+  if (!t.endsWith('น.') && !t.endsWith('น')) {
+    return `${t} น.`;
+  }
+  return t;
+}
+

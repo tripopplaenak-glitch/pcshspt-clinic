@@ -426,6 +426,7 @@ const SupabaseAPI = {
       date: toYMD(row.date) || '',
       weekId: row.week_id || row.weekId || '',
       status: row.status || 'active',
+      time: row.time || '18:30–20:30',
       studentCount: Number(row.student_count || (row.student_list && row.student_list.length) || 0),
       studentList: row.student_list || []
     };

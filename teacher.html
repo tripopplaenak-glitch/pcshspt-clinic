@@ -318,7 +318,7 @@ function renderClinicCard(c, teacherMap) {
         </div>
         <div class="clinic-meta" style="margin-bottom:10px;">
           <span>👩‍🏫 ${t.name || '–'}</span>
-          <span>🕐 ${c.time || '–'}</span>
+          <span>🕐 ${typeof formatClinicTime === 'function' ? formatClinicTime(c.time) : (c.time || '18:30–20:30 น.')}</span>
           ${c.room ? `<span>📍 ${c.room}</span>` : ''}
           <span>👥 ${c.studentCount || 0} คน</span>
         </div>

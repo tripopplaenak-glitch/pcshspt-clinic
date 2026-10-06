@@ -1204,7 +1204,7 @@
                 <td><strong>วัน${dayNames[c.dayOfWeek] || '–'}</strong><br><span class="text-xs text-muted">${formatDateThai(c.date)}</span></td>
                 <td><strong>${getSubjectIcon(c.subject)} ${c.subject}</strong></td>
                 <td>${t.name || '–'}</td>
-                <td class="text-xs">${c.time || '–'}</td>
+                <td class="text-xs">${typeof formatClinicTime === 'function' ? formatClinicTime(c.time) : (c.time || '18:30–20:30 น.')}</td>
                 <td>${c.room || '–'}</td>
                 <td><span class="status-badge ${st.cls}">${st.icon} ${st.text}</span></td>
                 <td>${c.studentCount || 0}</td>
@@ -1533,9 +1533,11 @@
       document.getElementById('clinic-date').value = c.date || '';
       document.getElementById('clinic-subject').value = c.subject;
       document.getElementById('clinic-teacher').value = c.teacherId;
-      const [ts, te] = (c.time || '18:30–20:30').split('–');
-      document.getElementById('clinic-time-start').value = ts?.trim() || '18:30';
-      document.getElementById('clinic-time-end').value = te?.trim() || '20:30';
+      const parts = (c.time || '18:30–20:30').replace(/น\.?/g, '').trim().split(/[-–—]/);
+      const ts = parts[0]?.trim() || '18:30';
+      const te = parts[1]?.trim() || '20:30';
+      document.getElementById('clinic-time-start').value = ts;
+      document.getElementById('clinic-time-end').value = te;
       document.getElementById('clinic-room').value = c.room || '';
       document.getElementById('clinic-status').value = c.status || 'active';
       document.getElementById('clinic-notes').value = c.notes || '';
