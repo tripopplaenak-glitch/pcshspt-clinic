@@ -418,7 +418,12 @@ async function openAttendance(clinicId) {
 
   // Load existing attendance for this clinic
   const existing = await DataService.getAttByClinic(c.id);
-  selectedStudentIds = new Set(existing.map(a => String(a.studentId)));
+  const fromClinic = Array.isArray(c.studentList) ? c.studentList : [];
+  const existingIds = [
+    ...existing.map(a => String(a.studentId)),
+    ...fromClinic.map(a => String(a.studentId || a.id))
+  ].filter(Boolean);
+  selectedStudentIds = new Set(existingIds);
 
   renderRoomChips();
   document.getElementById('att-search').value = '';
@@ -627,9 +632,10 @@ async function saveAttendance() {
     // Atomic batch save (instant & safe)
     await DataService.setAttendanceForClinic(currentClinic.id, attRecords);
 
-    // Update studentCount on clinic
+    // Update studentCount and studentList on clinic
     currentClinic.studentCount = selectedStudentIds.size;
     currentClinic.attendanceIds = attRecords.map(a => a.id);
+    currentClinic.studentList = attRecords;
     await DataService.saveClinic(currentClinic);
 
     // Close modal directly

@@ -807,32 +807,38 @@ async function openClinicStudentsModal(clinicId) {
     ${c.room ? ` &bull; <span>📍 ${escapeHtml(c.room)}</span>` : ''}
   `;
 
-  // Get attendance records for this clinic
-  const allAttendance = await DataService.getAttendance();
-  const cDate = toYMD(c.date);
-  const cGrade = Number(c.grade);
-  const cSubj = (c.subject || '').trim();
+  // 1. First check if clinic has studentList saved directly
+  let studentData = Array.isArray(c.studentList) && c.studentList.length > 0 ? c.studentList : [];
 
-  let matchedAtt = allAttendance.filter(a => {
-    if (a.clinicId && String(a.clinicId) === String(c.id)) return true;
-    if (cDate && a.date && toYMD(a.date) === cDate && Number(a.grade) === cGrade && (a.subject || '').trim() === cSubj) return true;
-    return false;
-  });
+  // 2. If not, check attendance records
+  if (studentData.length === 0) {
+    const allAttendance = await DataService.getAttendance();
+    const cDate = toYMD(c.date);
+    const cGrade = Number(c.grade);
+    const cSubj = (c.subject || '').trim();
+
+    studentData = allAttendance.filter(a => {
+      if (a.clinicId && String(a.clinicId) === String(c.id)) return true;
+      if (cDate && a.date && toYMD(a.date) === cDate && Number(a.grade) === cGrade && (a.subject || '').trim() === cSubj) return true;
+      return false;
+    });
+  }
 
   // Cross reference with students directory
   const allStudents = await DataService.getStudents();
   const stuMap = Object.fromEntries(allStudents.map(s => [String(s.id), s]));
 
-  currentModalStudentList = matchedAtt.map((att, i) => {
-    const s = stuMap[String(att.studentId)] || {};
+  currentModalStudentList = studentData.map((item, i) => {
+    const sId = String(item.studentId || item.id || '');
+    const s = stuMap[sId] || (item.studentCode ? allStudents.find(x => x.studentCode === item.studentCode) : null) || {};
     return {
       index: i + 1,
-      name: att.studentName || s.name || '–',
-      studentCode: s.studentCode || att.studentCode || '',
-      grade: att.grade || s.grade || c.grade,
-      room: att.room || s.room || '–',
-      number: att.number || s.number || '–',
-      dormitory: att.dormitory || s.dormitory || 'D1'
+      name: item.studentName || item.name || s.name || '–',
+      studentCode: s.studentCode || item.studentCode || '',
+      grade: item.grade || s.grade || c.grade,
+      room: item.room || s.room || '–',
+      number: item.number || s.number || '–',
+      dormitory: item.dormitory || s.dormitory || 'D1'
     };
   });
 

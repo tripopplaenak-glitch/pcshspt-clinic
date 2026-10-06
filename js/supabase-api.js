@@ -148,6 +148,17 @@ const SupabaseAPI = {
         if (newRecord.key === 'school_settings') LocalDB.set('school_settings', newRecord.value);
         if (newRecord.key === 'announcements_config') LocalDB.saveAnnouncementsConfig(newRecord.value);
       }
+    } else if (table === 'attendance') {
+      const att = LocalDB.getAttendance();
+      if (eventType === 'DELETE') {
+        LocalDB.setList('attendance', att.filter(a => String(a.id) !== String(oldRecord.id)));
+      } else {
+        const mapped = this.mapAttendanceFromDb(newRecord);
+        const idx = att.findIndex(a => String(a.id) === String(mapped.id));
+        if (idx >= 0) att[idx] = mapped;
+        else att.push(mapped);
+        LocalDB.setList('attendance', att);
+      }
     }
   },
 
@@ -164,7 +175,8 @@ const SupabaseAPI = {
         { data: studentsData },
         { data: staffData },
         { data: dutyData },
-        { data: settingsData }
+        { data: settingsData },
+        { data: attendanceData }
       ] = await Promise.all([
         this.client.from('weeks').select('*'),
         this.client.from('clinics').select('*'),
@@ -172,7 +184,8 @@ const SupabaseAPI = {
         this.client.from('students').select('*'),
         this.client.from('staff').select('*'),
         this.client.from('duty_staff').select('*'),
-        this.client.from('settings').select('*')
+        this.client.from('settings').select('*'),
+        this.client.from('attendance').select('*')
       ]);
 
       if (Array.isArray(teachersData) && teachersData.length) {
@@ -198,6 +211,9 @@ const SupabaseAPI = {
       }
       if (Array.isArray(clinicsData)) {
         LocalDB.setList('clinics', clinicsData.map(c => this.mapClinicFromDb(c)));
+      }
+      if (Array.isArray(attendanceData)) {
+        LocalDB.setList('attendance', attendanceData.map(a => this.mapAttendanceFromDb(a)));
       }
       if (Array.isArray(settingsData)) {
         settingsData.forEach(row => {
@@ -236,6 +252,9 @@ const SupabaseAPI = {
       if (weeks.length) await this.client.from('weeks').upsert(weeks);
       if (clinics.length) await this.client.from('clinics').upsert(clinics);
       if (dutyRows.length) await this.client.from('duty_staff').upsert(dutyRows);
+
+      const attendance = (LocalDB.getAttendance() || []).map(a => this.mapAttendanceToDb(a));
+      if (attendance.length) await this.client.from('attendance').upsert(attendance);
 
       await this.client.from('settings').upsert([
         { key: 'school_settings', value: schoolSettings, updated_at: new Date() },
@@ -494,5 +513,42 @@ const SupabaseAPI = {
       id: row.id,
       name: row.name || ''
     };
+  },
+
+  mapAttendanceToDb(a) {
+    return {
+      id: String(a.id || `att_${a.clinicId || a.clinic_id}_${a.studentId || a.student_id}`),
+      clinic_id: String(a.clinicId || a.clinic_id || ''),
+      student_id: String(a.studentId || a.student_id || ''),
+      student_code: String(a.studentCode || a.student_code || ''),
+      date: toYMD(a.date),
+      status: a.status || 'present',
+      note: a.note || ''
+    };
+  },
+
+  mapAttendanceFromDb(row) {
+    return {
+      id: row.id,
+      clinicId: row.clinic_id,
+      studentId: row.student_id,
+      studentCode: row.student_code || '',
+      date: toYMD(row.date),
+      status: row.status || 'present',
+      note: row.note || ''
+    };
+  },
+
+  async setAttendanceForClinic(clinicId, records) {
+    if (!this.client) return;
+    try {
+      await this.client.from('attendance').delete().eq('clinic_id', String(clinicId));
+      if (records && records.length) {
+        const rows = records.map(r => this.mapAttendanceToDb(r));
+        await this.client.from('attendance').upsert(rows);
+      }
+    } catch (e) {
+      console.warn('Supabase setAttendanceForClinic error:', e);
+    }
   }
 };

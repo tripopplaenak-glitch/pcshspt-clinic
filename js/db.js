@@ -145,16 +145,59 @@ class LocalDB {
   }
 
   // Attendance
-  static getAttendance()          { return LocalDB.getList('attendance').filter(x => !String(x.id || '').startsWith('demo_')); }
-  static saveAttendance(a)        { const list = LocalDB.getAttendance(); const idx = list.findIndex(x => String(x.id) === String(a.id)); if (idx >= 0) list[idx] = a; else { a.id = LocalDB.nextId('att'); list.push(a); } LocalDB.setList('attendance', list); return a; }
-  static deleteAttendance(id)     { LocalDB.setList('attendance', LocalDB.getAttendance().filter(x => String(x.id) !== String(id))); }
-  static getAttByDate(date)       { return LocalDB.getAttendance().filter(x => x.date === date); }
+  static getAttendance() {
+    const raw = LocalDB.getList('attendance').filter(x => !String(x.id || '').startsWith('demo_'));
+    const students = LocalDB.getStudents();
+    const clinics = LocalDB.getClinics();
+    const stuMap = Object.fromEntries(students.map(s => [String(s.id), s]));
+    const cliMap = Object.fromEntries(clinics.map(c => [String(c.id), c]));
+
+    return raw.map(a => {
+      const s = stuMap[String(a.studentId)] || {};
+      const c = cliMap[String(a.clinicId)] || {};
+      return {
+        ...a,
+        studentName: a.studentName || s.name || '–',
+        studentCode: a.studentCode || s.studentCode || '',
+        grade: a.grade || s.grade || c.grade || 1,
+        room: a.room || s.room || '–',
+        number: a.number || s.number || '–',
+        dormitory: a.dormitory || s.dormitory || 'D1',
+        subject: a.subject || c.subject || c.subjectName || '–',
+        teacherId: a.teacherId || c.teacherId || ''
+      };
+    });
+  }
+  static saveAttendance(a) {
+    const list = LocalDB.getList('attendance');
+    const idx = list.findIndex(x => String(x.id) === String(a.id));
+    if (idx >= 0) list[idx] = a;
+    else { a.id = LocalDB.nextId('att'); list.push(a); }
+    LocalDB.setList('attendance', list);
+    return a;
+  }
+  static deleteAttendance(id) {
+    LocalDB.setList('attendance', LocalDB.getList('attendance').filter(x => String(x.id) !== String(id)));
+  }
+  static getAttByDate(date) {
+    const dStr = toYMD(date);
+    return LocalDB.getAttendance().filter(x => toYMD(x.date) === dStr);
+  }
+  static getAttByClinic(clinicId) {
+    const fromAtt = LocalDB.getAttendance().filter(a => String(a.clinicId) === String(clinicId));
+    if (fromAtt.length) return fromAtt;
+    const c = LocalDB.getClinics().find(x => String(x.id) === String(clinicId));
+    if (c && Array.isArray(c.studentList) && c.studentList.length) {
+      return c.studentList;
+    }
+    return [];
+  }
   static setAttendanceForClinic(clinicId, records) {
-    const list = LocalDB.getAttendance().filter(x => String(x.clinicId) !== String(clinicId));
+    const list = LocalDB.getList('attendance').filter(x => String(x.clinicId) !== String(clinicId));
     let nextIdNum = (LocalDB.get('__id_att') || 0);
     records.forEach(r => {
       nextIdNum++;
-      r.id = 'att_' + nextIdNum;
+      if (!r.id) r.id = 'att_' + nextIdNum;
       list.push(r);
     });
     LocalDB.set('__id_att', nextIdNum);
@@ -498,16 +541,26 @@ const DataService = {
   // --- Attendance ---
   async getAttendance()     { return LocalDB.getAttendance(); },
   async getAttByDate(date)  { return LocalDB.getAttByDate(date); },
-  async getAttByClinic(clinicId) { return LocalDB.getAttendance().filter(a => String(a.clinicId) === String(clinicId)); },
+  async getAttByClinic(clinicId) { return LocalDB.getAttByClinic(clinicId); },
   async saveAttendance(a)   {
     const res = LocalDB.saveAttendance(a);
-    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.client?.from('attendance').upsert(a);
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+      SupabaseAPI.client?.from('attendance').upsert(SupabaseAPI.mapAttendanceToDb(res));
+    }
     return res;
   },
-  async deleteAttendance(id){ return LocalDB.deleteAttendance(id); },
+  async deleteAttendance(id){
+    const res = LocalDB.deleteAttendance(id);
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+      SupabaseAPI.client?.from('attendance').delete().eq('id', String(id));
+    }
+    return res;
+  },
   async setAttendanceForClinic(clinicId, records) {
     const res = LocalDB.setAttendanceForClinic(clinicId, records);
-    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.client?.from('attendance').upsert(records);
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+      await SupabaseAPI.setAttendanceForClinic(clinicId, res || records);
+    }
     return res;
   },
 
