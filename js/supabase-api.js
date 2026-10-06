@@ -324,6 +324,21 @@ const SupabaseAPI = {
     } catch (e) { console.warn('Supabase deleteStaff error:', e); }
   },
 
+  async clearTable(tableName) {
+    if (!this.client) return;
+    try {
+      if (tableName === 'duty_staff') {
+        await this.client.from('duty_staff').delete().neq('date', '___none___');
+      } else if (tableName === 'settings') {
+        await this.client.from('settings').delete().neq('key', '___none___');
+      } else {
+        await this.client.from(tableName).delete().neq('id', '___none___');
+      }
+    } catch (e) {
+      console.warn(`Supabase clearTable(${tableName}) error:`, e);
+    }
+  },
+
   async saveDutyStaff(dutyMap, weeks) {
     if (!this.client) return;
     try {

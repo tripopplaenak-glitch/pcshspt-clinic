@@ -43,7 +43,6 @@ const APP_CONFIG = {
   schoolShort: 'ว.จ.ป.',
   semester: 1,
   academicYear: 2569,
-  googleSheetsUrl: 'https://script.google.com/macros/s/AKfycbwwkHc80da3-9Yf7FrdyuP3SbW3DwBHyP82se7PrtzHqmMbWcyZNAnRdNNgMk18pV3l/exec',
   logo: 'assets/logo.png',
   dormitories: [
     { id: 'D1', name: 'D1 บัวอุบล', gender: 'ญ' },

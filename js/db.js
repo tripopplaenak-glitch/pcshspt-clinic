@@ -273,8 +273,8 @@ class LocalDB {
       weeks.forEach((w, idx) => { w.weekNum = cleanWeekNum(w.weekNum, w.label, idx + 1); });
       LocalDB.setList('weeks', weeks);
       LocalDB.setList('clinics', clinics);
-      if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
-        SheetsAPI.saveWeeks(weeks);
+      if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+        SupabaseAPI.saveDutyStaff(LocalDB.getDutyStaffMap(), weeks);
       }
     }
   }
@@ -405,18 +405,15 @@ const DataService = {
   async saveTeacher(t)      {
     const res = LocalDB.saveTeacher(t);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.saveTeacher(res);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) SheetsAPI.saveTeachers(LocalDB.getTeachers());
     return res;
   },
   async deleteTeacher(id)   {
     LocalDB.deleteTeacher(id);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.deleteTeacher(id);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) SheetsAPI.saveTeachers(LocalDB.getTeachers());
   },
   async importTeachers(arr) {
     LocalDB.importTeachers(arr);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.uploadAll();
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) SheetsAPI.saveTeachers(LocalDB.getTeachers());
   },
 
   // --- Staff (เจ้าหน้าที่) ---
@@ -424,17 +421,11 @@ const DataService = {
   async saveStaff(s)        {
     const res = LocalDB.saveStaff(s);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.saveStaff(res);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
-      SheetsAPI.saveStaff(LocalDB.getStaff());
-    }
     return res;
   },
   async deleteStaff(id)     {
     LocalDB.deleteStaff(id);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.deleteStaff(id);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
-      SheetsAPI.saveStaff(LocalDB.getStaff());
-    }
   },
 
   // --- Duty Staff (เจ้าหน้าที่ประจำวัน) ---
@@ -445,9 +436,6 @@ const DataService = {
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
       SupabaseAPI.saveDutyStaff(LocalDB.getDutyStaffMap(), LocalDB.getWeeks());
     }
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
-      SheetsAPI.saveDutyStaff(LocalDB.getWeeks(), LocalDB.getDutyStaffMap());
-    }
     return res;
   },
 
@@ -456,18 +444,15 @@ const DataService = {
   async saveStudent(s)      {
     const res = LocalDB.saveStudent(s);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.saveStudent(res);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) SheetsAPI.saveStudents(LocalDB.getStudents());
     return res;
   },
   async deleteStudent(id)   {
     LocalDB.deleteStudent(id);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.deleteStudent(id);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) SheetsAPI.saveStudents(LocalDB.getStudents());
   },
   async importStudents(arr) {
     LocalDB.importStudents(arr);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.uploadAll();
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) SheetsAPI.saveStudents(LocalDB.getStudents());
   },
   async getStudentsByGrade(grade) {
     const cleanG = String(grade).replace(/\D/g, '');
@@ -486,13 +471,11 @@ const DataService = {
   async saveClinic(c)       {
     const res = LocalDB.saveClinic(c);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.saveClinic(res);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) SheetsAPI.saveClinics(LocalDB.getClinics());
     return res;
   },
   async deleteClinic(id)    {
     LocalDB.deleteClinic(id);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.deleteClinic(id);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) SheetsAPI.saveClinics(LocalDB.getClinics());
   },
 
   // --- Weeks ---
@@ -500,13 +483,11 @@ const DataService = {
   async saveWeek(w)         {
     const res = LocalDB.saveWeek(w);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.saveWeek(res);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) SheetsAPI.saveWeeks(LocalDB.getWeeks());
     return res;
   },
   async deleteWeek(id)      {
     LocalDB.deleteWeek(id);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.deleteWeek(id);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) SheetsAPI.saveWeeks(LocalDB.getWeeks());
   },
   async getCurrentWeek()    {
     const today = new Date().toISOString().split('T')[0];
@@ -518,11 +499,15 @@ const DataService = {
   async getAttendance()     { return LocalDB.getAttendance(); },
   async getAttByDate(date)  { return LocalDB.getAttByDate(date); },
   async getAttByClinic(clinicId) { return LocalDB.getAttendance().filter(a => String(a.clinicId) === String(clinicId)); },
-  async saveAttendance(a)   { return LocalDB.saveAttendance(a); },
+  async saveAttendance(a)   {
+    const res = LocalDB.saveAttendance(a);
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.client?.from('attendance').upsert(a);
+    return res;
+  },
   async deleteAttendance(id){ return LocalDB.deleteAttendance(id); },
   async setAttendanceForClinic(clinicId, records) {
     const res = LocalDB.setAttendanceForClinic(clinicId, records);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) SheetsAPI.saveAttendance(LocalDB.getAttendance());
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.client?.from('attendance').upsert(records);
     return res;
   },
 
@@ -531,9 +516,6 @@ const DataService = {
   async saveAnnouncementsConfig(cfg) {
     const res = LocalDB.saveAnnouncementsConfig(cfg);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.saveAnnouncementsConfig(cfg);
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
-      SheetsAPI.saveAnnouncementsConfig(cfg);
-    }
     return res;
   },
   async getAnnouncements()  { return LocalDB.getAnnouncements().sort((a, b) => b.date > a.date ? 1 : -1); },
@@ -545,9 +527,6 @@ const DataService = {
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
       const ok = await SupabaseAPI.fetchAll();
       if (ok) return true;
-    }
-    if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
-      return SheetsAPI.fetchAll();
     }
     return false;
   }

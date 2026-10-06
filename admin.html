@@ -514,68 +514,6 @@
             </div>
           </div>
 
-          <!-- Google Sheets Cloud Database Integration -->
-          <div class="card mb-4" style="border:2px solid #2e7d32;">
-            <div class="card-header"
-              style="background:#e8f5e9;display:flex;justify-content:space-between;align-items:center;">
-              <div class="section-title" style="font-size:1.05rem;color:#1b5e20;">📊 เชื่อมต่อฐานข้อมูลกลาง Google
-                Sheets (คลาวด์)</div>
-              <span id="sheets-connection-badge" class="badge" style="background:#757575;color:#fff;">⚪ โหมดออฟไลน์
-                (Local)</span>
-            </div>
-            <div class="card-body">
-              <div class="alert alert-info mb-3">
-                💡 <strong>ทำไมต้องเชื่อมต่อ Google Sheets?</strong>
-                เพื่อให้ครูทุกคนและนักเรียนสามารถดูและอัปเดตข้อมูลชุดเดียวกันได้จากคอมและมือถือทุกเครื่องแบบออนไลน์
-                ข้อมูลจะถูกเก็บใน Google Drive ของโรงเรียนอัตโนมัติ
-              </div>
-
-              <div class="form-group">
-                <label class="form-label font-bold">URL เว็บแอป Google Apps Script (Web App URL)</label>
-                <div style="display:flex;gap:8px;">
-                  <input type="url" class="form-control" id="setting-sheets-url"
-                    placeholder="https://script.google.com/macros/s/AKfycb.../exec" style="flex:1;">
-                  <button class="btn btn-primary" onclick="testAndSaveSheetsUrl()">💾 บันทึกและทดสอบ</button>
-                </div>
-                <div id="sheets-status-msg" class="text-xs mt-1" style="font-weight:600;"></div>
-              </div>
-
-              <div class="flex gap-2 mt-3" style="flex-wrap:wrap;">
-                <button class="btn btn-outline btn-sm" onclick="syncDataToSheets()" id="btn-sync-to-sheets">📤
-                  ส่งข้อมูลจากระบบนี้ขึ้น Google Sheets (ครั้งแรก)</button>
-                <button class="btn btn-outline btn-sm" onclick="syncDataFromSheets()" id="btn-sync-from-sheets">🔄
-                  ดึงข้อมูลล่าสุดจาก Google Sheets (Sync)</button>
-              </div>
-
-              <!-- Step-by-step setup guide -->
-              <details
-                style="margin-top:16px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:12px;">
-                <summary style="font-weight:600;color:var(--blue-deep);cursor:pointer;">📖 ดูขั้นตอนการตั้งค่า Google
-                  Sheets (ทำครั้งเดียวเพียง 3 นาที)</summary>
-                <ol style="margin-top:10px;padding-left:20px;font-size:.88rem;line-height:1.7;">
-                  <li>เปิด <a href="https://sheets.new" target="_blank"
-                      style="color:var(--blue-main);font-weight:600;text-decoration:underline;">Google Sheets ใหม่
-                      (คลิกที่นี่)</a> แล้วตั้งชื่อไฟล์ เช่น <strong>"ระบบคลินิกวิชาการ PCCPT"</strong></li>
-                  <li>ไปที่เมนูด้านบนของชีต: <strong>ส่วนขยาย (Extensions) → Apps Script</strong></li>
-                  <li>เปิดไฟล์ <code>google_apps_script.js</code> ในโฟลเดอร์นี้ แล้ว Copy โค้ดทั้งหมดไปวางทับใน Apps
-                    Script</li>
-                  <li>กดปุ่ม <strong>"ทำให้ใช้งานได้" (Deploy)</strong> มุมขวาบน → เลือก
-                    <strong>"การทำให้ใช้งานได้รายการใหม่" (New deployment)</strong></li>
-                  <li>เลือกประเภท: <strong>เว็บแอป (Web app)</strong></li>
-                  <li>ตั้งค่า:
-                    <ul>
-                      <li>ดำเนินการในฐานะ: <strong>ฉัน (Me)</strong></li>
-                      <li>ผู้ที่มีสิทธิ์เข้าถึง: <strong style="color:#c62828;">ทุกคน (Anyone)</strong> <em>(สำคัญมาก
-                          ต้องเลือกทุกคน)</em></li>
-                    </ul>
-                  </li>
-                  <li>กด <strong>Deploy</strong> แล้วกดให้สิทธิ์ (Authorize access) จากนั้นคัดลอก <strong>URL
-                      เว็บแอป</strong> ที่ลงท้ายด้วย <code>/exec</code> มาวางในช่องด้านบนนี้ แล้วกดบันทึก</li>
-                </ol>
-              </details>
-            </div>
-          </div>
-
           <!-- System maintenance -->
           <div class="card">
             <div class="card-header">
@@ -945,7 +883,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script src="js/firebase-config.js?v=2569_8"></script>
   <script src="js/supabase-api.js?v=2569_8"></script>
-  <script src="js/sheets-api.js?v=2569_8"></script>
   <script src="js/db.js?v=2569_8"></script>
   <script src="js/auth.js?v=2569_8"></script>
   <script src="js/xlsx.full.min.js"></script>
@@ -967,8 +904,7 @@
       }
 
       // Background sync from Cloud
-      if ((typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) ||
-          (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured())) {
+      if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
         const updated = await DataService.initSync();
         if (updated) {
           await loadAdminData();
@@ -977,13 +913,13 @@
 
       // Sync on visibility change or window focus (only when no modal is open)
       document.addEventListener('visibilitychange', async () => {
-        if (!document.hidden && !document.querySelector('.modal-overlay.open') && typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
+        if (!document.hidden && !document.querySelector('.modal-overlay.open') && typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
           const updated = await DataService.initSync();
           if (updated) await loadAdminData();
         }
       });
       window.addEventListener('focus', async () => {
-        if (!document.querySelector('.modal-overlay.open') && typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
+        if (!document.querySelector('.modal-overlay.open') && typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
           const updated = await DataService.initSync();
           if (updated) await loadAdminData();
         }
@@ -1002,7 +938,6 @@
       await loadAnnouncementConfig();
       loadSchoolSettings();
       loadSupabaseSettings();
-      loadSheetsSettings();
     }
 
     // ─── TABS ─────────────────────────────────────────────────
@@ -2213,8 +2148,8 @@
     async function clearTeachersList() {
       if (!confirm('ยืนยันที่จะลบรายชื่อครูทั้งหมดใช่หรือไม่? ข้อมูลจะถูกล้างเพื่อให้คุณกรอกใหม่')) return;
       LocalDB.setList('teachers', []);
-      if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
-        SheetsAPI.saveTeachers([]);
+      if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+        await SupabaseAPI.clearTable('teachers');
       }
       await loadTeachers();
       showToast('ล้างรายชื่อครูเรียบร้อย', 'คุณสามารถเพิ่มหรือนำเข้าข้อมูลใหม่ได้ทันที', 'success');
@@ -2223,8 +2158,8 @@
     async function clearStudentsList() {
       if (!confirm('ยืนยันที่จะลบรายชื่อนักเรียนทั้งหมดใช่หรือไม่? ข้อมูลจะถูกล้างเพื่อให้คุณกรอกใหม่')) return;
       LocalDB.setList('students', []);
-      if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
-        SheetsAPI.saveStudents([]);
+      if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+        await SupabaseAPI.clearTable('students');
       }
       await loadStudents();
       showToast('ล้างรายชื่อนักเรียนเรียบร้อย', 'คุณสามารถเพิ่มหรือนำเข้าข้อมูลใหม่ได้ทันที', 'success');
@@ -2234,8 +2169,9 @@
       if (!confirm('ยืนยันที่จะลบรายชื่อเจ้าหน้าที่ทั้งหมดใช่หรือไม่? ข้อมูลจะถูกล้างเพื่อให้คุณกรอกใหม่')) return;
       LocalDB.setList('staff', []);
       LocalDB.set('duty_staff_map', {});
-      if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
-        SheetsAPI.saveStaff([]);
+      if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+        await SupabaseAPI.clearTable('staff');
+        await SupabaseAPI.clearTable('duty_staff');
       }
       await loadStaff();
       await loadDutyStaffUI();
@@ -2245,10 +2181,11 @@
     async function clearAllPersonnelData() {
       if (!confirm('ยืนยันที่จะล้างข้อมูลรายชื่อครู รายชื่อนักเรียน และรายชื่อเจ้าหน้าที่ทั้งหมดใช่หรือไม่?')) return;
       LocalDB.clearAllPersonnel();
-      if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
-        SheetsAPI.saveTeachers([]);
-        SheetsAPI.saveStudents([]);
-        SheetsAPI.saveStaff([]);
+      if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+        await SupabaseAPI.clearTable('teachers');
+        await SupabaseAPI.clearTable('students');
+        await SupabaseAPI.clearTable('staff');
+        await SupabaseAPI.clearTable('duty_staff');
       }
       await loadTeachers();
       await loadStudents();
@@ -2513,90 +2450,10 @@
         return;
       }
       LocalDB.set('school_settings', { semester, academicYear });
-      if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
-        SheetsAPI.saveSettings(LocalDB.get('school_settings') || {});
+      if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+        SupabaseAPI.saveSettings(LocalDB.get('school_settings') || {});
       }
       showToast('บันทึกสำเร็จ', `ตั้งค่าภาคเรียนที่ ${semester} ปีการศึกษา ${academicYear} เรียบร้อยแล้ว`, 'success');
-    }
-
-    // ─── GOOGLE SHEETS MANAGEMENT ─────────────────────────────
-    function loadSheetsSettings() {
-      if (typeof SheetsAPI === 'undefined') return;
-      const url = SheetsAPI.getUrl();
-      const input = document.getElementById('setting-sheets-url');
-      if (input) input.value = url;
-      updateSheetsBadge(Boolean(url));
-    }
-
-    function updateSheetsBadge(isConnected, msg = '') {
-      const badge = document.getElementById('sheets-connection-badge');
-      const statusMsg = document.getElementById('sheets-status-msg');
-      if (badge) {
-        if (isConnected) {
-          badge.textContent = '🟢 เชื่อมต่อ Google Sheets แล้ว';
-          badge.style.background = '#2e7d32';
-          badge.style.color = '#fff';
-        } else {
-          badge.textContent = '⚪ โหมดออฟไลน์ (Local)';
-          badge.style.background = '#757575';
-          badge.style.color = '#fff';
-        }
-      }
-      if (statusMsg) {
-        statusMsg.innerHTML = msg;
-      }
-    }
-
-    async function testAndSaveSheetsUrl() {
-      const input = document.getElementById('setting-sheets-url');
-      const url = (input ? input.value : '').trim();
-      if (!url) {
-        SheetsAPI.setUrl('');
-        updateSheetsBadge(false, '<span style="color:var(--gray-600);">ลบการเชื่อมต่อแล้ว (กลับสู่โหมดบันทึกในเครื่อง)</span>');
-        showToast('ลบการเชื่อมต่อแล้ว', 'กลับสู่โหมดบันทึกในเครื่อง LocalStorage', 'info');
-        return;
-      }
-
-      updateSheetsBadge(false, '<span style="color:var(--blue-main);">⏳ กำลังทดสอบเชื่อมต่อ...</span>');
-      showToast('กำลังทดสอบ...', 'กำลังส่งสัญญาณทดสอบไปยัง Google Sheets', 'info');
-      const testRes = await SheetsAPI.testConnection(url);
-      if (testRes && testRes.success) {
-        SheetsAPI.setUrl(url);
-        updateSheetsBadge(true, '<span style="color:#2e7d32;">✅ ทดสอบสำเร็จ! เชื่อมต่อ Google Sheets เรียบร้อยแล้ว</span>');
-        showToast('เชื่อมต่อสำเร็จ!', 'ระบบบันทึก Google Sheets URL เรียบร้อยแล้ว', 'success');
-      } else {
-        updateSheetsBadge(false, `<span style="color:#c62828;">❌ เชื่อมต่อไม่สำเร็จ: ${testRes ? testRes.message : 'กรุณาตรวจสอบ URL หรือสิทธิ์การเข้าถึงเป็น Anyone'}</span>`);
-        showToast('เชื่อมต่อไม่สำเร็จ', testRes ? testRes.message : 'กรุณาตรวจสอบ URL', 'error');
-      }
-    }
-
-    async function syncDataToSheets() {
-      if (!SheetsAPI.isConfigured()) {
-        showToast('ยังไม่ได้เชื่อมต่อ', 'กรุณาระบุ URL เว็บแอป Google Apps Script และกดบันทึกก่อน', 'warning');
-        return;
-      }
-      showToast('กำลังอัปโหลด...', 'ส่งข้อมูลขึ้น Google Sheets กรุณารอสักครู่ (ประมาณ 3–5 วินาที)', 'info');
-      const res = await SheetsAPI.uploadAll();
-      if (res && res.success) {
-        showToast('อัปโหลดสำเร็จ!', 'ข้อมูลทั้งหมดถูกบันทึกลงใน Google Sheets เรียบร้อยแล้ว', 'success');
-      } else {
-        showToast('อัปโหลดไม่สำเร็จ', res ? res.message : '', 'error');
-      }
-    }
-
-    async function syncDataFromSheets() {
-      if (!SheetsAPI.isConfigured()) {
-        showToast('ยังไม่ได้เชื่อมต่อ', 'กรุณาระบุ URL เว็บแอป Google Apps Script ก่อน', 'warning');
-        return;
-      }
-      showToast('กำลังดึงข้อมูล...', 'กำลังโหลดข้อมูลล่าสุดจาก Google Sheets', 'info');
-      const ok = await SheetsAPI.fetchAll();
-      if (ok) {
-        showToast('ดึงข้อมูลสำเร็จ!', 'อัปเดตข้อมูลล่าสุดจาก Google Sheets เรียบร้อยแล้ว', 'success');
-        await loadAdminData();
-      } else {
-        showToast('เกิดข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลจาก Google Sheets ได้ กรุณาลองใหม่อีกครั้ง', 'error');
-      }
     }
     function loadSupabaseSettings() {
       if (typeof SupabaseAPI === 'undefined') return;
