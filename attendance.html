@@ -56,8 +56,10 @@
     <div class="filter-bar" style="margin-bottom:16px;">
       <span class="filter-label">📅 วันที่:</span>
       <input type="date" class="filter-input" id="filter-date" onchange="loadAttendance()">
+      <button class="btn btn-outline btn-sm" onclick="setTodayDate()" title="เลือกวันที่วันนี้">วันนี้</button>
+      <button class="btn btn-outline btn-sm" onclick="showAllDates()" title="แสดงข้อมูลทุกวัน">ดูทุกวัน</button>
 
-      <span class="filter-label">📌 กรองโดย:</span>
+      <span class="filter-label" style="margin-left:8px;">📌 กรองโดย:</span>
       <button class="filter-chip active" id="chip-all" onclick="setGroupBy('all')">ทั้งหมด</button>
       <button class="filter-chip" id="chip-grade" onclick="setGroupBy('grade')">แยกชั้นเรียน</button>
       <button class="filter-chip" id="chip-dorm" onclick="setGroupBy('dorm')">แยกหอพัก</button>
@@ -132,15 +134,7 @@
   <script src="js/db.js?v=2569_8"></script>
   <script src="js/auth.js?v=2569_8"></script>
   <script>
-    // ─── DORMITORY DIRECTORY & OFFICIAL NAMES (6 หอพัก)
-    const DORM_MAP = {
-      'D1': 'D1 บัวอุบล',
-      'D2': 'D2 บุษกร',
-      'D3': 'D3 บัวชมพู',
-      'D4': 'D4 นิลกมล',
-      'D5': 'D5 โกเมน',
-      'D6': 'D6 นิลปัทม์'
-    };
+    // ─── DORMITORY HELPER (DORM_MAP is loaded from js/firebase-config.js)
 
     function formatDormTitle(dormId) {
       if (!dormId) return 'หอพัก';
@@ -171,9 +165,6 @@
       updateNavbarAuth();
       updateNavbarLinks();
 
-      // Set default date to today
-      document.getElementById('filter-date').value = todayStr();
-
       // Connect Supabase Realtime
       if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
         SupabaseAPI.init(async () => {
@@ -185,11 +176,28 @@
       }
 
       // Initial Sync from Cloud
-      await refreshAttendanceData();
+      try {
+        await refreshAttendanceData();
+      } catch (err) {
+        console.warn('Initial sync error:', err);
+      }
 
       allTeachers = await DataService.getTeachers();
       allClinics = await DataService.getClinics();
       allStudents = await DataService.getStudents();
+
+      // Determine default date: if today has data, use today; otherwise default to latest date with data
+      const allAtt = await DataService.getAttendance();
+      const today = todayStr();
+      const hasToday = allAtt.some(a => toYMD(a.date) === today);
+      if (hasToday) {
+        document.getElementById('filter-date').value = today;
+      } else if (allAtt.length > 0) {
+        const dates = allAtt.map(a => toYMD(a.date)).filter(Boolean).sort();
+        document.getElementById('filter-date').value = dates[dates.length - 1] || today;
+      } else {
+        document.getElementById('filter-date').value = today;
+      }
 
       await loadAttendance();
 
@@ -206,6 +214,27 @@
         if (!document.hidden) refreshAttendanceData();
       }, 20000);
     });
+
+    function setTodayDate() {
+      document.getElementById('filter-date').value = todayStr();
+      loadAttendance();
+    }
+
+    function showAllDates() {
+      document.getElementById('filter-date').value = '';
+      loadAttendance();
+    }
+
+    async function showLatestDateWithData() {
+      const all = await DataService.getAttendance();
+      const dates = all.map(a => toYMD(a.date)).filter(Boolean).sort();
+      if (dates.length) {
+        document.getElementById('filter-date').value = dates[dates.length - 1];
+        await loadAttendance();
+      } else {
+        showAllDates();
+      }
+    }
 
     async function refreshAttendanceData() {
       if (typeof SupabaseAPI === 'undefined' || !SupabaseAPI.isConfigured()) return;
@@ -273,8 +302,12 @@
         const dateStr = document.getElementById('filter-date').value;
         content.innerHTML = `<div class="empty-state">
       <div class="empty-icon">📭</div>
-      <div class="empty-title">ไม่มีข้อมูลการเข้าเรียน</div>
+      <div class="empty-title">ไม่มีข้อมูลการเข้าเรียนในวันที่เลือก</div>
       <div class="empty-sub">${dateStr ? `วันที่ ${formatDateThai(dateStr)}` : ''} ยังไม่มีรายชื่อนักเรียน</div>
+      <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-primary btn-sm" onclick="showLatestDateWithData()">📅 ไปยังวันที่มีข้อมูลล่าสุด</button>
+        <button class="btn btn-outline btn-sm" onclick="showAllDates()">📋 ดูข้อมูลทั้งหมดทุกวัน</button>
+      </div>
     </div>`;
         return;
       }
@@ -317,6 +350,7 @@
 `;
 
     function renderFlatTable(rows, teacherMap) {
+      const showDate = !document.getElementById('filter-date')?.value;
       return `
     <table class="table-fixed">
       ${TABLE_COLGROUP}
@@ -336,7 +370,7 @@
             <td>${r.room || '–'}</td>
             <td>${r.number || '–'}</td>
             <td>${formatDormBadge(r.dormitory)}</td>
-            <td>${getSubjectIcon(r.subject)} ${r.subject || '–'}</td>
+            <td>${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>
             <td>${t.name || '–'}</td>
           </tr>`;
       }).join('')}
@@ -345,6 +379,7 @@
     }
 
     function renderGroupedTable(rows, teacherMap, groupKey, keyFn, labelFn, order) {
+      const showDate = !document.getElementById('filter-date')?.value;
       const groups = {};
       rows.forEach(r => {
         const k = keyFn(r);
@@ -395,7 +430,7 @@
                 <td>${r.room || '–'}</td>
                 <td>${r.number || '–'}</td>
                 <td>${formatDormBadge(r.dormitory)}</td>
-                <td>${getSubjectIcon(r.subject)} ${r.subject || '–'}</td>
+                <td>${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>
                 <td>${t.name || '–'}</td>
               </tr>`;
         }).join('')}
