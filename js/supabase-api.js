@@ -209,17 +209,26 @@ const SupabaseAPI = {
         });
         LocalDB.setDutyStaffMap(dutyMap);
       }
-      if (Array.isArray(clinicsData)) {
-        LocalDB.setList('clinics', clinicsData.map(c => this.mapClinicFromDb(c)));
-      }
-      if (Array.isArray(attendanceData)) {
-        LocalDB.setList('attendance', attendanceData.map(a => this.mapAttendanceFromDb(a)));
-      }
       if (Array.isArray(settingsData)) {
         settingsData.forEach(row => {
           if (row.key === 'school_settings') LocalDB.set('school_settings', row.value);
           if (row.key === 'announcements_config') LocalDB.saveAnnouncementsConfig(row.value);
+          if (row.key === 'clinic_custom_data') LocalDB.set('clinic_custom_data', row.value || {});
         });
+      }
+      if (Array.isArray(clinicsData)) {
+        const customData = LocalDB.get('clinic_custom_data') || {};
+        const clinics = clinicsData.map(c => {
+          const item = this.mapClinicFromDb(c);
+          const custom = customData[String(item.id)] || {};
+          if (custom.time) item.time = custom.time;
+          if (custom.notes !== undefined && (!item.notes || custom.notes)) item.notes = custom.notes;
+          return item;
+        });
+        LocalDB.setList('clinics', clinics);
+      }
+      if (Array.isArray(attendanceData)) {
+        LocalDB.setList('attendance', attendanceData.map(a => this.mapAttendanceFromDb(a)));
       }
 
       return true;
@@ -245,12 +254,29 @@ const SupabaseAPI = {
 
       const schoolSettings = LocalDB.get('school_settings') || { semester: '1', academicYear: '2569' };
       const annConfig = LocalDB.get('announcements_config') || {};
+      const customData = LocalDB.get('clinic_custom_data') || {};
+      (LocalDB.getClinics() || []).forEach(c => {
+        if (c.id && (c.time || c.notes)) {
+          customData[String(c.id)] = { time: c.time || '18:30–20:30', notes: c.notes || '' };
+        }
+      });
 
       if (teachers.length) await this.client.from('teachers').upsert(teachers);
       if (students.length) await this.client.from('students').upsert(students);
       if (staff.length) await this.client.from('staff').upsert(staff);
       if (weeks.length) await this.client.from('weeks').upsert(weeks);
-      if (clinics.length) await this.client.from('clinics').upsert(clinics);
+      if (clinics.length) {
+        const { error } = await this.client.from('clinics').upsert(clinics);
+        if (error && (error.code === '42703' || String(error.message).includes('time') || String(error.message).includes('notes'))) {
+          const safeClinics = clinics.map(c => {
+            const sc = { ...c };
+            delete sc.time;
+            delete sc.notes;
+            return sc;
+          });
+          await this.client.from('clinics').upsert(safeClinics);
+        }
+      }
       if (dutyRows.length) await this.client.from('duty_staff').upsert(dutyRows);
 
       const attendance = (LocalDB.getAttendance() || []).map(a => this.mapAttendanceToDb(a));
@@ -258,7 +284,8 @@ const SupabaseAPI = {
 
       await this.client.from('settings').upsert([
         { key: 'school_settings', value: schoolSettings, updated_at: new Date() },
-        { key: 'announcements_config', value: annConfig, updated_at: new Date() }
+        { key: 'announcements_config', value: annConfig, updated_at: new Date() },
+        { key: 'clinic_custom_data', value: customData, updated_at: new Date() }
       ]);
 
       return { success: true, message: 'ส่งข้อมูลทั้งหมดขึ้น Supabase เรียบร้อยแล้ว' };
@@ -272,13 +299,44 @@ const SupabaseAPI = {
   async saveClinic(c) {
     if (!this.client) return;
     try {
-      await this.client.from('clinics').upsert(this.mapClinicToDb(c));
+      // 1. Sync custom time & notes to Supabase settings table (works 100% across all devices)
+      const customData = LocalDB.get('clinic_custom_data') || {};
+      customData[String(c.id)] = {
+        time: c.time || '18:30–20:30',
+        notes: c.notes || ''
+      };
+      LocalDB.set('clinic_custom_data', customData);
+      await this.client.from('settings').upsert({
+        key: 'clinic_custom_data',
+        value: customData,
+        updated_at: new Date()
+      });
+
+      // 2. Upsert to clinics table (including time & notes if columns exist, with safe fallback)
+      const dbRow = this.mapClinicToDb(c);
+      const { error } = await this.client.from('clinics').upsert(dbRow);
+      if (error && (error.code === '42703' || String(error.message).includes('time') || String(error.message).includes('notes'))) {
+        const safeRow = { ...dbRow };
+        delete safeRow.time;
+        delete safeRow.notes;
+        await this.client.from('clinics').upsert(safeRow);
+      }
     } catch (e) { console.warn('Supabase saveClinic error:', e); }
   },
 
   async deleteClinic(id) {
     if (!this.client) return;
     try {
+      const customData = LocalDB.get('clinic_custom_data') || {};
+      if (customData[String(id)]) {
+        delete customData[String(id)];
+        LocalDB.set('clinic_custom_data', customData);
+        await this.client.from('settings').upsert({
+          key: 'clinic_custom_data',
+          value: customData,
+          updated_at: new Date()
+        });
+      }
       await this.client.from('clinics').delete().eq('id', String(id));
     } catch (e) { console.warn('Supabase deleteClinic error:', e); }
   },
@@ -407,6 +465,8 @@ const SupabaseAPI = {
       date: toYMD(c.date) || '',
       week_id: c.weekId || c.week_id || '',
       status: c.status || 'active',
+      time: c.time || '18:30–20:30',
+      notes: c.notes || '',
       student_count: Number(c.studentCount || (c.studentList && c.studentList.length) || 0),
       student_list: c.studentList || []
     };
@@ -426,7 +486,8 @@ const SupabaseAPI = {
       date: toYMD(row.date) || '',
       weekId: row.week_id || row.weekId || '',
       status: row.status || 'active',
-      time: row.time || '18:30–20:30',
+      time: row.time || '',
+      notes: row.notes || '',
       studentCount: Number(row.student_count || (row.student_list && row.student_list.length) || 0),
       studentList: row.student_list || []
     };

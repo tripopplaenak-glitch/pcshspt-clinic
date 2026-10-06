@@ -114,10 +114,16 @@ class LocalDB {
 
   // Clinics (schedule slots)
   static getClinics()             {
-    return LocalDB.getList('clinics').map(c => ({
-      ...c,
-      time: c.time || '18:30–20:30'
-    }));
+    const list = LocalDB.getList('clinics');
+    const customData = LocalDB.get('clinic_custom_data') || {};
+    return list.map(c => {
+      const custom = customData[String(c.id)] || {};
+      return {
+        ...c,
+        time: c.time || custom.time || '18:30–20:30',
+        notes: c.notes !== undefined && c.notes !== '' ? c.notes : (custom.notes || '')
+      };
+    });
   }
   static saveClinic(c)            {
     c.time = c.time || '18:30–20:30';
@@ -126,10 +132,27 @@ class LocalDB {
     if (idx >= 0) list[idx] = c;
     else { c.id = LocalDB.nextId('clinic'); list.push(c); }
     LocalDB.setList('clinics', list);
+
+    if (c.id) {
+      const customData = LocalDB.get('clinic_custom_data') || {};
+      customData[String(c.id)] = {
+        time: c.time,
+        notes: c.notes || ''
+      };
+      LocalDB.set('clinic_custom_data', customData);
+    }
+
     LocalDB.ensureWeeksForClinics();
     return c;
   }
-  static deleteClinic(id)         { LocalDB.setList('clinics', LocalDB.getClinics().filter(x => String(x.id) !== String(id))); }
+  static deleteClinic(id)         {
+    LocalDB.setList('clinics', LocalDB.getClinics().filter(x => String(x.id) !== String(id)));
+    const customData = LocalDB.get('clinic_custom_data') || {};
+    if (customData[String(id)]) {
+      delete customData[String(id)];
+      LocalDB.set('clinic_custom_data', customData);
+    }
+  }
   static getClinicsByWeek(weekId) {
     const weeks = LocalDB.getWeeks();
     const targetWeek = weeks.find(w => w.weekId === weekId || String(w.id) === String(weekId));

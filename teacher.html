@@ -176,10 +176,10 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/firebase-config.js?v=2569_8"></script>
-<script src="js/supabase-api.js?v=2569_8"></script>
-<script src="js/db.js?v=2569_8"></script>
-<script src="js/auth.js?v=2569_8"></script>
+<script src="js/firebase-config.js?v=2569_10"></script>
+<script src="js/supabase-api.js?v=2569_10"></script>
+<script src="js/db.js?v=2569_10"></script>
+<script src="js/auth.js?v=2569_10"></script>
 <script>
 // ─── AUTH GUARD ───────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -351,7 +351,7 @@ async function openEditClinic(clinicId) {
     return;
   }
   currentClinic = c;
-  const parts = (c.time || '18:30–20:30').split(/[-–—]/);
+  const parts = (c.time || '18:30–20:30').replace(/น\.?/g, '').trim().split(/[-–—]/);
   const ts = parts[0]?.trim() || '18:30';
   const te = parts[1]?.trim() || '20:30';
   document.getElementById('edit-clinic-id').value = String(c.id);
