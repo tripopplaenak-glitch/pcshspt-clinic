@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ตารางคลินิกวิชาการ — PCCPT</title>
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Clinic Slot Footer & Students Button */
+    .clinic-slot-footer {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn-clinic-students {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Sarabun', sans-serif;
+      border: 1px solid transparent;
+    }
+    .btn-clinic-students.has-students {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+    }
+    .btn-clinic-students.has-students:hover {
+      background: #dbeafe;
+      color: #1e40af;
+      border-color: #93c5fd;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(29, 78, 216, 0.18);
+    }
+    .btn-clinic-students.empty-students {
+      background: #f8fafc;
+      color: #64748b;
+      border-color: #e2e8f0;
+    }
+    .btn-clinic-students.empty-students:hover {
+      background: #f1f5f9;
+      color: #334155;
+      border-color: #cbd5e1;
+      transform: translateY(-1px);
+    }
+
+    /* Modal Student Table */
+    .cs-table-wrap {
+      border: 1.5px solid var(--gray-200);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 12px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .cs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      text-align: left;
+    }
+    .cs-table th {
+      background: #f1f5f9;
+      color: #334155;
+      padding: 10px 12px;
+      font-weight: 700;
+      font-family: 'Kanit', sans-serif;
+      border-bottom: 1.5px solid #e2e8f0;
+    }
+    .cs-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #f1f5f9;
+      color: #1e293b;
+    }
+    .cs-table tr:hover td {
+      background: #f8fafc;
+    }
+    @media (max-width: 600px) {
+      .cs-table th, .cs-table td {
+        padding: 8px 6px;
+        font-size: 0.8rem;
+      }
+      .btn-clinic-students {
+        font-size: 0.76rem;
+        padding: 4px 9px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAVBAR ════════════════════════════════════════════ -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <div class="navbar-brand">
+      <img src="assets/logo.png" alt="โลโก้ โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี" class="navbar-logo">
+      <div class="navbar-title">
+        <h1>โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</h1>
+        <p>ระบบคลินิกวิชาการ | ภาคเรียนที่ <span id="nav-semester">1</span> ปีการศึกษา <span id="nav-academic-year">2569</span></p>
+      </div>
+    </div>
+    <nav class="navbar-nav">
+      <a href="schedule.html" class="nav-link active">📅 ตารางสอน</a>
+      <a href="attendance.html" class="nav-link">📋 สรุปการเข้าเรียน</a>
+      <a href="login.html" class="nav-link nav-btn nav-btn-login" id="nav-login-btn">🔑 เข้าสู่ระบบ</a>
+      <span class="nav-link hidden" id="nav-user-info" style="background:rgba(255,255,255,.1);border-radius:8px;"></span>
+      <a href="teacher.html" class="nav-link hidden" id="nav-teacher-link">👩‍🏫 ระบบครู</a>
+      <a href="admin.html" class="nav-link hidden" id="nav-admin-link">⚙️ Admin</a>
+      <button class="nav-btn nav-btn-logout hidden" id="nav-logout-btn" onclick="AuthService.logout()">ออกจากระบบ</button>
+    </nav>
+  </div>
+</nav>
+
+<!-- ═══ HERO ══════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-text" style="text-align:center;width:100%;">
+      <h1>ตารางสอนเสริมหลังเลิกเรียน (คลินิกวิชาการ)</h1>
+      <p>โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</p>
+      <span class="hero-sub">ภาคเรียนที่ <span id="hero-semester">1</span> ปีการศึกษา <span id="hero-academic-year">2569</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MAIN ══════════════════════════════════════════════ -->
+<main class="main-content">
+
+  <!-- STATS ROW -->
+  <div class="stats-row" id="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon blue">📅</div>
+      <div>
+        <div class="stat-num" id="stat-active">–</div>
+        <div class="stat-label">วันที่มีสอน</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">⛔</div>
+      <div>
+        <div class="stat-num" id="stat-cancel">–</div>
+        <div class="stat-label">วันงดสอน</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green">👩‍🏫</div>
+      <div>
+        <div class="stat-num" id="stat-teachers">–</div>
+        <div class="stat-label">ครูผู้สอน</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon gold">🎓</div>
+      <div>
+        <div class="stat-num" id="stat-students">–</div>
+        <div class="stat-label">นักเรียนที่ลงทะเบียน</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROL ROW -->
+  <div class="section-header">
+    <div class="section-title">
+      <div class="section-title-icon">🏫</div>
+      <span>ตารางสอนคลินิกวิชาการ</span>
+    </div>
+    <div class="flex gap-2 items-center" style="flex-wrap:wrap;">
+      <label class="filter-label">ระดับชั้น:</label>
+      <div class="grade-tabs" id="grade-tabs" style="margin-bottom:0;"></div>
+      <div class="flex gap-2" style="margin-left:8px;">
+        <button class="btn btn-primary btn-sm" id="btn-single-week" onclick="setViewMode('single')" title="ดูสัปดาห์เดียว">📄 1 สัปดาห์</button>
+        <button class="btn btn-outline btn-sm" id="btn-multi-week" onclick="setViewMode('multi')" title="ดูหลายสัปดาห์">📚 หลายสัปดาห์</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEK NAVIGATOR (single mode) -->
+  <div id="week-nav-bar" class="week-nav">
+    <button class="week-btn" id="btn-prev-week" onclick="changeWeek(-1)">‹ สัปดาห์ก่อนหน้า</button>
+    <div class="week-nav-center">
+      <span>📅</span>
+      <span id="week-label">กำลังโหลด...</span>
+    </div>
+    <button class="week-btn" id="btn-next-week" onclick="changeWeek(1)">สัปดาห์ถัดไป ›</button>
+  </div>
+
+  <!-- MULTI-WEEK PICKER (multi mode) -->
+  <div id="multi-week-bar" class="multi-week-picker hidden">
+    <div class="flex items-center justify-between mb-2">
+      <div style="font-weight:700;font-size:.9rem;color:var(--blue-deep);">
+        🗓️ เลือกสัปดาห์ที่ต้องการดู (สูงสุด 4 สัปดาห์):
+      </div>
+      <div id="multi-week-count" style="font-size:.82rem;font-weight:600;color:var(--blue-main);">
+        เลือกแล้ว 0/4 สัปดาห์
+      </div>
+    </div>
+    <div id="multi-week-pills" class="flex gap-2" style="flex-wrap:wrap;"></div>
+  </div>
+
+  <!-- TOP ANNOUNCEMENT -->
+  <div id="announcement-top-bar" style="margin-bottom:16px;"></div>
+
+  <!-- SCHEDULE CONTENT -->
+  <div id="schedule-content">
+    <div class="empty-state">
+      <div class="spinner"></div>
+      <div class="mt-3">กำลังโหลดตาราง...</div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ANNOUNCEMENT / NOTES -->
+  <div id="announcement-bottom-bar" style="margin-top:20px;"></div>
+
+
+</main>
+
+<!-- ═══ FOOTER ════════════════════════════════════════════ -->
+<footer>
+  โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี
+</footer>
+
+<!-- MODAL: VIEW CLINIC STUDENTS -->
+<div class="modal-overlay" id="modal-clinic-students" onclick="if(event.target===this)closeModal('modal-clinic-students')">
+  <div class="modal" style="max-width:680px;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.18);">
+    <div class="modal-header" style="background:linear-gradient(135deg, #1e3a8a, #0284c7);color:#fff;padding:18px 24px;border:none;">
+      <div>
+        <div class="modal-title" id="cs-modal-title" style="color:#fff;font-size:1.15rem;display:flex;align-items:center;gap:8px;">
+          <span>📋</span> <span id="cs-subject-title">รายชื่อนักเรียน</span>
+        </div>
+        <div id="cs-modal-subtitle" style="font-size:0.85rem;color:#e0f2fe;margin-top:4px;font-weight:400;"></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-clinic-students')" style="background:rgba(255,255,255,0.2);color:#fff;border:none;">✕</button>
+    </div>
+    
+    <div class="modal-body" id="cs-modal-body" style="padding:20px 24px;max-height:65vh;overflow-y:auto;">
+    </div>
+    
+    <div class="modal-footer" style="padding:12px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;">
+      <div id="cs-modal-footer-info" style="font-size:0.85rem;color:#64748b;font-weight:500;"></div>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('modal-clinic-students')" style="padding:6px 18px;border-radius:8px;">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner" style="width:40px;height:40px;border-width:4px;"></div>
+  <div class="loading-text">กำลังโหลด...</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/firebase-config.js?v=2569_8"></script>
+<script src="js/supabase-api.js?v=2569_8"></script>
+<script src="js/sheets-api.js?v=2569_8"></script>
+<script src="js/db.js?v=2569_8"></script>
+<script src="js/auth.js?v=2569_8"></script>
+<script>
+// ─── INIT ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  seedDemoData();
+  updateNavbarAuth();
+  updateNavbarLinks();
+  initGradeTabs();
+  loadSchoolInfo();
+  await loadAnnouncements();
+  await loadWeeks();
+  await renderSchedule();
+
+  // 0. Connect Supabase Realtime WebSockets (< 0.1s instant sync)
+  if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+    SupabaseAPI.init(async () => {
+      // Called instantly whenever any device edits or adds data in Supabase
+      const modal = document.getElementById('modal-clinic-students');
+      if (modal && modal.classList.contains('active')) return;
+      loadSchoolInfo();
+      await loadAnnouncements();
+      await loadWeeks();
+      await renderSchedule();
+    });
+  }
+
+  // Background sync from Cloud
+  await refreshScheduleData();
+
+  // 1. Sync immediately when switching back to tab or unlocking phone
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshScheduleData();
+  });
+  window.addEventListener('focus', () => {
+    refreshScheduleData();
+  });
+
+  // 2. Fast background sync interval to catch updates live
+  setInterval(() => {
+    if (!document.hidden) refreshScheduleData();
+  }, 15000);
+});
+
+let isRefreshingSchedule = false;
+async function refreshScheduleData() {
+  if (isRefreshingSchedule) return;
+  const hasCloud = (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) ||
+                   (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured());
+  if (!hasCloud) return;
+  // If student modal is currently open, skip re-render to avoid resetting user's open modal
+  const modal = document.getElementById('modal-clinic-students');
+  if (modal && modal.classList.contains('active')) return;
+
+  isRefreshingSchedule = true;
+  try {
+    const updated = await DataService.initSync();
+    if (updated) {
+      loadSchoolInfo();
+      await loadAnnouncements();
+      await loadWeeks();
+      await renderSchedule();
+    }
+  } finally {
+    isRefreshingSchedule = false;
+  }
+}
+
+// ─── School Info (read from settings)
+function loadSchoolInfo() {
+  const s = LocalDB.get('school_settings') || {};
+  const sem  = s.semester    || (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.semester) || '1';
+  const year = s.academicYear || (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.academicYear) || '2569';
+  const ids = ['nav-semester','hero-semester'];
+  ids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = sem; });
+  const yids = ['nav-academic-year','hero-academic-year'];
+  yids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = year; });
+}
+
+// ─── STATE
+let currentGrade = 1;
+let allWeeks = [];
+let currentWeekIdx = 0;
+let viewMode = 'single'; // 'single' | 'multi'
+let selectedMultiWeekIds = []; // Up to 4 weeks
+
+// ─── Navbar links based on role
+function updateNavbarLinks() {
+  const s = AuthService.getSession();
+  const teacherLink = document.getElementById('nav-teacher-link');
+  const adminLink   = document.getElementById('nav-admin-link');
+  if (!s) return;
+  if (s.role === 'teacher' || s.role === 'admin') teacherLink && teacherLink.classList.remove('hidden');
+  if (s.role === 'admin')                          adminLink   && adminLink.classList.remove('hidden');
+}
+
+// ─── Grade Tabs
+function initGradeTabs() {
+  const container = document.getElementById('grade-tabs');
+  container.innerHTML = '';
+  APP_CONFIG.grades.forEach((g, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'grade-tab' + (i === 0 ? ' active' : '');
+    btn.textContent = g;
+    btn.dataset.grade = i + 1;
+    btn.onclick = () => selectGrade(i + 1);
+    container.appendChild(btn);
+  });
+}
+
+function selectGrade(grade) {
+  currentGrade = grade;
+  document.querySelectorAll('.grade-tab').forEach(b => {
+    b.classList.toggle('active', Number(b.dataset.grade) === grade);
+  });
+  renderSchedule();
+}
+
+// ─── View Mode
+function setViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('btn-single-week').classList.toggle('btn-primary', mode === 'single');
+  document.getElementById('btn-single-week').classList.toggle('btn-outline', mode !== 'single');
+  document.getElementById('btn-multi-week').classList.toggle('btn-primary', mode === 'multi');
+  document.getElementById('btn-multi-week').classList.toggle('btn-outline', mode !== 'multi');
+  document.getElementById('week-nav-bar').style.display = mode === 'single' ? 'flex' : 'none';
+
+  const multiBar = document.getElementById('multi-week-bar');
+  if (mode === 'multi') {
+    multiBar.classList.remove('hidden');
+    renderMultiWeekPills();
+  } else {
+    multiBar.classList.add('hidden');
+  }
+
+  renderSchedule();
+}
+
+// ─── Load weeks
+async function loadWeeks() {
+  allWeeks = await DataService.getWeeks();
+  if (allWeeks.length === 0) return;
+
+  const today = todayStr();
+  const idx = allWeeks.findIndex(w => {
+    const s = toYMD(w.startDate);
+    const e = toYMD(w.endDate);
+    return s && e && today >= s && today <= e;
+  });
+
+  const allClinics = await DataService.getClinics();
+  const curWeek = idx >= 0 ? allWeeks[idx] : null;
+  const currentWeekClinics = curWeek
+    ? allClinics.filter(c => c.weekId === curWeek.weekId || (c.date && curWeek.startDate && curWeek.endDate && toYMD(c.date) >= toYMD(curWeek.startDate) && toYMD(c.date) <= toYMD(curWeek.endDate)))
+    : [];
+
+  if (idx >= 0 && currentWeekClinics.length > 0) {
+    currentWeekIdx = idx;
+  } else if (idx >= 0 && currentWeekClinics.length === 0) {
+    // Current week has no clinics at all. Find nearest week that has clinics!
+    const weekWithClinicsIdx = allWeeks.findIndex(w => {
+      const s = toYMD(w.startDate);
+      const e = toYMD(w.endDate);
+      return allClinics.some(c => c.weekId === w.weekId || (c.date && s && e && toYMD(c.date) >= s && toYMD(c.date) <= e));
+    });
+    currentWeekIdx = weekWithClinicsIdx >= 0 ? weekWithClinicsIdx : idx;
+  } else {
+    currentWeekIdx = allWeeks.length - 1;
+  }
+  updateWeekLabel();
+
+  // Auto-switch to grade that has clinics if current grade has none
+  const activeW = allWeeks[currentWeekIdx];
+  if (activeW) {
+    const s = toYMD(activeW.startDate);
+    const e = toYMD(activeW.endDate);
+    const wClinics = allClinics.filter(c => c.weekId === activeW.weekId || (toYMD(c.date) >= s && toYMD(c.date) <= e));
+    if (wClinics.length > 0 && !wClinics.some(c => Number(c.grade) === currentGrade)) {
+      const firstActive = wClinics.find(c => c.grade);
+      if (firstActive) {
+        currentGrade = Number(firstActive.grade);
+        initGradeTabs();
+      }
+    }
+  }
+
+  // Initialize multi-week selection with first up to 4 weeks starting from current
+  if (selectedMultiWeekIds.length === 0) {
+    const start = Math.max(0, currentWeekIdx);
+    selectedMultiWeekIds = allWeeks.slice(start, start + 4).map(w => w.weekId);
+    if (selectedMultiWeekIds.length < 4 && allWeeks.length > selectedMultiWeekIds.length) {
+      selectedMultiWeekIds = allWeeks.slice(0, 4).map(w => w.weekId);
+    }
+  }
+}
+
+function renderMultiWeekPills() {
+  const container = document.getElementById('multi-week-pills');
+  container.innerHTML = '';
+  document.getElementById('multi-week-count').textContent = `เลือกแล้ว ${selectedMultiWeekIds.length}/4 สัปดาห์`;
+
+  allWeeks.forEach(w => {
+    const isSelected = selectedMultiWeekIds.includes(w.weekId);
+    const pill = document.createElement('div');
+    pill.className = `week-pill ${isSelected ? 'selected' : ''}`;
+    pill.innerHTML = `<span>${isSelected ? '✓' : '+'}</span> <span>${w.label || ('สัปดาห์ที่ ' + w.weekNum)}</span>`;
+    pill.onclick = () => toggleMultiWeek(w.weekId);
+    container.appendChild(pill);
+  });
+}
+
+function toggleMultiWeek(weekId) {
+  const idx = selectedMultiWeekIds.indexOf(weekId);
+  if (idx >= 0) {
+    if (selectedMultiWeekIds.length === 1) {
+      showToast('แจ้งเตือน', 'ต้องเลือกดูอย่างน้อย 1 สัปดาห์', 'info');
+      return;
+    }
+    selectedMultiWeekIds.splice(idx, 1);
+  } else {
+    if (selectedMultiWeekIds.length >= 4) {
+      showToast('เลือกได้สูงสุด 4 สัปดาห์', 'กรุณายกเลิกสัปดาห์อื่นก่อนหากต้องการเปลี่ยนช่วงเวลา', 'warning');
+      return;
+    }
+    selectedMultiWeekIds.push(weekId);
+  }
+  renderMultiWeekPills();
+  renderSchedule();
+}
+
+function updateWeekLabel() {
+  if (!allWeeks.length) { document.getElementById('week-label').textContent = 'ยังไม่มีข้อมูลสัปดาห์'; return; }
+  const w = allWeeks[currentWeekIdx];
+  const noClassBadge = w?.noClasses ? ' <span style="color:#ef4444;font-size:.85rem;">(ไม่มีการเรียนการสอน)</span>' : '';
+  document.getElementById('week-label').innerHTML = (w?.label || '') + noClassBadge;
+  document.getElementById('btn-prev-week').disabled = currentWeekIdx <= 0;
+  document.getElementById('btn-next-week').disabled = currentWeekIdx >= allWeeks.length - 1;
+}
+
+function changeWeek(dir) {
+  const newIdx = currentWeekIdx + dir;
+  if (newIdx < 0 || newIdx >= allWeeks.length) return;
+  currentWeekIdx = newIdx;
+  updateWeekLabel();
+  renderSchedule();
+}
+
+// ─── Helper: HTML Escape ──────────────────────────────────
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// ─── Load announcements (Top & Bottom positions)
+async function loadAnnouncements() {
+  const cfg = await DataService.getAnnouncementsConfig();
+  const topBar = document.getElementById('announcement-top-bar');
+  const btmBar = document.getElementById('announcement-bottom-bar');
+  if (!topBar || !btmBar) return;
+
+  // 1. Top Announcement (แถบบนก่อนตาราง)
+  const isTopActive = cfg.top && (cfg.top.active !== false && cfg.top.active !== 'false');
+  const topText = (cfg.top?.text || '').trim();
+
+  if (isTopActive && topText) {
+    const badge = cfg.top.badge || '📢 ประกาศ:';
+    topBar.innerHTML = `
+      <div class="alert alert-info" style="align-items:flex-start;display:flex;gap:12px;padding:14px 18px;border-radius:12px;background:#e0f2fe;border:1.5px solid #bae6fd;box-shadow:0 2px 4px rgba(14,165,233,0.08);">
+        <span style="font-size:1.35rem;flex-shrink:0;line-height:1.2;">📢</span>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:8px;">
+            <span style="display:inline-block;padding:3px 10px;background:#0284c7;color:#fff;border-radius:20px;font-size:.82rem;font-weight:700;letter-spacing:.3px;box-shadow:0 1px 2px rgba(2,132,199,0.2);">${escapeHtml(badge)}</span>
+            <span style="white-space:pre-line;line-height:1.65;font-size:.95rem;color:#0c4a6e;font-weight:500;">${escapeHtml(topText)}</span>
+          </div>
+        </div>
+      </div>`;
+    topBar.style.display = 'block';
+  } else {
+    topBar.innerHTML = '';
+    topBar.style.display = 'none';
+  }
+
+  // 2. Bottom Announcement / Notes (กล่องหมายเหตุด้านล่าง)
+  const isBtmActive = cfg.bottom && (cfg.bottom.active !== false && cfg.bottom.active !== 'false');
+  const btmText = (cfg.bottom?.text || '').trim();
+
+  if (isBtmActive && btmText) {
+    const title = cfg.bottom.title || '📌 หมายเหตุ:';
+    btmBar.innerHTML = `
+      <div class="alert alert-warning" id="schedule-notes" style="align-items:flex-start;display:flex;gap:12px;padding:14px 18px;border-radius:12px;background:#fffbeb;border:1.5px solid #fde68a;box-shadow:0 2px 4px rgba(217,119,6,0.06);">
+        <span style="font-size:1.35rem;flex-shrink:0;line-height:1.2;">📌</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:700;color:#92400e;font-size:1rem;margin-bottom:4px;">${escapeHtml(title)}</div>
+          <div style="white-space:pre-line;line-height:1.65;font-size:.93rem;color:#78350f;">${escapeHtml(btmText)}</div>
+        </div>
+      </div>`;
+    btmBar.style.display = 'block';
+  } else {
+    btmBar.innerHTML = '';
+    btmBar.style.display = 'none';
+  }
+}
+
+// ─── RENDER SCHEDULE ──────────────────────────────────────
+async function renderSchedule() {
+  const content = document.getElementById('schedule-content');
+  content.innerHTML = '<div class="empty-state"><div class="spinner"></div><div class="mt-3">กำลังโหลด...</div></div>';
+
+  if (!allWeeks.length) {
+    content.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">ยังไม่มีตารางสอน</div><div class="empty-sub">แอดมินยังไม่ได้อัปเดตข้อมูลสัปดาห์นี้</div></div>';
+    return;
+  }
+
+  if (viewMode === 'single') {
+    await renderSingleWeek();
+  } else {
+    await renderMultiWeek();
+  }
+}
+
+// ─── SINGLE WEEK VIEW ─────────────────────────────────────
+async function renderSingleWeek() {
+  const week = allWeeks[currentWeekIdx];
+  if (!week) return;
+
+  const gradeLabel = APP_CONFIG.grades[currentGrade - 1];
+
+  // If marked as NO CLASSES THIS WEEK
+  if (week.noClasses) {
+    document.getElementById('stat-active').textContent   = 0;
+    document.getElementById('stat-cancel').textContent   = 0;
+    document.getElementById('stat-teachers').textContent = 0;
+    document.getElementById('stat-students').textContent = '–';
+
+    document.getElementById('schedule-content').innerHTML = `
+      <div class="flex items-center gap-2 mb-3 text-muted text-sm">
+        🎓 <strong>ระดับชั้น ${gradeLabel}</strong> — ${week.label}
+      </div>
+      <div class="no-classes-card">
+        <div class="icon">🚫</div>
+        <div class="title">สัปดาห์นี้ไม่มีการจัดการเรียนการสอนคลินิกวิชาการ</div>
+        <div class="sub">${week.label}</div>
+      </div>
+    `;
+    return;
+  }
+
+  const clinics = await DataService.getClinicsByGradeAndWeek(currentGrade, week.weekId);
+  const teachers = await DataService.getTeachers();
+  const teacherMap = Object.fromEntries(teachers.map(t => [t.id, t]));
+  const today = todayStr();
+
+  // Build day slots
+  const dayNames = ['จันทร์','อังคาร','พุธ','พฤหัสบดี'];
+  const days = [];
+  const baseD = parseDateSafe(week.startDate) || new Date();
+  for (let i = 0; i < 4; i++) {
+    const d = new Date(baseD);
+    d.setDate(d.getDate() + i);
+    const dStr = toYMD(d);
+    days.push({ name: dayNames[i], date: dStr, dayIdx: i, isToday: dStr === today });
+  }
+
+  // Stats
+  const activeDays = new Set(clinics.filter(c => c.status === 'active').map(c => c.dayOfWeek)).size;
+  const cancelledDays = new Set(clinics.filter(c => c.status === 'cancelled').map(c => c.dayOfWeek)).size;
+  const uniqueTeachers = new Set(clinics.map(c => c.teacherId)).size;
+  const totalStudents = clinics.reduce((s, c) => s + (c.studentCount || 0), 0);
+  document.getElementById('stat-active').textContent   = activeDays;
+  document.getElementById('stat-cancel').textContent   = cancelledDays;
+  document.getElementById('stat-teachers').textContent = uniqueTeachers;
+  document.getElementById('stat-students').textContent = totalStudents || '–';
+
+  const weekDuty = await DataService.getDutyStaffForWeek(week.weekId);
+  const dutyStaffMap = await DataService.getDutyStaffMap();
+
+  // Render day cards
+  const html = `
+    <div class="flex items-center gap-2 mb-3 text-muted text-sm">
+      🎓 <strong>ระดับชั้น ${gradeLabel}</strong> — ${week.label}
+    </div>
+    <div class="days-grid">
+      ${days.map(day => {
+        const dayClinics = clinics.filter(c => {
+          const cYmd = toYMD(c.date);
+          if (cYmd && day.date) return cYmd === day.date;
+          return Number(c.dayOfWeek) === day.dayIdx;
+        });
+        const dutyOfficer = weekDuty[day.dayIdx] || dutyStaffMap[day.date] || '';
+        return renderDayCard(day, dayClinics, teacherMap, dutyOfficer);
+      }).join('')}
+    </div>`;
+
+  document.getElementById('schedule-content').innerHTML = html;
+}
+
+// ─── MULTI WEEK VIEW ──────────────────────────────────────
+async function renderMultiWeek() {
+  const teachers = await DataService.getTeachers();
+  const teacherMap = Object.fromEntries(teachers.map(t => [t.id, t]));
+  const today = todayStr();
+  const dutyStaffMap = await DataService.getDutyStaffMap();
+
+  // Only show user-selected weeks (up to 4)
+  const weeksToShow = allWeeks.filter(w => selectedMultiWeekIds.includes(w.weekId));
+
+  let html = '';
+  let totalActive = 0, totalCancel = 0, totalTch = new Set(), totalStu = 0;
+
+  for (const week of weeksToShow) {
+    if (week.noClasses) {
+      html += `
+        <div class="multi-week-section">
+          <div class="week-header">📅 ${week.label}</div>
+          <div class="no-classes-card" style="margin-top:10px;padding:24px 16px;">
+            <div class="icon" style="font-size:2rem;margin-bottom:6px;">🚫</div>
+            <div class="title" style="font-size:1.15rem;">สัปดาห์นี้ไม่มีการจัดการเรียนการสอนคลินิกวิชาการ</div>
+            <div class="sub">${week.label}</div>
+          </div>
+        </div>`;
+      continue;
+    }
+
+    const clinics = await DataService.getClinicsByGradeAndWeek(currentGrade, week.weekId);
+    const weekDuty = await DataService.getDutyStaffForWeek(week.weekId);
+    clinics.filter(c => c.status === 'active').forEach(c => {
+      totalActive++;
+      if (c.teacherId) totalTch.add(c.teacherId);
+      totalStu += c.studentCount || 0;
+    });
+    clinics.filter(c => c.status === 'cancelled').forEach(() => totalCancel++);
+
+    const dayNames = ['จันทร์','อังคาร','พุธ','พฤหัสบดี'];
+    const days = [];
+    const baseD = parseDateSafe(week.startDate) || new Date();
+    for (let i = 0; i < 4; i++) {
+      const d = new Date(baseD);
+      d.setDate(d.getDate() + i);
+      const dStr = toYMD(d);
+      days.push({ name: dayNames[i], date: dStr, dayIdx: i, isToday: dStr === today });
+    }
+
+    html += `
+      <div class="multi-week-section">
+        <div class="week-header">📅 ${week.label}</div>
+        <div class="days-grid">
+          ${days.map(day => {
+            const dayClinics = clinics.filter(c => {
+              const cYmd = toYMD(c.date);
+              if (cYmd && day.date) return cYmd === day.date;
+              return Number(c.dayOfWeek) === day.dayIdx;
+            });
+            const dutyOfficer = weekDuty[day.dayIdx] || dutyStaffMap[day.date] || '';
+            return renderDayCard(day, dayClinics, teacherMap, dutyOfficer);
+          }).join('')}
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('stat-active').textContent   = totalActive;
+  document.getElementById('stat-cancel').textContent   = totalCancel;
+  document.getElementById('stat-teachers').textContent = totalTch.size;
+  document.getElementById('stat-students').textContent = totalStu || '–';
+
+  if (!html) html = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">ไม่พบสัปดาห์ที่เลือก</div></div>';
+  document.getElementById('schedule-content').innerHTML = html;
+}
+
+// ─── RENDER DAY CARD ──────────────────────────────────────
+function renderDayCard(day, clinics, teacherMap, dutyOfficer) {
+  const isToday = day.isToday;
+  const slotsHtml = clinics.length
+    ? clinics.map(c => {
+        const t = teacherMap[c.teacherId] || {};
+        const st = getStatusLabel(c.status);
+        const count = Number(c.studentCount || 0);
+        return `
+          <div class="clinic-slot">
+            <div class="clinic-subject">${getSubjectIcon(c.subject)} ${c.subject}</div>
+            <div class="clinic-meta">
+              <span>👩‍🏫 ${t.name || '–'}</span>
+              <span>🕐 ${c.time}</span>
+              ${c.room ? `<span>📍 ${c.room}</span>` : ''}
+            </div>
+            <div class="clinic-slot-footer">
+              <span class="status-badge ${st.cls}">${st.icon} ${st.text}</span>
+              <button class="btn-clinic-students ${count > 0 ? 'has-students' : 'empty-students'}" 
+                      onclick="openClinicStudentsModal('${c.id}')"
+                      title="คลิกเพื่อดูรายชื่อนักเรียน">
+                👥 ${count > 0 ? `รายชื่อนักเรียน (${count} คน)` : 'ดูรายชื่อนักเรียน'}
+                <span style="font-weight:bold;margin-left:2px;">›</span>
+              </button>
+            </div>
+          </div>`;
+      }).join('')
+    : `<div class="no-clinic"><div class="no-clinic-icon">🗓️</div><div>ไม่มีคลินิก</div></div>`;
+
+  return `
+    <div class="day-card ${isToday ? 'today' : ''}">
+      <div class="day-card-header ${isToday ? 'today-hdr' : ''}">
+        <div class="flex items-center justify-between">
+          <div class="day-name">${isToday ? '☀️ ' : ''}${day.name}</div>
+          ${isToday ? '<span class="today-badge">วันนี้</span>' : ''}
+        </div>
+        <div class="day-date">${formatDateThai(day.date)}</div>
+        <div class="day-duty-staff">
+          <span class="duty-icon">👮</span>
+          <span class="duty-label">เจ้าหน้าที่:</span>
+          <span class="duty-name" title="${dutyOfficer || 'ยังไม่ระบุ'}">${dutyOfficer || '–'}</span>
+        </div>
+      </div>
+      <div class="day-card-body">${slotsHtml}</div>
+    </div>`;
+}
+
+// ─── CLINIC STUDENTS MODAL LOGIC ──────────────────────────
+let currentModalStudentList = [];
+
+async function openClinicStudentsModal(clinicId) {
+  const allClinics = await DataService.getClinics();
+  const c = allClinics.find(x => String(x.id) === String(clinicId));
+  if (!c) {
+    showToast('ไม่พบข้อมูลวิชา', '', 'warning');
+    return;
+  }
+  const teachers = await DataService.getTeachers();
+  const t = teachers.find(x => String(x.id) === String(c.teacherId)) || {};
+  const teacherName = t.name || 'ไม่ระบุ';
+
+  // Set modal header
+  document.getElementById('cs-subject-title').textContent = `${c.subject} (ม.${c.grade})`;
+  const dateStr = formatDateThai(c.date);
+  document.getElementById('cs-modal-subtitle').innerHTML = `
+    <span>👩‍🏫 ครูผู้สอน: <strong>${escapeHtml(teacherName)}</strong></span> &bull; 
+    <span>📅 ${escapeHtml(dateStr)} (${escapeHtml(c.time)})</span>
+    ${c.room ? ` &bull; <span>📍 ${escapeHtml(c.room)}</span>` : ''}
+  `;
+
+  // Get attendance records for this clinic
+  const allAttendance = await DataService.getAttendance();
+  const cDate = toYMD(c.date);
+  const cGrade = Number(c.grade);
+  const cSubj = (c.subject || '').trim();
+
+  let matchedAtt = allAttendance.filter(a => {
+    if (a.clinicId && String(a.clinicId) === String(c.id)) return true;
+    if (cDate && a.date && toYMD(a.date) === cDate && Number(a.grade) === cGrade && (a.subject || '').trim() === cSubj) return true;
+    return false;
+  });
+
+  // Cross reference with students directory
+  const allStudents = await DataService.getStudents();
+  const stuMap = Object.fromEntries(allStudents.map(s => [String(s.id), s]));
+
+  currentModalStudentList = matchedAtt.map((att, i) => {
+    const s = stuMap[String(att.studentId)] || {};
+    return {
+      index: i + 1,
+      name: att.studentName || s.name || '–',
+      studentCode: s.studentCode || att.studentCode || '',
+      grade: att.grade || s.grade || c.grade,
+      room: att.room || s.room || '–',
+      number: att.number || s.number || '–',
+      dormitory: att.dormitory || s.dormitory || 'D1'
+    };
+  });
+
+  const bodyEl = document.getElementById('cs-modal-body');
+  const footerInfo = document.getElementById('cs-modal-footer-info');
+
+  if (currentModalStudentList.length === 0) {
+    // ─── Case 0: ครูผู้สอนยังไม่ได้กรอกรายชื่อนักเรียน ───
+    bodyEl.innerHTML = `
+      <div style="text-align:center;padding:28px 16px;">
+        <div style="width:70px;height:70px;margin:0 auto 16px;border-radius:50%;background:#fff7ed;border:2px dashed #fb923c;display:flex;align-items:center;justify-content:center;font-size:2rem;">
+          📝
+        </div>
+        <div style="font-size:1.15rem;font-weight:700;color:#9a3412;margin-bottom:8px;font-family:'Kanit',sans-serif;">
+          ครูผู้สอนยังไม่ได้ลงทะเบียนรายชื่อนักเรียน
+        </div>
+        <div style="font-size:0.95rem;color:#c2410c;background:#fffbeb;border:1.5px solid #fde68a;padding:12px 18px;border-radius:12px;margin:0 auto 20px;max-width:480px;line-height:1.65;box-shadow:0 1px 3px rgba(217,119,6,0.06);">
+          📢 โปรดติดต่อครูผู้สอน <strong>${escapeHtml(teacherName)}</strong> เพื่อลงทะเบียนรายชื่อเข้าเรียนคลินิกวิชาการ
+        </div>
+        
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;max-width:480px;margin:0 auto;text-align:left;font-size:0.88rem;color:#475569;display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;">
+          <div><span style="color:#64748b;">วิชา:</span> <strong>${escapeHtml(c.subject)}</strong></div>
+          <div><span style="color:#64748b;">ระดับชั้น:</span> <strong>ม.${c.grade}</strong></div>
+          <div><span style="color:#64748b;">วันที่:</span> <strong>${escapeHtml(dateStr)}</strong></div>
+          <div><span style="color:#64748b;">เวลา:</span> <strong>${escapeHtml(c.time)}</strong></div>
+          <div><span style="color:#64748b;">ห้องเรียน:</span> <strong>${escapeHtml(c.room || '–')}</strong></div>
+          <div><span style="color:#64748b;">ครูผู้สอน:</span> <strong>${escapeHtml(teacherName)}</strong></div>
+        </div>
+      </div>`;
+    footerInfo.textContent = 'ยังไม่มีข้อมูลนักเรียน';
+  } else {
+    // ─── Case > 0: มีรายชื่อนักเรียนที่ครูกรอกไว้แล้ว ───
+    renderStudentListTable(currentModalStudentList);
+    footerInfo.textContent = `พบข้อมูลนักเรียนทั้งหมด ${currentModalStudentList.length} คน`;
+  }
+
+  openModal('modal-clinic-students');
+}
+
+function renderStudentListTable(list) {
+  const bodyEl = document.getElementById('cs-modal-body');
+  const count = list.length;
+  bodyEl.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+      <div style="position:relative;flex:1;min-width:220px;">
+        <input type="text" id="cs-search-input" class="form-control" placeholder="🔍 ค้นหาชื่อ, เลขประจำตัว, ห้อง..." 
+               oninput="filterModalStudentList(this.value)" 
+               style="font-size:0.88rem;padding:7px 12px;border-radius:8px;">
+      </div>
+      <div style="font-size:0.85rem;font-weight:600;color:var(--blue-main);background:#eff6ff;padding:6px 14px;border-radius:20px;border:1px solid #bfdbfe;">
+        👥 ลงทะเบียนแล้ว: <span id="cs-visible-count">${count}</span> คน
+      </div>
+    </div>
+    <div class="cs-table-wrap">
+      <table class="cs-table">
+        <thead>
+          <tr>
+            <th style="width:10%;text-align:center;">#</th>
+            <th style="width:20%;">เลขประจำตัว</th>
+            <th style="width:36%;">ชื่อ - นามสกุล</th>
+            <th style="width:14%;text-align:center;">ห้อง/เลขที่</th>
+            <th style="width:20%;">หอพัก</th>
+          </tr>
+        </thead>
+        <tbody id="cs-table-body">
+          ${renderStudentRows(list)}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderStudentRows(list) {
+  if (!list.length) {
+    return `<tr><td colspan="5" style="text-align:center;padding:24px;color:#94a3b8;">ไม่พบรายชื่อนักเรียนที่ค้นหา</td></tr>`;
+  }
+  return list.map((s, i) => `
+    <tr>
+      <td style="text-align:center;color:#64748b;font-size:0.82rem;">${i + 1}</td>
+      <td><span style="font-family:monospace;font-weight:600;color:#0284c7;">${escapeHtml(s.studentCode || '–')}</span></td>
+      <td><strong>${escapeHtml(s.name)}</strong></td>
+      <td style="text-align:center;">ม.${s.grade}/${s.room} (เลขที่ ${s.number})</td>
+      <td style="font-size:0.82rem;color:#475569;">${escapeHtml(typeof formatDormitory === 'function' ? formatDormitory(s.dormitory) : (s.dormitory || '–'))}</td>
+    </tr>
+  `).join('');
+}
+
+function filterModalStudentList(keyword) {
+  const q = (keyword || '').trim().toLowerCase();
+  const filtered = currentModalStudentList.filter(s => {
+    return (s.name || '').toLowerCase().includes(q) ||
+           String(s.studentCode || '').includes(q) ||
+           String(s.number || '').includes(q) ||
+           `ม.${s.grade}/${s.room}`.toLowerCase().includes(q);
+  });
+  const tbody = document.getElementById('cs-table-body');
+  if (tbody) tbody.innerHTML = renderStudentRows(filtered);
+  const countEl = document.getElementById('cs-visible-count');
+  if (countEl) countEl.textContent = filtered.length;
+}
+
+// ─── Realtime sync listeners across browser tabs ──────────
+window.addEventListener('storage', e => {
+  if (!e.key || e.key === 'announcements_config') {
+    loadAnnouncements();
+  }
+  if (!e.key || e.key === 'school_settings') {
+    loadSchoolInfo();
+  }
+  if (!e.key || e.key === 'weeks' || e.key === 'clinics') {
+    loadWeeks().then(() => renderSchedule());
+  }
+});
+
+window.addEventListener('focus', () => {
+  loadAnnouncements();
+  loadSchoolInfo();
+});
+</script>
+</body>
+</html>

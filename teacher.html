@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ระบบครูผู้สอน — คลินิกวิชาการ PCCPT</title>
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ═══ NAVBAR ════════════════════════════════════════════ -->
+<nav class="navbar">
+  <div class="navbar-inner">
+    <div class="navbar-brand">
+      <img src="assets/logo.png" alt="โลโก้" class="navbar-logo">
+      <div class="navbar-title">
+        <h1>ระบบครูผู้สอน — คลินิกวิชาการ</h1>
+        <p>โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</p>
+      </div>
+    </div>
+    <nav class="navbar-nav">
+      <a href="schedule.html" class="nav-link">📅 ตารางสอน</a>
+      <a href="attendance.html" class="nav-link">📋 สรุปการเข้าเรียน</a>
+      <a href="teacher.html" class="nav-link active">👩‍🏫 ระบบครู</a>
+      <a href="admin.html" class="nav-link hidden" id="nav-admin-link">⚙️ Admin</a>
+      <span class="nav-link" id="nav-user-info" style="background:rgba(255,255,255,.1);border-radius:8px;"></span>
+      <button class="nav-btn nav-btn-logout" onclick="AuthService.logout()">ออกจากระบบ</button>
+    </nav>
+  </div>
+</nav>
+
+<!-- ═══ HERO ══════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">👩‍🏫</div>
+    <div class="hero-text">
+      <h1>ระบบครูผู้สอน</h1>
+      <p>แก้ไขข้อมูลการสอนคลินิกวิชาการ และกรอกรายชื่อนักเรียนที่เข้าเรียนในแต่ละวัน</p>
+      <span class="hero-sub">กรอกและส่งรายชื่อไม่เกิน 16.30 น. ของทุกวัน</span>
+    </div>
+  </div>
+</div>
+
+<main class="main-content">
+
+  <!-- FILTER -->
+  <div class="filter-bar" style="margin-bottom:20px;">
+    <span class="filter-label">สัปดาห์:</span>
+    <select class="filter-select" id="week-select" onchange="loadTeacherClinics()"></select>
+
+    <span class="filter-label">ระดับชั้น:</span>
+    <select class="filter-select" id="grade-select" onchange="loadTeacherClinics()">
+      <option value="">ทุกระดับชั้น</option>
+      <option value="1">ม.1</option><option value="2">ม.2</option><option value="3">ม.3</option>
+      <option value="4">ม.4</option><option value="5">ม.5</option><option value="6">ม.6</option>
+    </select>
+
+    <span class="filter-label">วันที่:</span>
+    <input type="date" class="filter-input" id="day-filter" onchange="loadTeacherClinics()">
+  </div>
+
+  <!-- CLINIC LIST -->
+  <div class="section-header">
+    <div class="section-title">
+      <div class="section-title-icon">📋</div>
+      ตารางสอนที่รับผิดชอบ
+    </div>
+    <span id="clinic-count" class="badge badge-blue">0 รายการ</span>
+  </div>
+
+  <div id="teacher-clinics">
+    <div class="empty-state"><div class="spinner"></div><div class="mt-3">กำลังโหลด...</div></div>
+  </div>
+
+</main>
+
+<!-- ═══ MODAL: กรอกรายชื่อนักเรียน (เลือกได้หลายห้อง) ══════ -->
+<div class="modal-overlay" id="modal-attendance">
+  <div class="modal" style="max-width:720px;">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-att-title">📋 กรอกรายชื่อนักเรียน</div>
+      <button class="modal-close" onclick="closeModal('modal-attendance')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-info mb-3">
+        💡 สามารถเลือกห้องเรียนพร้อมกันได้หลายห้อง เช่น ห้อง 1 ถึงห้อง 6 รายชื่อที่ถูกติ๊กจะไม่หายไปเมื่อเปลี่ยนห้อง
+      </div>
+
+      <!-- MULTI-ROOM SELECTOR -->
+      <div style="background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:12px;">
+        <div class="flex items-center justify-between mb-2">
+          <div style="font-weight:700;font-size:.85rem;color:var(--blue-deep);">
+            🏫 เลือกห้องเรียนที่ต้องการดู / กรอกรายชื่อ:
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:.75rem;" onclick="selectAllRooms(true)">เลือกทุกห้อง</button>
+            <button class="btn btn-outline btn-sm" style="padding:2px 8px;font-size:.75rem;" onclick="selectAllRooms(false)">ล้างห้อง</button>
+          </div>
+        </div>
+        <div id="room-chips-container" class="room-selector-group"></div>
+      </div>
+
+      <!-- SEARCH & QUICK SELECT -->
+      <div class="filter-bar" style="padding:8px 12px;margin-bottom:12px;gap:8px;">
+        <input type="text" class="filter-input" id="att-search" placeholder="🔍 ค้นหาชื่อนักเรียน..." oninput="filterStudentList()" style="flex:1;min-width:140px;">
+        <button class="btn btn-success btn-sm" onclick="selectAllVisible()">✓ ติ๊กห้องที่แสดง</button>
+        <button class="btn btn-outline btn-sm" onclick="clearAllVisible()">✕ ยกเลิกห้องที่แสดง</button>
+        <button class="btn btn-danger btn-sm" onclick="clearAllSelections()" title="ล้างการเลือกทั้งหมด">ล้างทั้งหมด</button>
+      </div>
+
+      <!-- STUDENT CHECKLIST -->
+      <div id="student-checklist" style="max-height:300px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:var(--radius-md);background:var(--white);"></div>
+
+      <!-- FOOTER INFO -->
+      <div class="flex items-center justify-between mt-3 text-sm">
+        <div id="selected-count" style="font-weight:700;color:var(--blue-main);font-size:.95rem;">เลือกแล้ว 0 คน</div>
+        <div id="room-selection-info" class="text-muted text-xs"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-attendance')">ยกเลิก</button>
+      <button class="btn btn-primary" id="btn-save-attendance" onclick="saveAttendance()">💾 บันทึกรายชื่อ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: แก้ไขรายละเอียดคลินิก ═══════════════ -->
+<div class="modal-overlay" id="modal-edit-clinic">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">✏️ แก้ไขข้อมูลการสอน</div>
+      <button class="modal-close" onclick="closeModal('modal-edit-clinic')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-clinic-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">เวลาสอน (เริ่ม)</label>
+          <input type="time" class="form-control" id="edit-time-start" value="18:30">
+        </div>
+        <div class="form-group">
+          <label class="form-label">เวลาสอน (จบ)</label>
+          <input type="time" class="form-control" id="edit-time-end" value="20:30">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">สถานที่สอน (ห้อง)</label>
+        <input type="text" class="form-control" id="edit-room" placeholder="เช่น ห้อง 2208">
+      </div>
+      <div class="form-group">
+        <label class="form-label">สถานะ</label>
+        <select class="form-control" id="edit-status">
+          <option value="active">✅ มีสอน</option>
+          <option value="cancelled">⛔ งดสอน</option>
+          <option value="pending">⏳ รอยืนยัน</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">หมายเหตุ</label>
+        <textarea class="form-control" id="edit-notes" rows="2" placeholder="หมายเหตุเพิ่มเติม..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-edit-clinic')">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveClinicEdit()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/firebase-config.js?v=2569_8"></script>
+<script src="js/supabase-api.js?v=2569_8"></script>
+<script src="js/sheets-api.js?v=2569_8"></script>
+<script src="js/db.js?v=2569_8"></script>
+<script src="js/auth.js?v=2569_8"></script>
+<script>
+// ─── AUTH GUARD ───────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  const session = AuthService.requireAuth(['teacher','admin']);
+  if (!session) return;
+
+  seedDemoData();
+  const ui = document.getElementById('nav-user-info');
+  if (ui) ui.textContent = session.displayName;
+  if (session.role === 'admin') {
+    document.getElementById('nav-admin-link')?.classList.remove('hidden');
+  }
+
+  await loadWeeks();
+  await loadTeacherClinics();
+
+  // Connect Supabase Realtime for instant updates
+  if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+    SupabaseAPI.init(async () => {
+      if (!document.querySelector('.modal-overlay.open')) {
+        await loadWeeks();
+        await loadTeacherClinics();
+      }
+    });
+  }
+
+  // Background sync from Cloud
+  await refreshTeacherClinicsData();
+
+  // 1. Sync on visibility change or window focus
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) refreshTeacherClinicsData();
+  });
+  window.addEventListener('focus', () => {
+    refreshTeacherClinicsData();
+  });
+
+  // 2. Periodic sync every 20 seconds (pauses if modal is open)
+  setInterval(() => {
+    if (!document.hidden) refreshTeacherClinicsData();
+  }, 20000);
+});
+
+async function refreshTeacherClinicsData() {
+  const hasCloud = (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) ||
+                   (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured());
+  if (!hasCloud) return;
+  if (document.querySelector('.modal-overlay.open')) return;
+  const updated = await DataService.initSync();
+  if (updated) {
+    await loadWeeks();
+    await loadTeacherClinics();
+  }
+}
+
+let allWeeks = [];
+let allStudents = [];
+let currentClinic = null;
+let distinctRooms = [];
+let selectedRooms = new Set();
+let selectedStudentIds = new Set();
+
+async function loadWeeks() {
+  allWeeks = await DataService.getWeeks();
+  const sel = document.getElementById('week-select');
+  sel.innerHTML = '';
+  allWeeks.forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w.weekId;
+    opt.textContent = w.label;
+    sel.appendChild(opt);
+  });
+  // Select current week
+  const cur = await DataService.getCurrentWeek();
+  if (cur) sel.value = cur.weekId;
+}
+
+async function loadTeacherClinics() {
+  const weekId = document.getElementById('week-select').value;
+  const grade  = document.getElementById('grade-select').value;
+  const dayF   = document.getElementById('day-filter').value;
+
+  let clinics = weekId
+    ? await DataService.getClinicsByWeek(weekId)
+    : await DataService.getClinics();
+
+  if (grade)  clinics = clinics.filter(c => String(c.grade) === grade);
+  if (dayF) {
+    const d = new Date(dayF+'T00:00:00').getDay() - 1;
+    clinics = clinics.filter(c => c.dayOfWeek === d && c.date === dayF);
+  }
+
+  const teachers = await DataService.getTeachers();
+  const teacherMap = Object.fromEntries(teachers.map(t => [t.id, t]));
+
+  document.getElementById('clinic-count').textContent = clinics.length + ' รายการ';
+  const container = document.getElementById('teacher-clinics');
+
+  if (!clinics.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">ไม่พบตารางสอน</div><div class="empty-sub">ลองเลือกสัปดาห์หรือระดับชั้นอื่น</div></div>`;
+    return;
+  }
+
+  // Group by day
+  const dayNames = ['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์'];
+  const byDay = {};
+  clinics.forEach(c => {
+    const k = c.dayOfWeek;
+    if (!byDay[k]) byDay[k] = [];
+    byDay[k].push(c);
+  });
+
+  let html = '';
+  for (let i = 0; i < 5; i++) {
+    if (!byDay[i]) continue;
+    html += `<div style="margin-bottom:24px;">
+      <div class="week-header">📅 วัน${dayNames[i]} ${byDay[i][0].date ? '('+formatDateThai(byDay[i][0].date)+')' : ''}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;">
+        ${byDay[i].map(c => renderClinicCard(c, teacherMap)).join('')}
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+}
+
+function renderClinicCard(c, teacherMap) {
+  const t = teacherMap[String(c.teacherId)] || {};
+  const st = getStatusLabel(c.status);
+  const attCount = Array.isArray(c.attendanceIds) ? c.attendanceIds.length : (Number(c.studentCount) || 0);
+  return `
+    <div class="card" style="border-left:4px solid var(--blue-main);">
+      <div class="card-body" style="padding:16px;">
+        <div class="flex items-center justify-between mb-2">
+          <div style="font-family:'Kanit',sans-serif;font-size:1.05rem;font-weight:700;color:var(--blue-deep);">
+            ${getSubjectIcon(c.subject)} ${c.subject}
+          </div>
+          <span class="badge badge-blue">ม.${c.grade}</span>
+        </div>
+        <div class="clinic-meta" style="margin-bottom:10px;">
+          <span>👩‍🏫 ${t.name || '–'}</span>
+          <span>🕐 ${c.time || '–'}</span>
+          ${c.room ? `<span>📍 ${c.room}</span>` : ''}
+          <span>👥 ${c.studentCount || 0} คน</span>
+        </div>
+        <span class="status-badge ${st.cls}">${st.icon} ${st.text}</span>
+        ${c.notes ? `<div class="text-xs text-muted mt-2">💬 ${c.notes}</div>` : ''}
+        <div class="flex gap-2 mt-3" style="flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" onclick="openEditClinic('${c.id}')">✏️ แก้ไขข้อมูล</button>
+          <button class="btn btn-primary btn-sm" onclick="openAttendance('${c.id}')">📋 กรอกรายชื่อ (${attCount} คน)</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+}
+
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('open');
+}
+
+// ─── EDIT CLINIC ──────────────────────────────────────────
+async function openEditClinic(clinicId) {
+  const clinics = await DataService.getClinics();
+  const c = clinics.find(x => String(x.id) === String(clinicId));
+  if (!c) {
+    showToast('แจ้งเตือน', 'ไม่พบข้อมูลวิชานี้', 'warning');
+    return;
+  }
+  currentClinic = c;
+  const parts = (c.time || '18:30–20:30').split(/[-–—]/);
+  const ts = parts[0]?.trim() || '18:30';
+  const te = parts[1]?.trim() || '20:30';
+  document.getElementById('edit-clinic-id').value = String(c.id);
+  document.getElementById('edit-time-start').value = ts;
+  document.getElementById('edit-time-end').value   = te;
+  document.getElementById('edit-room').value   = c.room || '';
+  document.getElementById('edit-status').value = c.status || 'active';
+  document.getElementById('edit-notes').value  = c.notes || '';
+  openModal('modal-edit-clinic');
+}
+
+async function saveClinicEdit() {
+  const id    = document.getElementById('edit-clinic-id').value;
+  const ts    = document.getElementById('edit-time-start').value;
+  const te    = document.getElementById('edit-time-end').value;
+  const room  = document.getElementById('edit-room').value.trim();
+  const status= document.getElementById('edit-status').value;
+  const notes = document.getElementById('edit-notes').value.trim();
+
+  const clinics = await DataService.getClinics();
+  const c = clinics.find(x => String(x.id) === String(id));
+  if (!c) {
+    showToast('เกิดข้อผิดพลาด', 'ไม่พบข้อมูลวิชาที่ต้องการแก้ไข', 'error');
+    return;
+  }
+  c.time = `${ts}–${te}`;
+  c.room = room;
+  c.status = status;
+  c.notes = notes;
+  await DataService.saveClinic(c);
+  closeModal('modal-edit-clinic');
+  showToast('บันทึกสำเร็จ', 'อัปเดตข้อมูลการสอนเรียบร้อยแล้ว', 'success');
+  await loadTeacherClinics();
+}
+
+// ─── ATTENDANCE (MULTI-ROOM SUPPORT) ─────────────────────
+async function openAttendance(clinicId) {
+  const clinics = await DataService.getClinics();
+  const c = clinics.find(x => String(x.id) === String(clinicId));
+  if (!c) {
+    showToast('แจ้งเตือน', 'ไม่พบข้อมูลวิชานี้', 'warning');
+    return;
+  }
+  currentClinic = c;
+  const dateStr = formatDateThai(c.date) || 'ประจำสัปดาห์';
+  document.getElementById('modal-att-title').textContent = `📋 กรอกรายชื่อ: ${c.subject} (ม.${c.grade}) — ${dateStr}`;
+
+  // Load students of this grade
+  allStudents = await DataService.getStudentsByGrade(c.grade);
+  if (!allStudents || allStudents.length === 0) {
+    const all = await DataService.getStudents();
+    const cleanG = String(c.grade).replace(/\D/g, '');
+    allStudents = all.filter(s => String(s.grade).replace(/\D/g, '') === cleanG);
+  }
+
+  // กำหนดจำนวนห้องตามระดับชั้น:
+  const g = Number(String(c.grade).replace(/\D/g, ''));
+  const defaultRooms = (g <= 3) ? [1, 2, 3, 4] : [1, 2, 3, 4, 5, 6];
+  const stuRooms = (allStudents || []).map(s => Number(s.room)).filter(r => r > 0 && !isNaN(r));
+  distinctRooms = Array.from(new Set([...defaultRooms, ...stuRooms])).sort((a, b) => a - b);
+
+  // Default: select all rooms initially
+  selectedRooms = new Set(distinctRooms);
+
+  // Load existing attendance for this clinic
+  const existing = await DataService.getAttByClinic(c.id);
+  selectedStudentIds = new Set(existing.map(a => String(a.studentId)));
+
+  renderRoomChips();
+  document.getElementById('att-search').value = '';
+  filterStudentList();
+
+  openModal('modal-attendance');
+}
+
+function renderRoomChips() {
+  const container = document.getElementById('room-chips-container');
+  container.innerHTML = '';
+  distinctRooms.forEach(room => {
+    const btn = document.createElement('button');
+    const isSel = selectedRooms.has(room);
+    btn.className = `room-chip-btn ${isSel ? 'active' : ''}`;
+    btn.textContent = `ห้อง ${room}`;
+    btn.type = 'button';
+    btn.onclick = () => toggleRoom(room);
+    container.appendChild(btn);
+  });
+  updateRoomSelectionInfo();
+}
+
+function toggleRoom(room) {
+  if (selectedRooms.has(room)) {
+    selectedRooms.delete(room);
+  } else {
+    selectedRooms.add(room);
+  }
+  renderRoomChips();
+  filterStudentList();
+}
+
+function selectAllRooms(enable) {
+  if (enable) {
+    selectedRooms = new Set(distinctRooms);
+  } else {
+    selectedRooms.clear();
+  }
+  renderRoomChips();
+  filterStudentList();
+}
+
+function updateRoomSelectionInfo() {
+  const info = document.getElementById('room-selection-info');
+  if (selectedRooms.size === 0) {
+    info.textContent = 'ยังไม่ได้เลือกห้องเรียน';
+  } else if (selectedRooms.size === distinctRooms.length) {
+    info.textContent = 'แสดงนักเรียนทุกห้อง (ห้อง 1–' + distinctRooms[distinctRooms.length - 1] + ')';
+  } else {
+    const roomsList = Array.from(selectedRooms).sort((a,b)=>a-b).join(', ');
+    info.textContent = `แสดงเฉพาะห้อง: ${roomsList}`;
+  }
+}
+
+function filterStudentList() {
+  const search = (document.getElementById('att-search').value || '').trim().toLowerCase();
+  let filtered = allStudents.filter(s => selectedRooms.has(Number(s.room)));
+
+  if (search) {
+    filtered = filtered.filter(s =>
+      (s.name || '').toLowerCase().includes(search) ||
+      String(s.number || '').includes(search) ||
+      String(s.studentCode || '').includes(search)
+    );
+  }
+
+  // Sort by room then number
+  filtered.sort((a, b) => (Number(a.room) - Number(b.room)) || (Number(a.number) - Number(b.number)));
+
+  renderStudentList(filtered);
+}
+
+function renderStudentList(students) {
+  const ul = document.getElementById('student-checklist');
+  if (!students.length) {
+    ul.innerHTML = `
+      <div class="empty-state" style="padding:24px;color:var(--gray-500);">
+        ${selectedRooms.size === 0 ? 'กรุณากดเลือกห้องเรียนด้านบน' : 'ไม่พบข้อมูลนักเรียนในห้องที่เลือก'}
+      </div>`;
+    updateSelectedCount();
+    return;
+  }
+
+  ul.innerHTML = students.map(s => {
+    const isChecked = selectedStudentIds.has(String(s.id));
+    return `
+      <label id="stu-lbl-${s.id}" style="display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--gray-100);background:${isChecked ? 'var(--blue-pale)' : 'transparent'};transition:background .15s;" onmouseover="if(!${isChecked}) this.style.background='var(--gray-50)'" onmouseout="if(!${isChecked}) this.style.background=''">
+        <input type="checkbox" class="stu-cb" value="${s.id}" ${isChecked ? 'checked' : ''} onchange="handleStudentCheck('${s.id}', this.checked)" style="width:18px;height:18px;cursor:pointer;accent-color:var(--blue-main);">
+        <div style="flex:1;">
+          <div style="font-weight:600;color:var(--text);">${s.name}</div>
+          <div class="text-xs text-muted">
+            <span class="badge badge-blue" style="font-size:.7rem;padding:1px 6px;">ม.${s.grade}/${s.room}</span>
+            เลขที่ ${s.number} | ${formatDormMini(s.dormitory)}
+            ${s.studentCode ? `(รหัส: ${s.studentCode})` : ''}
+          </div>
+        </div>
+      </label>
+    `;
+  }).join('');
+
+  updateSelectedCount();
+}
+
+function handleStudentCheck(studentId, isChecked) {
+  const sid = String(studentId);
+  if (isChecked) {
+    selectedStudentIds.add(sid);
+  } else {
+    selectedStudentIds.delete(sid);
+  }
+  const lbl = document.getElementById(`stu-lbl-${studentId}`);
+  if (lbl) {
+    lbl.style.background = isChecked ? 'var(--blue-pale)' : 'transparent';
+  }
+  updateSelectedCount();
+}
+
+function formatDormMini(d) {
+  if (!d || d === 'none') return '';
+  if (typeof formatDormitory === 'function') {
+    const formatted = formatDormitory(d);
+    if (formatted && formatted !== '–') return `หอพัก ${formatted}`;
+  }
+  const dorm = APP_CONFIG.dormitories.find(x => x.id === d);
+  return dorm ? `หอพัก ${dorm.name}` : d;
+}
+
+function updateSelectedCount() {
+  const n = selectedStudentIds.size;
+  document.getElementById('selected-count').textContent = `เลือกแล้วทั้งหมด ${n} คน`;
+}
+
+function selectAllVisible() {
+  const search = (document.getElementById('att-search').value || '').trim().toLowerCase();
+  const visibleStudents = allStudents.filter(s => {
+    if (!selectedRooms.has(Number(s.room))) return false;
+    if (search) {
+      return (s.name || '').toLowerCase().includes(search) ||
+             String(s.number || '').includes(search) ||
+             String(s.studentCode || '').includes(search);
+    }
+    return true;
+  });
+
+  visibleStudents.forEach(s => selectedStudentIds.add(String(s.id)));
+  filterStudentList();
+}
+
+function clearAllVisible() {
+  const search = (document.getElementById('att-search').value || '').trim().toLowerCase();
+  const visibleStudents = allStudents.filter(s => {
+    if (!selectedRooms.has(Number(s.room))) return false;
+    if (search) {
+      return (s.name || '').toLowerCase().includes(search) ||
+             String(s.number || '').includes(search) ||
+             String(s.studentCode || '').includes(search);
+    }
+    return true;
+  });
+
+  visibleStudents.forEach(s => selectedStudentIds.delete(String(s.id)));
+  filterStudentList();
+}
+
+function clearAllSelections() {
+  if (!confirm('ต้องการล้างรายชื่อนักเรียนที่เลือกทั้งหมดใช่หรือไม่?')) return;
+  selectedStudentIds.clear();
+  filterStudentList();
+}
+
+async function saveAttendance() {
+  if (!currentClinic) {
+    showToast('แจ้งเตือน', 'ไม่พบข้อมูลคลินิกที่กำลังทำรายการ', 'warning');
+    return;
+  }
+
+  const saveBtn = document.getElementById('btn-save-attendance') || document.querySelector('#modal-attendance .btn-primary');
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '⏳ กำลังบันทึกข้อมูล...';
+  }
+
+  try {
+    const studentMap = Object.fromEntries(allStudents.map(s => [String(s.id), s]));
+    const attRecords = [];
+
+    for (const stuId of selectedStudentIds) {
+      const s = studentMap[String(stuId)] || (await DataService.getStudents()).find(x => String(x.id) === String(stuId));
+      if (!s) continue;
+      attRecords.push({
+        date: toYMD(currentClinic.date),
+        clinicId: currentClinic.id,
+        studentId: s.id,
+        studentName: s.name,
+        grade: s.grade,
+        room: s.room,
+        number: s.number,
+        dormitory: s.dormitory || 'D1',
+        subject: currentClinic.subject,
+        teacherId: currentClinic.teacherId,
+        status: 'present'
+      });
+    }
+
+    // Atomic batch save (instant & safe)
+    await DataService.setAttendanceForClinic(currentClinic.id, attRecords);
+
+    // Update studentCount on clinic
+    currentClinic.studentCount = selectedStudentIds.size;
+    currentClinic.attendanceIds = attRecords.map(a => a.id);
+    await DataService.saveClinic(currentClinic);
+
+    // Close modal directly
+    const modalEl = document.getElementById('modal-attendance');
+    if (modalEl) modalEl.classList.remove('open');
+    closeModal('modal-attendance');
+
+    showToast('บันทึกรายชื่อสำเร็จ', `บันทึกข้อมูลนักเรียน ${selectedStudentIds.size} คน เรียบร้อยแล้ว`, 'success');
+    await loadTeacherClinics();
+  } catch (err) {
+    console.error('Error in saveAttendance:', err);
+    showToast('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้: ' + (err.message || err), 'error');
+  } finally {
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = '💾 บันทึกรายชื่อ';
+    }
+  }
+}
+
+// Direct local modal helpers for safety
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('open');
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+}
+</script>
+</body>
+</html>

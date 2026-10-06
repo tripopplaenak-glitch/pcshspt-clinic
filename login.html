@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>เข้าสู่ระบบ — คลินิกวิชาการ PCCPT</title>
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .role-card {
+      border: 2px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .role-card:hover { border-color: var(--blue-main); background: var(--blue-pale); }
+    .role-card.selected { border-color: var(--blue-main); background: var(--blue-pale); }
+    .role-icon { font-size: 2rem; }
+    .role-title { font-weight: 700; font-family: 'Kanit', sans-serif; color: var(--blue-deep); }
+    .role-desc { font-size: .8rem; color: var(--gray-500); margin-top: 2px; }
+    .error-msg { background: var(--red-pale); color: var(--red-main); border: 1px solid #fca5a5; border-radius: var(--radius-md); padding: 10px 14px; font-size: .875rem; margin-bottom: 14px; display: none; }
+  </style>
+</head>
+<body>
+<div class="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <img src="assets/logo.png" alt="โลโก้โรงเรียน">
+      <h2>โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</h2>
+      <p>ระบบคลินิกวิชาการ | เข้าสู่ระบบ</p>
+    </div>
+
+    <div id="error-msg" class="error-msg">❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>
+
+    <!-- Role Selection -->
+    <div style="margin-bottom:18px;">
+      <div class="form-label">เลือกประเภทผู้ใช้</div>
+      <div class="role-card selected" id="role-teacher" onclick="selectRole('teacher')">
+        <span class="role-icon">👩‍🏫</span>
+        <div>
+          <div class="role-title">ครูผู้สอน</div>
+          <div class="role-desc">เข้าระบบเพื่อยืนยันตารางสอนและกรอกรายชื่อนักเรียน</div>
+        </div>
+      </div>
+      <div class="role-card" id="role-admin" onclick="selectRole('admin')">
+        <span class="role-icon">⚙️</span>
+        <div>
+          <div class="role-title">ผู้ดูแลระบบ (Admin)</div>
+          <div class="role-desc">จัดการตาราง ครู นักเรียน และข้อมูลทั้งหมด</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Login Form -->
+    <form id="login-form" onsubmit="doLogin(event)">
+      <div class="form-group" id="username-group">
+        <label class="form-label">ชื่อผู้ใช้ (Username)</label>
+        <input type="text" class="form-control" id="username-input"
+          value="teacher" autocomplete="username" placeholder="กรอกชื่อผู้ใช้">
+      </div>
+      <div class="form-group">
+        <label class="form-label">รหัสผ่าน</label>
+        <div style="position:relative;">
+          <input type="password" class="form-control" id="password-input"
+            autocomplete="current-password" placeholder="กรอกรหัสผ่าน" style="padding-right:42px;">
+          <button type="button" onclick="togglePw()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;" id="pw-toggle">👁️</button>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary w-full btn-lg" id="login-btn">
+        🔑 เข้าสู่ระบบ
+      </button>
+    </form>
+
+    <div style="text-align:center;margin-top:20px;">
+      <a href="schedule.html" class="text-muted text-sm">← กลับหน้าตารางสอน</a>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/firebase-config.js?v=2569_8"></script>
+<script src="js/supabase-api.js?v=2569_8"></script>
+<script src="js/sheets-api.js?v=2569_8"></script>
+<script src="js/db.js?v=2569_8"></script>
+<script src="js/auth.js?v=2569_8"></script>
+<script>
+let selectedRole = 'teacher';
+
+function selectRole(role) {
+  selectedRole = role;
+  document.getElementById('role-teacher').classList.toggle('selected', role === 'teacher');
+  document.getElementById('role-admin').classList.toggle('selected', role === 'admin');
+  // Pre-fill username
+  document.getElementById('username-input').value = role;
+  document.getElementById('password-input').value = '';
+  document.getElementById('password-input').focus();
+}
+
+function togglePw() {
+  const inp = document.getElementById('password-input');
+  const btn = document.getElementById('pw-toggle');
+  if (inp.type === 'password') { inp.type = 'text';     btn.textContent = '🙈'; }
+  else                          { inp.type = 'password'; btn.textContent = '👁️'; }
+}
+
+function doLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('username-input').value.trim();
+  const password = document.getElementById('password-input').value;
+  const errMsg   = document.getElementById('error-msg');
+  errMsg.style.display = 'none';
+
+  const btn = document.getElementById('login-btn');
+  btn.textContent = '⏳ กำลังเข้าสู่ระบบ...';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    const session = AuthService.login(username, password);
+    if (!session) {
+      errMsg.style.display = 'block';
+      btn.textContent = '🔑 เข้าสู่ระบบ';
+      btn.disabled = false;
+      return;
+    }
+    // Redirect based on role
+    if (session.role === 'admin') {
+      window.location.href = 'admin.html';
+    } else {
+      window.location.href = 'teacher.html';
+    }
+  }, 600);
+}
+
+// If already logged in, redirect
+document.addEventListener('DOMContentLoaded', () => {
+  const s = AuthService.getSession();
+  if (s) {
+    window.location.href = s.role === 'admin' ? 'admin.html' : 'teacher.html';
+  }
+});
+</script>
+</body>
+</html>

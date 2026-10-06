@@ -1,0 +1,2668 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>ระบบ Admin — คลินิกวิชาการ PCCPT</title>
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .admin-sidebar {
+      background: var(--white);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 80px;
+    }
+
+    .sidebar-section {
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      padding: 8px 12px 4px;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      color: var(--gray-700);
+      font-weight: 500;
+      font-size: .88rem;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-bottom: 2px;
+      user-select: none;
+    }
+
+    .sidebar-item:hover {
+      background: var(--gray-100);
+      color: var(--blue-main);
+    }
+
+    .sidebar-item.active {
+      background: var(--blue-main);
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    .import-dropzone {
+      border: 2px dashed var(--gray-300);
+      border-radius: var(--radius-lg);
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      background: var(--gray-50);
+    }
+
+    .import-dropzone:hover,
+    .import-dropzone.drag-over {
+      border-color: var(--blue-main);
+      background: var(--blue-pale);
+    }
+
+    @media (max-width: 900px) {
+      .admin-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .admin-sidebar {
+        position: static;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+
+      .sidebar-section {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ═══ NAVBAR ════════════════════════════════════════════ -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="navbar-brand">
+        <img src="assets/logo.png" alt="โลโก้" class="navbar-logo">
+        <div class="navbar-title">
+          <h1>⚙️ ระบบผู้ดูแล (Admin) — คลินิกวิชาการ</h1>
+          <p>โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</p>
+        </div>
+      </div>
+      <nav class="navbar-nav">
+        <a href="schedule.html" class="nav-link">📅 หน้าแรก</a>
+        <a href="attendance.html" class="nav-link">📋 สรุปการเข้าเรียน</a>
+        <a href="teacher.html" class="nav-link">👩‍🏫 ระบบครู</a>
+        <a href="admin.html" class="nav-link active">⚙️ Admin</a>
+        <button class="nav-btn nav-btn-logout" onclick="AuthService.logout()">ออกจากระบบ</button>
+      </nav>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="admin-layout">
+
+      <!-- SIDEBAR -->
+      <aside class="admin-sidebar">
+        <div class="sidebar-section">จัดการตาราง</div>
+        <div class="sidebar-item active" onclick="showTab('tab-weeks')" id="si-weeks">📅 จัดการสัปดาห์</div>
+        <div class="sidebar-item" onclick="showTab('tab-clinics')" id="si-clinics">📝 ตารางคลินิก</div>
+
+        <div class="sidebar-section">ข้อมูลบุคลากร</div>
+        <div class="sidebar-item" onclick="showTab('tab-teachers')" id="si-teachers">👩‍🏫 ครูผู้สอน</div>
+        <div class="sidebar-item" onclick="showTab('tab-students')" id="si-students">🎓 นักเรียน</div>
+        <div class="sidebar-item" onclick="showTab('tab-staff')" id="si-staff">💼 เจ้าหน้าที่</div>
+
+        <div class="sidebar-section">อื่น ๆ</div>
+        <div class="sidebar-item" onclick="showTab('tab-announce')" id="si-announce">📢 ประกาศ</div>
+        <div class="sidebar-item" onclick="showTab('tab-settings')" id="si-settings">⚙️ ตั้งค่า / เปลี่ยนรหัสผ่าน</div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <div class="admin-main">
+
+        <!-- ══ TAB: WEEKS ══════════════════════════════════════ -->
+        <div id="tab-weeks">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon">📅</div>จัดการสัปดาห์
+            </div>
+            <button class="btn btn-primary" onclick="openAddWeek()">➕ เพิ่มสัปดาห์</button>
+          </div>
+          <div class="alert alert-info mb-4">
+            💡 กำหนดช่วงวันที่ของแต่ละสัปดาห์ เพื่อให้โชว์ในหน้าหลักของเว็บไซต์ โดยสามารถกำหนดให้
+            <strong>"ไม่มีการเรียนการสอนทั้งสัปดาห์"</strong> ได้
+          </div>
+          <div id="weeks-list" class="card">
+            <div class="card-body">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ TAB: CLINICS ════════════════════════════════════ -->
+        <div id="tab-clinics" class="hidden">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon">📝</div>ตารางคลินิก
+            </div>
+            <div class="flex gap-2">
+              <select class="filter-select" id="clinic-week-filter" onchange="loadAdminClinics()">
+                <option value="">ทุกสัปดาห์</option>
+              </select>
+              <select class="filter-select" id="clinic-grade-filter" onchange="loadAdminClinics()">
+                <option value="">ทุกชั้น</option>
+                <option value="1">ม.1</option>
+                <option value="2">ม.2</option>
+                <option value="3">ม.3</option>
+                <option value="4">ม.4</option>
+                <option value="5">ม.5</option>
+                <option value="6">ม.6</option>
+              </select>
+              <button class="btn btn-outline" onclick="openAddClinicBatch()">📆 เพิ่มทั้งสัปดาห์ (4 วัน)</button>
+              <button class="btn btn-primary" onclick="openAddClinic()">➕ เพิ่มรายเดี่ยว</button>
+            </div>
+          </div>
+          <div id="clinics-table" class="card">
+            <div class="card-body">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ TAB: TEACHERS ═══════════════════════════════════ -->
+        <div id="tab-teachers" class="hidden">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon">👩‍🏫</div>ครูผู้สอน
+            </div>
+            <div class="flex gap-2" style="flex-wrap:wrap;">
+              <button class="btn btn-outline" onclick="downloadTeacherExcelTemplate()">📄 ดาวน์โหลดเทมเพลต
+                Excel</button>
+              <button class="btn btn-outline" onclick="showImportTeachers()">📥 นำเข้า CSV/Excel</button>
+              <button class="btn btn-primary" onclick="openAddTeacher()">➕ เพิ่มครู</button>
+              <button class="btn btn-danger btn-sm" onclick="clearTeachersList()"
+                title="ลบรายชื่อครูทั้งหมดเพื่อกรอกใหม่">🗑️ ล้างรายชื่อครูทั้งหมด</button>
+            </div>
+          </div>
+          <div id="teachers-table" class="card">
+            <div class="card-body">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ TAB: STUDENTS ═══════════════════════════════════ -->
+        <div id="tab-students" class="hidden">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon">🎓</div>นักเรียน
+            </div>
+            <div class="flex gap-2 items-center" style="flex-wrap:wrap;">
+              <select class="filter-select" id="stu-grade-filter" onchange="onGradeFilterChange()">
+                <option value="">ทุกชั้น</option>
+                <option value="1">ม.1</option>
+                <option value="2">ม.2</option>
+                <option value="3">ม.3</option>
+                <option value="4">ม.4</option>
+                <option value="5">ม.5</option>
+                <option value="6">ม.6</option>
+              </select>
+              <select class="filter-select" id="stu-room-filter" onchange="loadStudents()">
+                <option value="">ทุกห้อง</option>
+                <option value="1">ห้อง 1</option>
+                <option value="2">ห้อง 2</option>
+                <option value="3">ห้อง 3</option>
+                <option value="4">ห้อง 4</option>
+                <option value="5">ห้อง 5</option>
+                <option value="6">ห้อง 6</option>
+              </select>
+              <button class="btn btn-outline" onclick="downloadStudentExcelTemplate()">📄 ดาวน์โหลดเทมเพลต
+                Excel</button>
+              <button class="btn btn-outline" onclick="showImportStudents()">📥 นำเข้า CSV/Excel</button>
+              <button class="btn btn-primary" onclick="openAddStudent()">➕ เพิ่มนักเรียน</button>
+              <button class="btn btn-danger btn-sm" onclick="clearStudentsList()"
+                title="ลบรายชื่อนักเรียนทั้งหมดเพื่อกรอกใหม่">🗑️ ล้างรายชื่อนักเรียนทั้งหมด</button>
+            </div>
+          </div>
+
+          <!-- ADVICE BOX -->
+          <div class="alert alert-info mb-3">
+            <span>💡</span>
+            <div>
+              <strong>คำแนะนำในการนำเข้ารายชื่อนักเรียน:</strong> แนะนำให้นำเข้าข้อมูล <strong>"ทีเดียวทั้งโรงเรียน
+                หรือแยกระดับชั้น (ม.1–ม.6)"</strong> เพราะในไฟล์เทมเพลต Excel มีคอลัมน์ระบุ <em>ชั้น</em> และ
+              <em>ห้อง</em> อยู่แล้ว ระบบจะจัดกลุ่มให้อัตโนมัติและสามารถเลือกกรองดูเป็นรายห้องได้ทันที
+              ไม่ต้องเสียเวลานำเข้าทีละห้องถึง 36 ครั้ง (แต่หากโรงเรียนมีไฟล์แยกเป็นรายห้องอยู่แล้ว
+              ก็สามารถนำเข้าทีละห้องได้เช่นกัน ข้อมูลเดิมจะไม่หายครับ)
+            </div>
+          </div>
+
+          <div id="students-table" class="card">
+            <div class="card-body">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ TAB: STAFF (เจ้าหน้าที่ & กำหนดเจ้าหน้าที่ประจำวัน) ═════ -->
+        <div id="tab-staff" class="hidden">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon">👮</div>เจ้าหน้าที่และเวรประจำวัน
+            </div>
+          </div>
+
+          <!-- SECTION 1: กำหนดเจ้าหน้าที่ประจำวัน -->
+          <div class="card mb-4">
+            <div class="card-header flex items-center justify-between" style="background:var(--blue-pale);">
+              <div style="font-weight:700;font-size:1.05rem;color:var(--blue-deep);">
+                👮 กำหนดเจ้าหน้าที่ประจำวัน (คนเดียวกันในทุกระดับชั้น)
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="filter-label" style="margin-bottom:0;">เลือกสัปดาห์:</label>
+                <select class="filter-select" id="duty-week-select" onchange="loadDutyStaffForSelectedWeek()"></select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="alert alert-info mb-3">
+                💡 เจ้าหน้าที่ประจำวันของแต่ละวัน (จันทร์ - ศุกร์) จะเป็น<strong>คนเดียวกันในทุกระดับชั้น (ม.1 –
+                  ม.6)</strong> และจะแสดงกำกับในหัวข้อวันของหน้าแรก
+              </div>
+
+              <div id="duty-days-container"
+                style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:12px;margin-bottom:16px;">
+                <!-- Rendered by JS: 5 day inputs for Monday to Friday -->
+              </div>
+
+              <button class="btn btn-primary" onclick="saveDutyStaffAssignments()">💾 บันทึกเจ้าหน้าที่ประจำวัน</button>
+            </div>
+          </div>
+
+          <!-- SECTION 2: จัดการรายชื่อเจ้าหน้าที่ -->
+          <div class="card">
+            <div class="card-header flex items-center justify-between">
+              <div style="font-weight:700;font-size:1.05rem;color:var(--text);">
+                💼 รายชื่อเจ้าหน้าที่ทั้งหมด
+              </div>
+              <div class="flex gap-2" style="flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" onclick="downloadStaffExcelTemplate()">📄 ดาวน์โหลดเทมเพลต
+                  Excel</button>
+                <button class="btn btn-outline btn-sm" onclick="showImportStaff()">📥 นำเข้า CSV/Excel</button>
+                <button class="btn btn-primary btn-sm" onclick="openAddStaff()">➕ เพิ่มเจ้าหน้าที่</button>
+                <button class="btn btn-danger btn-sm" onclick="clearStaffList()"
+                  title="ลบรายชื่อเจ้าหน้าที่ทั้งหมดเพื่อกรอกใหม่">🗑️ ล้างรายชื่อเจ้าหน้าที่ทั้งหมด</button>
+              </div>
+            </div>
+            <div class="card-body p-0" id="staff-table">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ TAB: ANNOUNCE (ประกาศ 2 ตำแหน่ง: บน และ ล่าง) ═══════ -->
+        <div id="tab-announce" class="hidden">
+          <div class="section-header">
+            <div class="section-title">
+              <div class="section-title-icon">📢</div>จัดการข้อความประกาศ (2 ตำแหน่ง: ด้านบน และ ด้านล่าง)
+            </div>
+          </div>
+          <div class="alert alert-info mb-4">
+            💡 ระบบได้แยกตำแหน่งประกาศออกเป็น 2 ตำแหน่งอย่างชัดเจน เพื่อไม่ให้ข้อความสับสนหรือรวน:
+            <strong>"ข้อความประกาศด้านบน (แถบบนก่อนตาราง)"</strong> และ <strong>"ข้อความประกาศด้านล่าง
+              (หมายเหตุด้านล่างตาราง)"</strong>
+          </div>
+
+          <!-- CARD 1: ข้อความประกาศด้านบน -->
+          <div class="card mb-4">
+            <div class="card-header flex items-center justify-between"
+              style="background:var(--blue-pale);border-bottom:1.5px solid var(--blue-light);">
+              <div style="font-weight:700;font-size:1.05rem;color:var(--blue-deep);">
+                📢 1. ข้อความประกาศด้านบน (แถบสีฟ้าด้านบน ก่อนถึงตารางเรียน)
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:600;cursor:pointer;">
+                <input type="checkbox" id="ann-top-active"
+                  style="width:16px;height:16px;accent-color:var(--blue-main);">
+                <span>เปิดแสดงประกาศด้านบน</span>
+              </label>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">ป้ายกำกับด้านหน้า (Badge Label)</label>
+                <input type="text" class="form-control" id="ann-top-badge"
+                  placeholder="เช่น 📢 ประกาศสำคัญ: หรือ 📢 อัปเดตล่าสุด:">
+              </div>
+              <div class="form-group">
+                <label class="form-label">เนื้อหาข้อความประกาศด้านบน</label>
+                <textarea class="form-control" id="ann-top-text" rows="3"
+                  placeholder="พิมพ์ข้อความที่ต้องการแจ้งให้นักเรียนและผู้ปกครองทราบบนแถบประกาศด้านบน..."></textarea>
+              </div>
+              <button class="btn btn-primary" onclick="saveTopAnnouncement()">💾 บันทึกประกาศด้านบน</button>
+            </div>
+          </div>
+
+          <!-- CARD 2: ข้อความประกาศด้านล่าง -->
+          <div class="card mb-4">
+            <div class="card-header flex items-center justify-between"
+              style="background:#fef3c7;border-bottom:1.5px solid #fde68a;">
+              <div style="font-weight:700;font-size:1.05rem;color:#92400e;">
+                📌 2. ข้อความประกาศด้านล่าง (กล่องหมายเหตุด้านล่าง ใต้ตารางเรียน)
+              </div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:600;cursor:pointer;">
+                <input type="checkbox" id="ann-bottom-active" style="width:16px;height:16px;accent-color:#d97706;">
+                <span>เปิดแสดงหมายเหตุด้านล่าง</span>
+              </label>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label">หัวข้อหมายเหตุ (Title)</label>
+                <input type="text" class="form-control" id="ann-bottom-title"
+                  placeholder="เช่น 📌 หมายเหตุ: หรือ 📌 ข้อควรปฏิบัติ:">
+              </div>
+              <div class="form-group">
+                <label class="form-label">เนื้อหาข้อความประกาศด้านล่าง (หมายเหตุ)</label>
+                <textarea class="form-control" id="ann-bottom-text" rows="3"
+                  placeholder="พิมพ์รายละเอียดหมายเหตุด้านล่าง เช่น กำหนดเวลาลงชื่อ การส่งแบบบันทึก..."></textarea>
+              </div>
+              <button class="btn btn-primary" onclick="saveBottomAnnouncement()">💾 บันทึกประกาศด้านล่าง</button>
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center p-3"
+            style="background:#f8fafc;border-radius:10px;border:1.5px solid #cbd5e1;">
+            <span class="text-sm text-muted">💡 บันทึกแล้วข้อมูลจะเชื่อมโยงไปปรากฏที่หน้าแรก (ตารางสอน) ทันที</span>
+            <button class="btn btn-primary" onclick="saveAllAnnouncements()"
+              style="font-weight:700;font-size:1rem;padding:10px 24px;background:#059669;border-color:#059669;">💾
+              บันทึกประกาศทั้งหมด (ทั้งบนและล่าง)</button>
+          </div>
+        </div>
+
+        <!-- ══ TAB: SETTINGS & PASSWORD CHANGE ═════════════════ -->
+        <div id="tab-settings" class="hidden">
+          <div class="section-title mb-4">
+            <div class="section-title-icon">⚙️</div>ตั้งค่าระบบและจัดการรหัสผ่าน
+          </div>
+
+          <!-- Academic Year / Term Settings -->
+          <div class="card mb-4">
+            <div class="card-header" style="background:var(--blue-pale);">
+              <div class="section-title" style="font-size:1.05rem;color:var(--blue-deep);">🏫
+                ตั้งค่าปีการศึกษาและภาคเรียน</div>
+            </div>
+            <div class="card-body">
+              <div class="alert alert-info mb-3">
+                💡 ข้อมูลนี้จะแสดงบนหน้าแรกของเว็บไซต์ในส่วน Hero และ Navbar
+              </div>
+              <div style="max-width:480px;">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">ภาคเรียนที่</label>
+                    <select class="form-control" id="setting-semester">
+                      <option value="1">1</option>
+                      <option value="2">2</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">ปีการศึกษา (พ.ศ.)</label>
+                    <input type="number" class="form-control" id="setting-academic-year" placeholder="เช่น 2569"
+                      min="2560" max="2600">
+                  </div>
+                </div>
+                <button class="btn btn-primary" onclick="saveSchoolSettings()">💾 บันทึกการตั้งค่าปีการศึกษา</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Change Admin Password -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <div class="section-title" style="font-size:1.05rem;">🔑 เปลี่ยนรหัสผ่านผู้ดูแลระบบ (Admin)</div>
+            </div>
+            <div class="card-body">
+              <div style="max-width:440px;">
+                <div class="form-group">
+                  <label class="form-label">รหัสผ่านปัจจุบัน</label>
+                  <input type="password" class="form-control" id="admin-old-pass"
+                    placeholder="รหัสผ่านเดิม (ค่าเริ่มต้น: Admin)">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">รหัสผ่านใหม่</label>
+                  <input type="password" class="form-control" id="admin-new-pass"
+                    placeholder="รหัสผ่านใหม่ (อย่างน้อย 4 ตัวอักษร)">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">ยืนยันรหัสผ่านใหม่</label>
+                  <input type="password" class="form-control" id="admin-confirm-pass"
+                    placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง">
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="changeAdminPassword()">💾 บันทึกรหัสผ่าน Admin</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Set Teacher Password -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <div class="section-title" style="font-size:1.05rem;">🔑 กำหนดรหัสผ่านสำหรับครูผู้สอน (Teacher)</div>
+            </div>
+            <div class="card-body">
+              <div style="max-width:440px;">
+                <div class="form-group">
+                  <label class="form-label">รหัสผ่านใหม่สำหรับครูผู้สอน</label>
+                  <input type="password" class="form-control" id="teacher-new-pass"
+                    placeholder="รหัสผ่านใหม่สำหรับครู (ค่าเริ่มต้น: 98765432)">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">ยืนยันรหัสผ่านใหม่</label>
+                  <input type="password" class="form-control" id="teacher-confirm-pass"
+                    placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง">
+                </div>
+                <button class="btn btn-primary btn-sm" onclick="changeTeacherPassword()">💾
+                  บันทึกรหัสผ่านครูผู้สอน</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Supabase Realtime Database Integration -->
+          <div class="card mb-4" style="border:2px solid #059669;box-shadow:0 4px 12px rgba(5,150,105,0.08);">
+            <div class="card-header" style="background:#ecfdf5;display:flex;justify-content:space-between;align-items:center;">
+              <div class="section-title" style="font-size:1.05rem;color:#065f46;">⚡ ฐานข้อมูลสด Supabase Realtime (เร็วระดับมิลลิวินาที)</div>
+              <span id="supabase-connection-badge" class="badge" style="background:#059669;color:#fff;">🟢 เชื่อมต่อ Realtime แล้ว</span>
+            </div>
+            <div class="card-body">
+              <div class="alert alert-success mb-3" style="background:#f0fdf4;border-color:#bbf7d0;color:#166534;">
+                🚀 <strong>ความเร็วแบบ Realtime:</strong> ข้อมูลจะอัปเดตข้ามทุกอุปกรณ์ (คอม/มือถือ) ทันทีในเวลา <strong>&lt; 0.1 วินาที</strong> ผ่าน WebSockets ไม่ต้องรอรอบโหลด
+              </div>
+
+              <div class="form-group mb-3">
+                <label class="form-label font-bold">Supabase Project URL</label>
+                <input type="url" class="form-control" id="setting-supabase-url" value="https://tzxhffzlblkehyzmggdu.supabase.co">
+              </div>
+
+              <div class="form-group mb-3">
+                <label class="form-label font-bold">Supabase Publishable Key</label>
+                <input type="text" class="form-control" id="setting-supabase-key" value="sb_publishable_UnAxE0Dr5Z6fGf1zo-nd2g_QKqXOIc9">
+              </div>
+
+              <div class="flex gap-2 mt-3" style="flex-wrap:wrap;">
+                <button class="btn btn-primary btn-sm" onclick="saveSupabaseSettings()">💾 บันทึกการตั้งค่า Supabase</button>
+                <button class="btn btn-outline btn-sm" onclick="syncDataToSupabase()" id="btn-sync-to-supabase">🚀 ส่งข้อมูลทั้งหมดขึ้น Supabase</button>
+                <button class="btn btn-outline btn-sm" onclick="syncDataFromSupabase()" id="btn-sync-from-supabase">🔄 ดึงข้อมูลสดจาก Supabase</button>
+              </div>
+              <div id="supabase-status-msg" class="text-xs mt-2" style="font-weight:600;color:#059669;"></div>
+            </div>
+          </div>
+
+          <!-- Google Sheets Cloud Database Integration -->
+          <div class="card mb-4" style="border:2px solid #2e7d32;">
+            <div class="card-header"
+              style="background:#e8f5e9;display:flex;justify-content:space-between;align-items:center;">
+              <div class="section-title" style="font-size:1.05rem;color:#1b5e20;">📊 เชื่อมต่อฐานข้อมูลกลาง Google
+                Sheets (คลาวด์)</div>
+              <span id="sheets-connection-badge" class="badge" style="background:#757575;color:#fff;">⚪ โหมดออฟไลน์
+                (Local)</span>
+            </div>
+            <div class="card-body">
+              <div class="alert alert-info mb-3">
+                💡 <strong>ทำไมต้องเชื่อมต่อ Google Sheets?</strong>
+                เพื่อให้ครูทุกคนและนักเรียนสามารถดูและอัปเดตข้อมูลชุดเดียวกันได้จากคอมและมือถือทุกเครื่องแบบออนไลน์
+                ข้อมูลจะถูกเก็บใน Google Drive ของโรงเรียนอัตโนมัติ
+              </div>
+
+              <div class="form-group">
+                <label class="form-label font-bold">URL เว็บแอป Google Apps Script (Web App URL)</label>
+                <div style="display:flex;gap:8px;">
+                  <input type="url" class="form-control" id="setting-sheets-url"
+                    placeholder="https://script.google.com/macros/s/AKfycb.../exec" style="flex:1;">
+                  <button class="btn btn-primary" onclick="testAndSaveSheetsUrl()">💾 บันทึกและทดสอบ</button>
+                </div>
+                <div id="sheets-status-msg" class="text-xs mt-1" style="font-weight:600;"></div>
+              </div>
+
+              <div class="flex gap-2 mt-3" style="flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" onclick="syncDataToSheets()" id="btn-sync-to-sheets">📤
+                  ส่งข้อมูลจากระบบนี้ขึ้น Google Sheets (ครั้งแรก)</button>
+                <button class="btn btn-outline btn-sm" onclick="syncDataFromSheets()" id="btn-sync-from-sheets">🔄
+                  ดึงข้อมูลล่าสุดจาก Google Sheets (Sync)</button>
+              </div>
+
+              <!-- Step-by-step setup guide -->
+              <details
+                style="margin-top:16px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:12px;">
+                <summary style="font-weight:600;color:var(--blue-deep);cursor:pointer;">📖 ดูขั้นตอนการตั้งค่า Google
+                  Sheets (ทำครั้งเดียวเพียง 3 นาที)</summary>
+                <ol style="margin-top:10px;padding-left:20px;font-size:.88rem;line-height:1.7;">
+                  <li>เปิด <a href="https://sheets.new" target="_blank"
+                      style="color:var(--blue-main);font-weight:600;text-decoration:underline;">Google Sheets ใหม่
+                      (คลิกที่นี่)</a> แล้วตั้งชื่อไฟล์ เช่น <strong>"ระบบคลินิกวิชาการ PCCPT"</strong></li>
+                  <li>ไปที่เมนูด้านบนของชีต: <strong>ส่วนขยาย (Extensions) → Apps Script</strong></li>
+                  <li>เปิดไฟล์ <code>google_apps_script.js</code> ในโฟลเดอร์นี้ แล้ว Copy โค้ดทั้งหมดไปวางทับใน Apps
+                    Script</li>
+                  <li>กดปุ่ม <strong>"ทำให้ใช้งานได้" (Deploy)</strong> มุมขวาบน → เลือก
+                    <strong>"การทำให้ใช้งานได้รายการใหม่" (New deployment)</strong></li>
+                  <li>เลือกประเภท: <strong>เว็บแอป (Web app)</strong></li>
+                  <li>ตั้งค่า:
+                    <ul>
+                      <li>ดำเนินการในฐานะ: <strong>ฉัน (Me)</strong></li>
+                      <li>ผู้ที่มีสิทธิ์เข้าถึง: <strong style="color:#c62828;">ทุกคน (Anyone)</strong> <em>(สำคัญมาก
+                          ต้องเลือกทุกคน)</em></li>
+                    </ul>
+                  </li>
+                  <li>กด <strong>Deploy</strong> แล้วกดให้สิทธิ์ (Authorize access) จากนั้นคัดลอก <strong>URL
+                      เว็บแอป</strong> ที่ลงท้ายด้วย <code>/exec</code> มาวางในช่องด้านบนนี้ แล้วกดบันทึก</li>
+                </ol>
+              </details>
+            </div>
+          </div>
+
+          <!-- System maintenance -->
+          <div class="card">
+            <div class="card-header">
+              <div class="section-title" style="font-size:1.05rem;">💾 สำรองและล้างข้อมูล</div>
+            </div>
+            <div class="card-body">
+              <div class="alert alert-warning">
+                ⚠️ การล้างข้อมูลจะไม่สามารถกู้คืนได้ แนะนำให้กด Export สำรองข้อมูลไว้ก่อน
+              </div>
+              <div class="flex gap-2 mt-2" style="flex-wrap:wrap;">
+                <button class="btn btn-outline btn-sm" onclick="exportAllData()">💾 Export สำรองข้อมูลทั้งหมด (JSON)</button>
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-json-file').click()">📥 Import นำเข้าข้อมูลจากไฟล์ JSON</button>
+                <input type="file" id="import-json-file" accept=".json" style="display:none;" onchange="importAllData(event)">
+                <button class="btn btn-danger btn-sm" onclick="clearAllPersonnelData()">🗑️ ล้างรายชื่อบุคลากรทั้งหมด (ครู นักเรียน เจ้าหน้าที่)</button>
+                <button class="btn btn-danger btn-sm"
+                  onclick="if(confirm('ยืนยันล้างข้อมูลตารางและสัปดาห์ทั้งหมด?')){clearScheduleData();}">🗑️
+                  ล้างตารางและสัปดาห์</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div><!-- /admin-main -->
+    </div><!-- /admin-layout -->
+  </main>
+
+  <!-- ═══ MODAL: เพิ่ม/แก้ไขสัปดาห์ ════════════════════ -->
+  <div class="modal-overlay" id="modal-add-week">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="week-modal-title">➕ เพิ่มสัปดาห์</div>
+        <button class="modal-close" onclick="closeModal('modal-add-week')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="week-edit-id">
+        <div class="form-group">
+          <label class="form-label">หมายเลขสัปดาห์</label>
+          <input type="number" class="form-control" id="week-num" min="1" max="20" value="1">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">วันเริ่มต้น (จันทร์)</label>
+            <input type="date" class="form-control" id="week-start" onchange="autoFillWeekEnd()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">วันสิ้นสุด (ศุกร์)</label>
+            <input type="date" class="form-control" id="week-end">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ชื่อสัปดาห์ (Label)</label>
+          <input type="text" class="form-control" id="week-label" placeholder="เช่น สัปดาห์ที่ 1 (7 – 11 ก.ย. 2570)">
+        </div>
+
+        <!-- NO CLASSES THIS WEEK TOGGLE -->
+        <div class="form-group"
+          style="background:var(--red-pale);padding:12px 14px;border-radius:var(--radius-md);border:1px solid #fca5a5;">
+          <label
+            style="display:flex;align-items:center;gap:10px;font-weight:700;color:var(--red-main);cursor:pointer;margin-bottom:0;">
+            <input type="checkbox" id="week-no-classes"
+              style="width:18px;height:18px;accent-color:var(--red-main);cursor:pointer;">
+            <span>ไม่มีการเรียนการสอนทั้งสัปดาห์ (เช่น สัปดาห์สอบ / กิจกรรมโรงเรียน / ปิดเรียน)</span>
+          </label>
+          <div class="text-xs text-muted mt-1" style="margin-left:28px;">
+            ระบบจะแสดงป้ายแจ้งเตือนในหน้าหลักว่าสัปดาห์นี้ไม่มีการจัดการเรียนการสอนคลินิกวิชาการ
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-add-week')">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="saveWeek()">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL: เพิ่ม/แก้ไขคลินิก ════════════════════ -->
+  <div class="modal-overlay" id="modal-clinic">
+    <div class="modal" style="max-width:600px;">
+      <div class="modal-header">
+        <div class="modal-title" id="clinic-modal-title">➕ เพิ่มตารางคลินิก</div>
+        <button class="modal-close" onclick="closeModal('modal-clinic')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="clinic-edit-id">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">สัปดาห์</label>
+            <select class="form-control" id="clinic-week-id">
+              <option value="">-- เลือก --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ระดับชั้น</label>
+            <select class="form-control" id="clinic-grade">
+              <option value="1">ม.1</option>
+              <option value="2">ม.2</option>
+              <option value="3">ม.3</option>
+              <option value="4">ม.4</option>
+              <option value="5">ม.5</option>
+              <option value="6">ม.6</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">วัน</label>
+            <select class="form-control" id="clinic-day" onchange="autoFillDate()">
+              <option value="0">จันทร์</option>
+              <option value="1">อังคาร</option>
+              <option value="2">พุธ</option>
+              <option value="3">พฤหัสบดี</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">วันที่</label>
+            <input type="date" class="form-control" id="clinic-date" onchange="autoFillDayFromDate()">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">วิชา</label>
+          <input type="text" class="form-control" id="clinic-subject"
+            placeholder="เช่น คณิตศาสตร์เพิ่มเติม, ฟิสิกส์, ภาษาอังกฤษ">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>ครูผู้สอน</span>
+            <span id="teacher-search-count" class="text-xs text-muted"></span>
+          </label>
+          <div style="position:relative;margin-bottom:6px;">
+            <input type="text" class="form-control" id="clinic-teacher-search"
+              placeholder="🔍 พิมพ์ชื่อครูเพื่อค้นหาทันที..." oninput="filterTeacherOptions(this.value)"
+              autocomplete="off" style="padding-left:36px;font-size:.9rem;">
+            <span
+              style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;">🔍</span>
+            <button type="button" id="btn-clear-teacher-search" onclick="clearTeacherSearch()"
+              style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1rem;">✕</button>
+          </div>
+          <select class="form-control" id="clinic-teacher">
+            <option value="">-- ไม่ระบุ / เลือกครูผู้สอน --</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">เวลาเริ่ม</label>
+            <input type="time" class="form-control" id="clinic-time-start" value="18:30">
+          </div>
+          <div class="form-group">
+            <label class="form-label">เวลาจบ</label>
+            <input type="time" class="form-control" id="clinic-time-end" value="20:30">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ห้อง/สถานที่</label>
+            <input type="text" class="form-control" id="clinic-room" placeholder="เช่น ห้อง 2208">
+          </div>
+          <div class="form-group">
+            <label class="form-label">สถานะ</label>
+            <select class="form-control" id="clinic-status">
+              <option value="active">✅ มีสอน</option>
+              <option value="cancelled">⛔ งดสอน</option>
+              <option value="pending">⏳ รอยืนยัน</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">หมายเหตุ</label>
+          <textarea class="form-control" id="clinic-notes" rows="2" placeholder="หมายเหตุเพิ่มเติม..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-clinic')">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="saveClinic()">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL: เพิ่ม/แก้ไขครู ═══════════════════════ -->
+  <div class="modal-overlay" id="modal-teacher">
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-header">
+        <div class="modal-title" id="teacher-modal-title">➕ เพิ่มครูผู้สอน</div>
+        <button class="modal-close" onclick="closeModal('modal-teacher')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="teacher-edit-id">
+        <div class="form-group">
+          <label class="form-label">ชื่อ-สกุลครูผู้สอน</label>
+          <input type="text" class="form-control" id="teacher-name" placeholder="เช่น ครูไตรภพ แปลนาค">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-teacher')">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="saveTeacher()">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL: เพิ่ม/แก้ไขเจ้าหน้าที่ ═════════════════ -->
+  <div class="modal-overlay" id="modal-staff">
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-header">
+        <div class="modal-title" id="staff-modal-title">➕ เพิ่มเจ้าหน้าที่</div>
+        <button class="modal-close" onclick="closeModal('modal-staff')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="staff-edit-id">
+        <div class="form-group">
+          <label class="form-label">ชื่อ-สกุล เจ้าหน้าที่</label>
+          <input type="text" class="form-control" id="staff-name" placeholder="เช่น ครูวิวรรณ ศรีวิไล">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-staff')">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="saveStaff()">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL: เพิ่ม/แก้ไขนักเรียน ═══════════════════ -->
+  <div class="modal-overlay" id="modal-student">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="student-modal-title">➕ เพิ่มนักเรียน</div>
+        <button class="modal-close" onclick="closeModal('modal-student')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="student-edit-id">
+        <div class="form-group">
+          <label class="form-label">ชื่อ-สกุล</label>
+          <input type="text" class="form-control" id="stu-name" placeholder="เช่น ด.ช.สมชาย ดีงาม">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">ระดับชั้น</label>
+            <select class="form-control" id="stu-grade" onchange="onStudentModalGradeChange()">
+              <option value="1">ม.1</option>
+              <option value="2">ม.2</option>
+              <option value="3">ม.3</option>
+              <option value="4">ม.4</option>
+              <option value="5">ม.5</option>
+              <option value="6">ม.6</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ห้อง <span id="stu-room-hint" class="text-xs text-muted">(ม.1 มี 4
+                ห้อง)</span></label>
+            <input type="number" class="form-control" id="stu-room" min="1" max="4" placeholder="เช่น 1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">เลขที่</label>
+            <input type="number" class="form-control" id="stu-number" min="1" max="50" placeholder="เช่น 5">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">หอพัก</label>
+          <select class="form-control" id="stu-dorm">
+            <option value="D1">D1 บัวอุบล (ญ)</option>
+            <option value="D2">D2 บุษกร (ญ)</option>
+            <option value="D3">D3 บัวชมพู (ญ)</option>
+            <option value="D4">D4 นิลกมล (ช)</option>
+            <option value="D5">D5 โกเมน (ช)</option>
+            <option value="D6">D6 นิลปัทม์ (ช)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">รหัสประจำตัวนักเรียน</label>
+          <input type="text" class="form-control" id="stu-code" placeholder="เช่น 02456 หรือ 10001">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-student')">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="saveStudent()">💾 บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL: IMPORT CSV ════════════════════════════ -->
+  <div class="modal-overlay" id="modal-import">
+    <div class="modal" style="max-width:680px;">
+      <div class="modal-header">
+        <div class="modal-title" id="import-modal-title">📥 นำเข้าข้อมูล CSV / Excel</div>
+        <button class="modal-close" onclick="closeModal('modal-import')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info mb-3" id="import-format-hint"></div>
+        <div class="import-dropzone mb-3" id="import-dropzone"
+          onclick="document.getElementById('csv-file-input').click()">
+          <input type="file" id="csv-file-input" accept=".csv,.txt,.xlsx,.xls" style="display:none;"
+            onchange="handleCSVFile(event)">
+          <div style="font-size:2rem;margin-bottom:8px;">📁</div>
+          <div style="font-weight:600;">คลิกเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</div>
+          <div class="text-xs text-muted mt-1">รองรับ Excel (.xlsx) และ CSV (.csv)</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">หรือวางข้อมูล CSV ที่นี่ (คั่นด้วยจุลภาค):</label>
+          <textarea class="form-control" id="csv-paste" rows="5" placeholder="วางข้อมูลที่นี่..."
+            oninput="previewCSV()"></textarea>
+        </div>
+        <div id="import-preview"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-import')">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="importCSV()">📥 นำเข้าข้อมูล</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ╔╗╔╗ MODAL: เพิ่มคลินิกทั้งสัปดาห์ (4 วัน) ╔╗╔╗ -->
+  <div class="modal-overlay" id="modal-clinic-batch">
+    <div class="modal" style="max-width:680px;">
+      <div class="modal-header">
+        <div class="modal-title">📆 เพิ่มคลินิกทั้งสัปดาห์ (4 วัน: จันทร์-พฤหัสบดี)</div>
+        <button class="modal-close" onclick="closeModal('modal-clinic-batch')">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info mb-3">
+          💡 กรอกรายวิชาและครูสำหรับแต่ละวัน ระบบจะเพิ่มรายการให้ครบทั้ง 4 วันพร้อมกัน (วันใดไม่กรอกวิชา-ครู
+          จะไม่เพิ่มวันนั้น)
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">สัปดาห์</label>
+            <select class="form-control" id="batch-week-id">
+              <option value="">-- เลือกสัปดาห์ --</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">ระดับชั้น</label>
+            <select class="form-control" id="batch-grade">
+              <option value="1">ม.1</option>
+              <option value="2">ม.2</option>
+              <option value="3">ม.3</option>
+              <option value="4">ม.4</option>
+              <option value="5">ม.5</option>
+              <option value="6">ม.6</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">เวลาเริ่ม (ทุกวัน)</label>
+            <input type="time" class="form-control" id="batch-time-start" value="18:30">
+          </div>
+          <div class="form-group">
+            <label class="form-label">เวลาจบ (ทุกวัน)</label>
+            <input type="time" class="form-control" id="batch-time-end" value="20:30">
+          </div>
+        </div>
+        <!-- 4 day rows -->
+        <div id="batch-days-container">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-clinic-batch')">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="saveClinicBatch()">💾 บันทึกทั้งสัปดาห์</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/firebase-config.js?v=2569_8"></script>
+  <script src="js/supabase-api.js?v=2569_8"></script>
+  <script src="js/sheets-api.js?v=2569_8"></script>
+  <script src="js/db.js?v=2569_8"></script>
+  <script src="js/auth.js?v=2569_8"></script>
+  <script src="js/xlsx.full.min.js"></script>
+  <script>
+    // ─── AUTH GUARD ───────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      const session = AuthService.requireAuth(['admin']);
+      if (!session) return;
+      seedDemoData();
+      await loadAdminData();
+
+      // Connect Supabase Realtime
+      if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+        SupabaseAPI.init(async () => {
+          if (!document.querySelector('.modal-overlay.open')) {
+            await loadAdminData();
+          }
+        });
+      }
+
+      // Background sync from Cloud
+      if ((typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) ||
+          (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured())) {
+        const updated = await DataService.initSync();
+        if (updated) {
+          await loadAdminData();
+        }
+      }
+
+      // Sync on visibility change or window focus (only when no modal is open)
+      document.addEventListener('visibilitychange', async () => {
+        if (!document.hidden && !document.querySelector('.modal-overlay.open') && typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
+          const updated = await DataService.initSync();
+          if (updated) await loadAdminData();
+        }
+      });
+      window.addEventListener('focus', async () => {
+        if (!document.querySelector('.modal-overlay.open') && typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
+          const updated = await DataService.initSync();
+          if (updated) await loadAdminData();
+        }
+      });
+    });
+
+    let importMode = 'students'; // 'students' | 'teachers'
+
+    async function loadAdminData() {
+      await loadWeeksList();
+      await loadAdminClinics();
+      await loadTeachers();
+      await loadStudents();
+      await loadStaff();
+      await loadDutyStaffUI();
+      await loadAnnouncementConfig();
+      loadSchoolSettings();
+      loadSupabaseSettings();
+      loadSheetsSettings();
+    }
+
+    // ─── TABS ─────────────────────────────────────────────────
+    function showTab(tabId) {
+      const tabs = ['tab-weeks', 'tab-clinics', 'tab-teachers', 'tab-students', 'tab-staff', 'tab-announce', 'tab-settings'];
+      const siMap = {
+        'tab-weeks': 'si-weeks',
+        'tab-clinics': 'si-clinics',
+        'tab-teachers': 'si-teachers',
+        'tab-students': 'si-students',
+        'tab-staff': 'si-staff',
+        'tab-announce': 'si-announce',
+        'tab-settings': 'si-settings'
+      };
+      tabs.forEach(t => {
+        const el = document.getElementById(t);
+        if (el) el.classList.toggle('hidden', t !== tabId);
+      });
+      Object.entries(siMap).forEach(([t, si]) => {
+        document.getElementById(si)?.classList.toggle('active', t === tabId);
+      });
+      if (tabId === 'tab-staff') {
+        loadStaff();
+        loadDutyStaffUI();
+      } else if (tabId === 'tab-announce') {
+        loadAnnouncementConfig();
+      } else if (tabId === 'tab-students') {
+        loadStudents();
+      } else if (tabId === 'tab-teachers') {
+        loadTeachers();
+      } else if (tabId === 'tab-settings') {
+        loadSchoolSettings();
+      }
+    }
+
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+
+    // ─── EXCEL / CSV DOWNLOAD HELPER ─────────────────────────
+    function downloadCSV(filename, csvContent) {
+      const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function downloadStudentExcelTemplate() {
+      const csv =
+        `รหัสประจำตัว,ชื่อ-สกุล,ชั้น,ห้อง,เลขที่,หอพัก
+02456,ด.ช.ธนาวุฒิ สมใจ,1,1,1,บัวอุบล
+10002,ด.ญ.ปภาวรินทร์ แสงดาว,1,1,2,บัวอุบล
+03112,ด.ช.ภัทรพล วงษ์ทอง,1,2,5,บุษกร
+20001,ด.ญ.อรนุช พิทักษ์,2,1,3,นิลกมล
+20002,ด.ช.ณัฐพล สว่างศรี,2,2,7,โกเมน
+40001,นายกฤษณ์ ดีงาม,4,1,2,นิลปัทม์
+40002,นางสาวพิมพ์ ใจดี,4,1,8,บัวชมพู
+50001,นายสุรชัย แก้วพระ,5,2,4,โกเมน
+50002,นางสาวอังคณา รักษา,5,1,11,บัวอุบล
+60001,นายพงศ์พันธ์ ศรีสง่า,6,2,6,นิลปัทม์`;
+      downloadCSV('เทมเพลตนำเข้ารายชื่อนักเรียน_คลินิกวิชาการ.csv', csv);
+      showToast('ดาวน์โหลดเรียบร้อย', 'รองรับรหัสประจำตัวที่มีเลข 0 นำหน้า เช่น 02456 (ระบบจะคงเลข 0 ด้านหน้าให้อัตโนมัติ)', 'success');
+    }
+
+    function downloadTeacherExcelTemplate() {
+      const csv =
+        `\u0e25\u0e33\u0e14\u0e31\u0e1a,\u0e0a\u0e37\u0e48\u0e2d-\u0e2a\u0e01\u0e38\u0e25\u0e04\u0e23\u0e39\u0e1c\u0e39\u0e49\u0e2a\u0e2d\u0e19
+1,\u0e04\u0e23\u0e39\u0e44\u0e15\u0e23\u0e20\u0e1e \u0e41\u0e1b\u0e25\u0e19\u0e32\u0e04
+2,\u0e04\u0e23\u0e39\u0e2a\u0e38\u0e1e\u0e31\u0e15\u0e23\u0e32 \u0e27\u0e07\u0e28\u0e4c\u0e28\u0e23\u0e35
+3,\u0e04\u0e23\u0e39\u0e13\u0e31\u0e10\u0e27\u0e38\u0e12\u0e34 \u0e28\u0e23\u0e35\u0e2a\u0e38\u0e02
+4,\u0e04\u0e23\u0e39\u0e18\u0e19\u0e01\u0e24\u0e15 \u0e43\u0e08\u0e40\u0e22\u0e47\u0e19
+5,\u0e04\u0e23\u0e39\u0e08\u0e34\u0e23\u0e32\u0e1e\u0e23 \u0e28\u0e23\u0e35\u0e2a\u0e21\u0e1a\u0e31\u0e15\u0e34
+6,\u0e04\u0e23\u0e39\u0e27\u0e23\u0e23\u0e13\u0e32 \u0e1e\u0e23\u0e23\u0e13\u0e01\u0e32\u0e0d\u0e08\u0e19\u0e4c
+7,\u0e04\u0e23\u0e39\u0e2a\u0e21\u0e0a\u0e32\u0e22 \u0e23\u0e31\u0e01\u0e14\u0e35`;
+      downloadCSV('\u0e40\u0e17\u0e21\u0e40\u0e1e\u0e25\u0e15\u0e19\u0e33\u0e40\u0e02\u0e49\u0e32\u0e23\u0e32\u0e22\u0e0a\u0e37\u0e48\u0e2d\u0e04\u0e23\u0e39_\u0e04\u0e25\u0e34\u0e19\u0e34\u0e01\u0e27\u0e34\u0e0a\u0e32\u0e01\u0e32\u0e23.csv', csv);
+      showToast('\u0e14\u0e32\u0e27\u0e19\u0e4c\u0e42\u0e2b\u0e25\u0e14\u0e40\u0e23\u0e35\u0e22\u0e1a\u0e23\u0e49\u0e2d\u0e22', '\u0e40\u0e1b\u0e34\u0e14\u0e44\u0e1f\u0e25\u0e4c\u0e14\u0e49\u0e27\u0e22 Excel \u0e44\u0e14\u0e49\u0e17\u0e31\u0e19\u0e17\u0e35 (\u0e23\u0e2d\u0e07\u0e23\u0e31\u0e1a\u0e20\u0e32\u0e29\u0e32\u0e44\u0e17\u0e22)', 'success');
+    }
+
+    function downloadStaffExcelTemplate() {
+      const csv =
+        `ลำดับ,ชื่อ-สกุลเจ้าหน้าที่
+1,นายสมชาย ใจดี
+2,นางสาววิภาวดี เที่ยงทอง
+3,นายประเสริญ ใจเย็น
+4,นางสาวสุกัญญา พิทักษ์`;
+      downloadCSV('เทมเพลตนำเข้ารายชื่อเจ้าหน้าที่_คลินิกวิชาการ.csv', csv);
+      showToast('ดาวน์โหลดเรียบร้อย', 'เปิดไฟล์ด้วย Excel ได้ทันที (รองรับภาษาไทย)', 'success');
+    }
+
+    // ─── WEEKS ────────────────────────────────────────────────
+    async function populateWeekSelects() {
+      const weeks = await DataService.getWeeks();
+      ['clinic-week-filter', 'clinic-week-id', 'batch-week-id'].forEach(selId => {
+        const sel = document.getElementById(selId);
+        if (!sel) return;
+        const cur = sel.value;
+        const defaultLabel = selId === 'clinic-week-filter' ? 'ทุกสัปดาห์' : 'เลือกสัปดาห์...';
+        sel.innerHTML = `<option value="">${defaultLabel}</option>`;
+        weeks.forEach(w => {
+          const o = document.createElement('option');
+          o.value = w.weekId;
+          o.textContent = w.label + (w.noClasses ? ' (งดสอน)' : '');
+          sel.appendChild(o);
+        });
+        if (cur && weeks.some(w => w.weekId === cur)) {
+          sel.value = cur;
+        } else if (selId !== 'clinic-week-filter' && weeks.length && !sel.value) {
+          sel.value = weeks[weeks.length - 1].weekId;
+        }
+      });
+      return weeks;
+    }
+
+    async function loadWeeksList() {
+      const weeks = await populateWeekSelects();
+      const container = document.getElementById('weeks-list');
+
+      if (!weeks.length) {
+        container.innerHTML = '<div class="card-body empty-state"><div class="empty-icon">📭</div><div class="empty-title">ยังไม่มีสัปดาห์</div><div class="empty-sub">กดปุ่มเพิ่มสัปดาห์เพื่อเริ่มต้น</div></div>';
+        return;
+      }
+
+      container.innerHTML = `
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>#</th><th>สัปดาห์</th><th>วันเริ่ม</th><th>วันสิ้นสุด</th><th>สถานะการสอน</th><th>Label</th><th>จัดการ</th></tr></thead>
+        <tbody>
+          ${weeks.map((w, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td><span class="badge badge-blue">สัปดาห์ที่ ${w.weekNum}</span></td>
+              <td>${formatDateThai(w.startDate)}</td>
+              <td>${formatDateThai(w.endDate)}</td>
+              <td>
+                ${w.noClasses
+          ? '<span class="badge badge-danger">🚫 ไม่มีการเรียนการสอนทั้งสัปดาห์</span>'
+          : '<span class="badge badge-green">✅ มีการเรียนการสอนปกติ</span>'}
+              </td>
+              <td>${w.label}</td>
+              <td>
+                <button class="btn btn-outline btn-sm" onclick="editWeek('${w.id}')">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteWeek('${w.id}')">🗑️</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+    }
+
+    function openAddWeek() {
+      document.getElementById('week-modal-title').textContent = '➕ เพิ่มสัปดาห์';
+      document.getElementById('week-edit-id').value = '';
+      document.getElementById('week-num').value = '1';
+      document.getElementById('week-start').value = '';
+      document.getElementById('week-end').value = '';
+      document.getElementById('week-label').value = '';
+      document.getElementById('week-no-classes').checked = false;
+      openModal('modal-add-week');
+    }
+
+    function autoFillWeekEnd() {
+      const start = document.getElementById('week-start').value;
+      if (!start) return;
+      const d = new Date(start + 'T00:00:00');
+      d.setDate(d.getDate() + 4);
+      const endStr = d.toISOString().split('T')[0];
+      document.getElementById('week-end').value = endStr;
+      const wn = document.getElementById('week-num').value;
+      document.getElementById('week-label').value = `สัปดาห์ที่ ${wn} (${formatDateThai(start)} – ${formatDateThai(endStr)})`;
+    }
+
+    async function saveWeek() {
+      const id = document.getElementById('week-edit-id').value;
+      const weekNum = Number(document.getElementById('week-num').value);
+      const startDate = document.getElementById('week-start').value;
+      const endDate = document.getElementById('week-end').value;
+      const label = document.getElementById('week-label').value.trim();
+      const noClasses = document.getElementById('week-no-classes').checked;
+
+      if (!startDate || !endDate || !label) {
+        showToast('กรุณากรอกข้อมูลให้ครบ', '', 'warning');
+        return;
+      }
+      const weekId = 'week_' + startDate;
+      const obj = { weekId, weekNum, startDate, endDate, label, noClasses };
+      if (id) obj.id = id;
+      await DataService.saveWeek(obj);
+      closeModal('modal-add-week');
+      showToast('บันทึกสำเร็จ', '', 'success');
+      await loadWeeksList();
+    }
+
+    async function editWeek(id) {
+      const weeks = await DataService.getWeeks();
+      const w = weeks.find(x => String(x.id) === String(id));
+      if (!w) return;
+      document.getElementById('week-edit-id').value = id;
+      document.getElementById('week-num').value = w.weekNum;
+      document.getElementById('week-start').value = toYMD(w.startDate);
+      document.getElementById('week-end').value = toYMD(w.endDate);
+      document.getElementById('week-label').value = w.label;
+      document.getElementById('week-no-classes').checked = !!w.noClasses;
+      document.getElementById('week-modal-title').textContent = '✏️ แก้ไขสัปดาห์';
+      openModal('modal-add-week');
+    }
+
+    async function deleteWeek(id) {
+      if (!confirm('ยืนยันลบสัปดาห์นี้?')) return;
+      await DataService.deleteWeek(id);
+      showToast('ลบเรียบร้อย', '', 'success');
+      await loadWeeksList();
+    }
+
+    // ─── CLINICS ──────────────────────────────────────────────
+    async function loadAdminClinics() {
+      const weekId = document.getElementById('clinic-week-filter').value;
+      const grade = document.getElementById('clinic-grade-filter').value;
+      let clinics = weekId ? await DataService.getClinicsByWeek(weekId) : await DataService.getClinics();
+      if (grade) clinics = clinics.filter(c => String(c.grade) === grade);
+
+      const teachers = await DataService.getTeachers();
+      const teacherMap = Object.fromEntries(teachers.map(t => [String(t.id), t]));
+      const weeks = await DataService.getWeeks();
+      const weekMap = {};
+      weeks.forEach(w => {
+        if (w.weekId) weekMap[w.weekId] = w;
+        if (w.id) weekMap[String(w.id)] = w;
+        if (w.startDate) weekMap[String(w.startDate).slice(0, 10)] = w;
+      });
+      const dayNames = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'];
+      const container = document.getElementById('clinics-table');
+
+      if (!clinics.length) {
+        container.innerHTML = '<div class="card-body empty-state"><div class="empty-icon">📝</div><div class="empty-title">ไม่พบตารางคลินิก</div><div class="empty-sub">กดปุ่มเพิ่มรายการเพื่อเริ่มต้น</div></div>';
+        return;
+      }
+
+      container.innerHTML = `
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>#</th><th>สัปดาห์</th><th>ชั้น</th><th>วัน/วันที่</th><th>วิชา</th><th>ครูผู้สอน</th><th>เวลา</th><th>ห้อง</th><th>สถานะ</th><th>นร.</th><th>จัดการ</th></tr></thead>
+        <tbody>
+          ${clinics.map((c, i) => {
+        let w = (c.weekId ? weekMap[c.weekId] : null) || (c.date ? weekMap[String(c.date).slice(0, 10)] : null);
+        if (!w && c.date) {
+          const cDate = String(c.date).slice(0, 10);
+          w = weeks.find(wk => {
+            const s = String(wk.startDate || '').slice(0, 10);
+            const e = String(wk.endDate || '').slice(0, 10);
+            return s && e && cDate >= s && cDate <= e;
+          });
+        }
+        w = w || {};
+        const t = teacherMap[String(c.teacherId)] || {};
+        const st = getStatusLabel(c.status);
+        return `
+              <tr>
+                <td>${i + 1}</td>
+                <td><span class="badge badge-gray text-xs">${w.weekNum ? 'สัปดาห์ที่ ' + w.weekNum : '–'}</span></td>
+                <td><span class="badge badge-blue">ม.${c.grade}</span></td>
+                <td><strong>วัน${dayNames[c.dayOfWeek] || '–'}</strong><br><span class="text-xs text-muted">${formatDateThai(c.date)}</span></td>
+                <td><strong>${getSubjectIcon(c.subject)} ${c.subject}</strong></td>
+                <td>${t.name || '–'}</td>
+                <td class="text-xs">${c.time || '–'}</td>
+                <td>${c.room || '–'}</td>
+                <td><span class="status-badge ${st.cls}">${st.icon} ${st.text}</span></td>
+                <td>${c.studentCount || 0}</td>
+                <td>
+                  <button class="btn btn-outline btn-sm" onclick="editClinic('${c.id}')">✏️</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteClinic('${c.id}')">🗑️</button>
+                </td>
+              </tr>`;
+      }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+    }
+
+    async function openAddClinic() {
+      document.getElementById('clinic-modal-title').textContent = '➕ เพิ่มตารางคลินิก (รายเดี่ยว)';
+      document.getElementById('clinic-edit-id').value = '';
+      document.getElementById('clinic-subject').value = '';
+      document.getElementById('clinic-room').value = '';
+      document.getElementById('clinic-notes').value = '';
+      await populateWeekSelects();
+      const curFilterWeek = document.getElementById('clinic-week-filter')?.value;
+      if (curFilterWeek) {
+        document.getElementById('clinic-week-id').value = curFilterWeek;
+      }
+      autoFillDate();
+      await populateTeacherSelect();
+      openModal('modal-clinic');
+    }
+
+    async function openAddClinicBatch() {
+      const weeks = await populateWeekSelects();
+      const curFilterWeek = document.getElementById('clinic-week-filter')?.value;
+      const sel = document.getElementById('batch-week-id');
+      if (curFilterWeek && sel) {
+        sel.value = curFilterWeek;
+      } else if (weeks.length && sel && !sel.value) {
+        sel.value = weeks[weeks.length - 1].weekId;
+      }
+
+      // Populate teacher dropdowns for all 4 days
+      batchTeachersList = await DataService.getTeachers();
+      const teacherOptions = '<option value="">ไม่มีคลินิก / ไม่ระบุ</option>' +
+        batchTeachersList.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+      const dayLabels = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี'];
+      const container = document.getElementById('batch-days-container');
+      container.innerHTML = dayLabels.map((day, i) => `
+    <div style="background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
+      <div style="font-weight:700;font-size:.9rem;color:var(--blue-deep);margin-bottom:8px;">&#x1F4C5; วัน${day}</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" style="font-size:.8rem;">วิชา (ถ้าว่างไว้ = ไม่เพิ่มวันนี้)</label>
+          <input type="text" class="form-control" id="batch-subject-${i}" placeholder="พิมพ์ชื่อวิชา...">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:.8rem;display:flex;justify-content:space-between;align-items:center;">
+            <span>ครูผู้สอน</span>
+            <span id="batch-teacher-count-${i}" style="color:var(--gray-500);font-weight:normal;font-size:.75rem;"></span>
+          </label>
+          <input type="text" class="form-control" id="batch-teacher-search-${i}" placeholder="🔍 พิมพ์ค้นหาชื่อครู..." oninput="filterBatchTeacher(${i}, this.value)" style="font-size:.82rem;padding:5px 8px;margin-bottom:4px;">
+          <select class="form-control" id="batch-teacher-${i}">${teacherOptions}</select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" style="font-size:.8rem;">ห้อง/สถานที่</label>
+          <input type="text" class="form-control" id="batch-room-${i}" placeholder="เช่น 2208">
+        </div>
+        <div class="form-group">
+          <label class="form-label" style="font-size:.8rem;">สถานะ</label>
+          <select class="form-control" id="batch-status-${i}">
+            <option value="active">✅ มีสอน</option>
+            <option value="cancelled">⛔ งดสอน</option>
+            <option value="pending">⏳ รอยืนยัน</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+      openModal('modal-clinic-batch');
+    }
+
+    function filterBatchTeacher(dayIndex, keyword) {
+      const q = (keyword || '').trim().toLowerCase();
+      const sel = document.getElementById(`batch-teacher-${dayIndex}`);
+      if (!sel) return;
+      const currentVal = sel.value;
+      const filtered = q ? batchTeachersList.filter(t => (t.name || '').toLowerCase().includes(q)) : batchTeachersList;
+
+      sel.innerHTML = '<option value="">ไม่มีคลินิก / ไม่ระบุ</option>' +
+        filtered.map(t => `<option value="${t.id}" ${t.id === currentVal ? 'selected' : ''}>${t.name}</option>`).join('');
+
+      if (currentVal && !filtered.some(t => t.id === currentVal)) {
+        const activeT = batchTeachersList.find(t => t.id === currentVal);
+        if (activeT) {
+          const o = document.createElement('option');
+          o.value = activeT.id;
+          o.textContent = `${activeT.name} (เลือกอยู่)`;
+          o.selected = true;
+          sel.insertBefore(o, sel.children[1] || null);
+        }
+      }
+
+      if (filtered.length === 1) {
+        sel.value = filtered[0].id;
+      }
+
+      const countEl = document.getElementById(`batch-teacher-count-${dayIndex}`);
+      if (countEl) {
+        countEl.textContent = q ? `พบ ${filtered.length} ท่าน` : '';
+      }
+    }
+
+    async function saveClinicBatch() {
+      const weekId = document.getElementById('batch-week-id').value;
+      const grade = Number(document.getElementById('batch-grade').value);
+      const ts = document.getElementById('batch-time-start').value;
+      const te = document.getElementById('batch-time-end').value;
+
+      if (!weekId) {
+        showToast('กรุณาเลือกสัปดาห์', '', 'warning');
+        return;
+      }
+
+      const weeks = await DataService.getWeeks();
+      const currentWeek = weeks.find(w => w.weekId === weekId || String(w.id) === String(weekId));
+      let startDateStr = currentWeek ? currentWeek.startDate : weekId.replace('week_', '');
+
+      let saved = 0;
+      for (let i = 0; i < 4; i++) {
+        const subject = document.getElementById(`batch-subject-${i}`)?.value.trim();
+        const teacherId = document.getElementById(`batch-teacher-${i}`)?.value;
+        if (!subject) continue; // skip if no subject entered
+
+        const room = document.getElementById(`batch-room-${i}`)?.value.trim() || '';
+        const status = document.getElementById(`batch-status-${i}`)?.value || 'active';
+
+        const baseD = parseDateSafe(startDateStr) || new Date();
+        const d = new Date(baseD);
+        d.setDate(d.getDate() + i);
+        const dateStr = toYMD(d);
+
+        const obj = { weekId, grade, dayOfWeek: i, date: dateStr, subject, teacherId, time: `${ts}–${te}`, room, status, notes: '' };
+        await DataService.saveClinic(obj);
+        saved++;
+      }
+
+      closeModal('modal-clinic-batch');
+      if (saved > 0) {
+        showToast('บันทึกสำเร็จ', `เพิ่ม ${saved} วัน ในตารางคลินิกสำเร็จ`, 'success');
+      } else {
+        showToast('ไม่ได้บันทึก', 'กรุณากรอกชื่อวิชาอย่างน้อย 1 วัน', 'warning');
+        return;
+      }
+      await loadAdminClinics();
+    }
+
+    let cachedTeachersList = [];
+
+    async function populateTeacherSelect(selectedId = '') {
+      cachedTeachersList = await DataService.getTeachers();
+      const searchInput = document.getElementById('clinic-teacher-search');
+      if (searchInput) searchInput.value = '';
+      const clearBtn = document.getElementById('btn-clear-teacher-search');
+      if (clearBtn) clearBtn.style.display = 'none';
+      renderTeacherOptions(cachedTeachersList, selectedId);
+    }
+
+    function renderTeacherOptions(teachers, selectedId = '') {
+      const sel = document.getElementById('clinic-teacher');
+      if (!sel) return;
+      const currentVal = selectedId !== '' ? selectedId : sel.value;
+      sel.innerHTML = '<option value="">-- ไม่ระบุ / เลือกครูผู้สอน --</option>';
+      teachers.forEach(t => {
+        const o = document.createElement('option');
+        o.value = t.id;
+        o.textContent = t.name;
+        if (t.id === currentVal) o.selected = true;
+        sel.appendChild(o);
+      });
+
+      // If currentVal is selected but filtered out by search keyword, keep it visible so it isn't lost
+      if (currentVal && !teachers.some(t => t.id === currentVal)) {
+        const activeT = cachedTeachersList.find(t => t.id === currentVal);
+        if (activeT) {
+          const o = document.createElement('option');
+          o.value = activeT.id;
+          o.textContent = `${activeT.name} (เลือกอยู่)`;
+          o.selected = true;
+          sel.insertBefore(o, sel.children[1] || null);
+        }
+      }
+
+      const countEl = document.getElementById('teacher-search-count');
+      if (countEl) {
+        if (teachers.length === cachedTeachersList.length) {
+          countEl.textContent = `(ทั้งหมด ${cachedTeachersList.length} ท่าน)`;
+        } else {
+          countEl.textContent = `(พบ ${teachers.length} จาก ${cachedTeachersList.length} ท่าน)`;
+        }
+      }
+    }
+
+    function filterTeacherOptions(keyword) {
+      const q = (keyword || '').trim().toLowerCase();
+      const clearBtn = document.getElementById('btn-clear-teacher-search');
+      if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+      const sel = document.getElementById('clinic-teacher');
+      const currentVal = sel ? sel.value : '';
+
+      if (!q) {
+        renderTeacherOptions(cachedTeachersList, currentVal);
+        return;
+      }
+      const filtered = cachedTeachersList.filter(t => (t.name || '').toLowerCase().includes(q));
+      renderTeacherOptions(filtered, currentVal);
+
+      // If filtered list has exactly 1 teacher, auto select it for speed!
+      if (filtered.length === 1 && sel) {
+        sel.value = filtered[0].id;
+      }
+    }
+
+    function clearTeacherSearch() {
+      const input = document.getElementById('clinic-teacher-search');
+      if (input) input.value = '';
+      filterTeacherOptions('');
+      if (input) input.focus();
+    }
+
+    function autoFillDayFromDate() {
+      const dateVal = document.getElementById('clinic-date').value;
+      if (!dateVal) return;
+      const d = parseDateSafe(dateVal);
+      if (!d) return;
+      const dow = d.getDay(); // 1=Mon, 2=Tue, 3=Wed, 4=Thu
+      if (dow >= 1 && dow <= 4) {
+        document.getElementById('clinic-day').value = dow - 1;
+      }
+    }
+
+    async function autoFillDate() {
+      const weekId = document.getElementById('clinic-week-id').value;
+      const dayIdx = Number(document.getElementById('clinic-day').value);
+      if (!weekId) return;
+      const weeks = await DataService.getWeeks();
+      const currentWeek = weeks.find(w => w.weekId === weekId || String(w.id) === String(weekId));
+      let startDateStr = currentWeek ? currentWeek.startDate : weekId.replace('week_', '');
+      const d = parseDateSafe(startDateStr);
+      if (d) {
+        d.setDate(d.getDate() + dayIdx);
+        document.getElementById('clinic-date').value = toYMD(d);
+      }
+    }
+
+    async function saveClinic() {
+      const id = document.getElementById('clinic-edit-id').value;
+      let weekId = document.getElementById('clinic-week-id').value;
+      const grade = Number(document.getElementById('clinic-grade').value);
+      let dayOfWeek = Number(document.getElementById('clinic-day').value);
+      let date = toYMD(document.getElementById('clinic-date').value);
+      const subject = document.getElementById('clinic-subject').value.trim();
+      const teacherId = document.getElementById('clinic-teacher').value;
+      const ts = document.getElementById('clinic-time-start').value;
+      const te = document.getElementById('clinic-time-end').value;
+      const room = document.getElementById('clinic-room').value.trim();
+      const status = document.getElementById('clinic-status').value;
+      const notes = document.getElementById('clinic-notes').value.trim();
+
+      if (!subject || !teacherId) {
+        showToast('กรุณากรอกข้อมูลสำคัญให้ครบ', 'ระบุวิชาและครูผู้สอน', 'warning');
+        return;
+      }
+
+      // If date is provided, make sure dayOfWeek matches date!
+      if (date) {
+        const d = parseDateSafe(date);
+        if (d) {
+          const dow = d.getDay();
+          if (dow >= 1 && dow <= 4) dayOfWeek = dow - 1;
+        }
+      }
+
+      // If weekId is not selected but date is given, find or assign week
+      if (!weekId && date) {
+        const weeks = await DataService.getWeeks();
+        const matched = weeks.find(w => {
+          const s = toYMD(w.startDate);
+          const e = toYMD(w.endDate);
+          return s && e && date >= s && date <= e;
+        });
+        if (matched) {
+          weekId = matched.weekId || matched.id;
+        } else {
+          weekId = 'week_' + date;
+        }
+      }
+
+      if (!weekId) {
+        showToast('กรุณาเลือกสัปดาห์หรือใส่วันที่', '', 'warning');
+        return;
+      }
+
+      const obj = { weekId, grade, dayOfWeek, date, subject, teacherId, time: `${ts}–${te}`, room, status, notes };
+      if (id) obj.id = id;
+      await DataService.saveClinic(obj);
+      closeModal('modal-clinic');
+      showToast('บันทึกสำเร็จ', '', 'success');
+      await loadAdminClinics();
+    }
+
+    async function editClinic(id) {
+      const clinics = await DataService.getClinics();
+      const c = clinics.find(x => String(x.id) === String(id));
+      if (!c) return;
+      await populateWeekSelects();
+      await populateTeacherSelect(c.teacherId);
+      document.getElementById('clinic-modal-title').textContent = '✏️ แก้ไขตารางคลินิก';
+      document.getElementById('clinic-edit-id').value = id;
+      document.getElementById('clinic-week-id').value = c.weekId || '';
+      document.getElementById('clinic-grade').value = c.grade;
+      document.getElementById('clinic-day').value = c.dayOfWeek;
+      document.getElementById('clinic-date').value = c.date || '';
+      document.getElementById('clinic-subject').value = c.subject;
+      document.getElementById('clinic-teacher').value = c.teacherId;
+      const [ts, te] = (c.time || '18:30–20:30').split('–');
+      document.getElementById('clinic-time-start').value = ts?.trim() || '18:30';
+      document.getElementById('clinic-time-end').value = te?.trim() || '20:30';
+      document.getElementById('clinic-room').value = c.room || '';
+      document.getElementById('clinic-status').value = c.status || 'active';
+      document.getElementById('clinic-notes').value = c.notes || '';
+      openModal('modal-clinic');
+    }
+
+    async function deleteClinic(id) {
+      if (!confirm('ยืนยันลบรายการนี้?')) return;
+      await DataService.deleteClinic(id);
+      showToast('ลบเรียบร้อย', '', 'success');
+      await loadAdminClinics();
+    }
+
+    // ─── TEACHERS (สรุป: ลำดับที่, รายชื่อครูผู้สอน) ─────────
+    async function loadTeachers() {
+      const teachers = await DataService.getTeachers();
+      const container = document.getElementById('teachers-table');
+      if (!teachers.length) {
+        container.innerHTML = '<div class="card-body empty-state"><div class="empty-icon">👩‍🏫</div><div class="empty-title">ยังไม่มีข้อมูลครู</div></div>';
+        return;
+      }
+      container.innerHTML = `
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:15%;">ลำดับที่</th>
+            <th style="width:65%;">รายชื่อครูผู้สอน</th>
+            <th style="width:20%;">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${teachers.map((t, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td><strong>${t.name}</strong></td>
+              <td>
+                <button class="btn btn-outline btn-sm" onclick="editTeacher('${t.id}')">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteTeacher('${t.id}')">🗑️</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+    }
+
+    function openAddTeacher() {
+      document.getElementById('teacher-modal-title').textContent = '➕ เพิ่มครูผู้สอน';
+      document.getElementById('teacher-edit-id').value = '';
+      document.getElementById('teacher-name').value = '';
+      openModal('modal-teacher');
+    }
+
+    async function editTeacher(id) {
+      const teachers = await DataService.getTeachers();
+      const t = teachers.find(x => String(x.id) === String(id));
+      if (!t) return;
+      document.getElementById('teacher-modal-title').textContent = '✏️ แก้ไขข้อมูลครูผู้สอน';
+      document.getElementById('teacher-edit-id').value = id;
+      document.getElementById('teacher-name').value = t.name;
+      openModal('modal-teacher');
+    }
+
+    async function saveTeacher() {
+      const id = document.getElementById('teacher-edit-id').value;
+      const name = document.getElementById('teacher-name').value.trim();
+      const email = document.getElementById('teacher-email')?.value.trim() || '';
+      if (!name) { showToast('กรุณากรอกชื่อครูผู้สอน', '', 'warning'); return; }
+      const obj = { name, email };
+      if (id) obj.id = id;
+      await DataService.saveTeacher(obj);
+      closeModal('modal-teacher');
+      showToast('บันทึกสำเร็จ', '', 'success');
+      await loadTeachers();
+    }
+
+    async function deleteTeacher(id) {
+      if (!confirm('ยืนยันลบครูคนนี้?')) return;
+      await DataService.deleteTeacher(id);
+      showToast('ลบเรียบร้อย', '', 'success');
+      await loadTeachers();
+    }
+
+    function showImportTeachers() {
+      importMode = 'teachers';
+      document.getElementById('import-modal-title').textContent = '📥 นำเข้ารายชื่อครูผู้สอน CSV / Excel';
+      document.getElementById('import-format-hint').innerHTML = '📋 รูปแบบ: <code>ลำดับ, ชื่อ-สกุลครูผู้สอน, Email</code><br><em>ตัวอย่าง: 1, ครูไตรภพ แปลนาค, tripop@pccpt.ac.th</em>';
+      document.getElementById('csv-paste').value = '';
+      document.getElementById('import-preview').innerHTML = '';
+      openModal('modal-import');
+    }
+
+    // ─── STAFF (เจ้าหน้าที่) ──────────────────────────────────
+    async function loadStaff() {
+      const staff = await DataService.getStaff();
+      const container = document.getElementById('staff-table');
+      if (!staff.length) {
+        container.innerHTML = '<div class="card-body empty-state"><div class="empty-icon">💼</div><div class="empty-title">ยังไม่มีข้อมูลเจ้าหน้าที่</div></div>';
+        return;
+      }
+      container.innerHTML = `
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:15%;">ลำดับที่</th>
+            <th style="width:65%;">รายชื่อเจ้าหน้าที่</th>
+            <th style="width:20%;">จัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${staff.map((s, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td><strong>${s.name}</strong></td>
+              <td>
+                <button class="btn btn-outline btn-sm" onclick="editStaff('${s.id}')">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteStaff('${s.id}')">🗑️</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+    }
+
+    function openAddStaff() {
+      document.getElementById('staff-modal-title').textContent = '➕ เพิ่มเจ้าหน้าที่';
+      document.getElementById('staff-edit-id').value = '';
+      document.getElementById('staff-name').value = '';
+      openModal('modal-staff');
+    }
+
+    async function editStaff(id) {
+      const staff = await DataService.getStaff();
+      const s = staff.find(x => String(x.id) === String(id));
+      if (!s) return;
+      document.getElementById('staff-modal-title').textContent = '✏️ แก้ไขเจ้าหน้าที่';
+      document.getElementById('staff-edit-id').value = id;
+      document.getElementById('staff-name').value = s.name;
+      openModal('modal-staff');
+    }
+
+    async function saveStaff() {
+      const id = document.getElementById('staff-edit-id').value;
+      const name = document.getElementById('staff-name').value.trim();
+      if (!name) { showToast('กรุณากรอกชื่อเจ้าหน้าที่', '', 'warning'); return; }
+      const obj = { name };
+      if (id) obj.id = id;
+      await DataService.saveStaff(obj);
+      closeModal('modal-staff');
+      showToast('บันทึกสำเร็จ', '', 'success');
+      await loadStaff();
+      await loadDutyStaffForSelectedWeek();
+    }
+
+    async function deleteStaff(id) {
+      if (!confirm('ยืนยันลบเจ้าหน้าที่คนนี้?')) return;
+      await DataService.deleteStaff(id);
+      showToast('ลบเรียบร้อย', '', 'success');
+      await loadStaff();
+      await loadDutyStaffForSelectedWeek();
+    }
+
+    // ─── STUDENTS (รายชั้น รายห้อง) ───────────────────────────
+    function onGradeFilterChange() {
+      const grade = document.getElementById('stu-grade-filter').value;
+      const roomSel = document.getElementById('stu-room-filter');
+      const prevRoom = roomSel.value;
+      // ม.1 - ม.3 มี 4 ห้อง, ม.4 - ม.6 มี 6 ห้อง (หรือหากเลือกทุกชั้นแสดง 6 ห้อง)
+      const maxRooms = (!grade || Number(grade) > 3) ? 6 : 4;
+
+      roomSel.innerHTML = '<option value="">ทุกห้อง</option>';
+      for (let i = 1; i <= maxRooms; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `ห้อง ${i}`;
+        roomSel.appendChild(opt);
+      }
+      if (prevRoom && Number(prevRoom) <= maxRooms) {
+        roomSel.value = prevRoom;
+      }
+      loadStudents();
+    }
+
+    function onStudentModalGradeChange() {
+      const g = Number(document.getElementById('stu-grade').value);
+      const max = (g <= 3) ? 4 : 6;
+      const roomInput = document.getElementById('stu-room');
+      roomInput.max = max;
+      roomInput.placeholder = `ห้อง 1–${max}`;
+      const hint = document.getElementById('stu-room-hint');
+      if (hint) hint.textContent = `(ม.${g} มี ${max} ห้อง: ห้อง 1–${max})`;
+    }
+
+    async function loadStudents() {
+      const grade = document.getElementById('stu-grade-filter').value;
+      const room = document.getElementById('stu-room-filter').value;
+      let students = await DataService.getStudents();
+
+      if (grade) students = students.filter(s => String(s.grade) === grade);
+      if (room) students = students.filter(s => String(s.room) === room);
+
+      // Sort by grade, room, number
+      students.sort((a, b) => (Number(a.grade) - Number(b.grade)) || (Number(a.room) - Number(b.room)) || (Number(a.number) - Number(b.number)));
+
+      const container = document.getElementById('students-table');
+      if (!students.length) {
+        container.innerHTML = '<div class="card-body empty-state"><div class="empty-icon">🎓</div><div class="empty-title">ไม่พบข้อมูลนักเรียน</div><div class="empty-sub">ลองเปลี่ยนตัวกรองชั้น/ห้อง หรือกดปุ่มเพิ่มนักเรียน</div></div>';
+        return;
+      }
+
+      const dormMap = {
+        'D1': 'D1 บัวอุบล (ญ)', 'D2': 'D2 บุษกร (ญ)', 'D3': 'D3 บัวชมพู (ญ)',
+        'D4': 'D4 นิลกมล (ช)', 'D5': 'D5 โกเมน (ช)', 'D6': 'D6 นิลปัทม์ (ช)'
+      };
+
+      container.innerHTML = `
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>#</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>ห้อง</th><th>เลขที่</th><th>หอพัก</th><th>รหัสนักเรียน</th><th>จัดการ</th></tr></thead>
+        <tbody>
+          ${students.map((s, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td><strong>${s.name}</strong></td>
+              <td><span class="badge badge-blue">ม.${s.grade}</span></td>
+              <td>ห้อง ${s.room}</td>
+              <td>${s.number}</td>
+              <td>${dormMap[s.dormitory] || s.dormitory || 'D1'}</td>
+              <td>${normalizeStudentCode(s.studentCode) || '–'}</td>
+              <td>
+                <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑️</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+    }
+
+    function openAddStudent() {
+      document.getElementById('student-modal-title').textContent = '➕ เพิ่มนักเรียน';
+      document.getElementById('student-edit-id').value = '';
+      document.getElementById('stu-name').value = '';
+      document.getElementById('stu-grade').value = '1';
+      document.getElementById('stu-room').value = '';
+      document.getElementById('stu-number').value = '';
+      document.getElementById('stu-dorm').value = 'D1';
+      document.getElementById('stu-code').value = '';
+      onStudentModalGradeChange();
+      openModal('modal-student');
+    }
+
+    async function editStudent(id) {
+      const students = await DataService.getStudents();
+      const s = students.find(x => String(x.id) === String(id));
+      if (!s) return;
+      document.getElementById('student-modal-title').textContent = '✏️ แก้ไขข้อมูลนักเรียน';
+      document.getElementById('student-edit-id').value = id;
+      document.getElementById('stu-name').value = s.name;
+      document.getElementById('stu-grade').value = s.grade;
+      document.getElementById('stu-room').value = s.room;
+      document.getElementById('stu-number').value = s.number;
+      document.getElementById('stu-dorm').value = s.dormitory || 'D1';
+      document.getElementById('stu-code').value = normalizeStudentCode(s.studentCode) || '';
+      onStudentModalGradeChange();
+      openModal('modal-student');
+    }
+
+    function normalizeStudentCode(code) {
+      if (code === undefined || code === null) return '';
+      let str = String(code).trim();
+      if (!str) return '';
+      if (/^\d+$/.test(str) && str.length < 5) {
+        str = str.padStart(5, '0');
+      }
+      return str;
+    }
+
+    async function saveStudent() {
+      const id = document.getElementById('student-edit-id').value;
+      const name = document.getElementById('stu-name').value.trim();
+      const grade = Number(document.getElementById('stu-grade').value);
+      const room = Number(document.getElementById('stu-room').value);
+      const number = Number(document.getElementById('stu-number').value);
+      const dormitory = document.getElementById('stu-dorm').value || 'D1';
+      const code = normalizeStudentCode(document.getElementById('stu-code').value);
+      if (!name) { showToast('กรุณากรอกชื่อนักเรียน', '', 'warning'); return; }
+      const obj = { name, grade, room, number, dormitory, studentCode: code };
+      if (id) obj.id = id;
+      await DataService.saveStudent(obj);
+      closeModal('modal-student');
+      showToast('บันทึกสำเร็จ', '', 'success');
+      await loadStudents();
+    }
+
+    async function deleteStudent(id) {
+      if (!confirm('ยืนยันลบนักเรียนคนนี้?')) return;
+      await DataService.deleteStudent(id);
+      showToast('ลบเรียบร้อย', '', 'success');
+      await loadStudents();
+    }
+
+    function showImportStudents() {
+      importMode = 'students';
+      document.getElementById('import-modal-title').textContent = '📥 นำเข้ารายชื่อนักเรียน CSV / Excel';
+      document.getElementById('import-format-hint').innerHTML = '📋 รูปแบบ: <code>รหัสประจำตัว, ชื่อ-สกุล, ชั้น, ห้อง, เลขที่, หอพัก</code><br><em>ตัวอย่าง: 02456, ด.ช.สมชาย ดีงาม, 1, 1, 5, บัวอุบล (รหัส 5 หลัก สามารถมีเลข 0 นำหน้าได้ เช่น 02456 ระบบจะคงเลข 0 ด้านหน้าให้อัตโนมัติ)</em>';
+      document.getElementById('csv-paste').value = '';
+      document.getElementById('import-preview').innerHTML = '';
+      document.getElementById('csv-file-input').value = '';
+      openModal('modal-import');
+    }
+
+    function showImportTeachers() {
+      importMode = 'teachers';
+      document.getElementById('import-modal-title').textContent = '📥 นำเข้ารายชื่อครูผู้สอน CSV / Excel';
+      document.getElementById('import-format-hint').innerHTML = '📋 รูปแบบ: <code>ลำดับ, ชื่อ-สกุลครูผู้สอน</code><br><em>ตัวอย่าง: 1, ครูสมศรี มีสุข</em>';
+      document.getElementById('csv-paste').value = '';
+      document.getElementById('import-preview').innerHTML = '';
+      document.getElementById('csv-file-input').value = '';
+      openModal('modal-import');
+    }
+
+    function showImportStaff() {
+      importMode = 'staff';
+      document.getElementById('import-modal-title').textContent = '📥 นำเข้ารายชื่อเจ้าหน้าที่ CSV / Excel';
+      document.getElementById('import-format-hint').innerHTML = '📋 รูปแบบ: <code>ลำดับ, ชื่อ-สกุลเจ้าหน้าที่</code><br><em>ตัวอย่าง: 1, นายสมชาย ใจดี</em>';
+      document.getElementById('csv-paste').value = '';
+      document.getElementById('import-preview').innerHTML = '';
+      document.getElementById('csv-file-input').value = '';
+      openModal('modal-import');
+    }
+
+    function handleCSVFile(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'xlsx' || ext === 'xls') {
+        // Parse Excel with SheetJS
+        const reader = new FileReader();
+        reader.onload = e => {
+          try {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array', cellText: true, cellDates: true });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const jsonRows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '', raw: false });
+
+            // If importing students, normalize the student code column so leading zeros (e.g. 02456) are preserved
+            if (importMode === 'students' && jsonRows.length > 0) {
+              jsonRows.forEach((row, idx) => {
+                if (idx === 0) {
+                  const rowStr = row.join(' ');
+                  if (rowStr.includes('ชื่อ') || rowStr.includes('รหัส') || rowStr.includes('ลำดับ')) return; // Header row
+                }
+                if (row[0] !== undefined && row[0] !== '') {
+                  row[0] = normalizeStudentCode(row[0]);
+                }
+              });
+            }
+
+            // Convert to CSV text so existing parseCSV / previewCSV can handle it
+            const csvText = jsonRows.map(r => r.map(c => String(c !== undefined && c !== null ? c : '').replace(/,/g, '،')).join(',')).join('\n');
+            document.getElementById('csv-paste').value = csvText;
+            previewCSV();
+            showToast('โหลดไฟล์สำเร็จ', `อ่านข้อมูลจาก Excel (${jsonRows.length} แถว) เรียบร้อยแล้ว`, 'success');
+          } catch (err) {
+            showToast('เกิดข้อผิดพลาด', 'ไม่สามารถอ่านไฟล์ Excel ได้: ' + err.message, 'error');
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } else {
+        // CSV / TXT
+        const reader = new FileReader();
+        reader.onload = e => {
+          document.getElementById('csv-paste').value = e.target.result;
+          previewCSV();
+        };
+        reader.readAsText(file, 'UTF-8');
+      }
+    }
+
+    function parseCSV(text) {
+      return text.split(/\r?\n/)
+        .map(l => l.trim()).filter(l => l && !l.startsWith('#'))
+        .map(l => l.split(/[,;\t]/).map(c => c.replace(/^["']|["']$/g, '').trim()));
+    }
+
+    function previewCSV() {
+      const text = document.getElementById('csv-paste').value.trim();
+      if (!text) return;
+      let rows = parseCSV(text);
+      if (!rows.length) return;
+
+      // Check if first row is header
+      const first = rows[0].join(' ');
+      if (first.includes('ชื่อ') || first.includes('name') || first.includes('รหัส') || first.includes('ลำดับ')) {
+        rows = rows.slice(1);
+      }
+
+      const preview = document.getElementById('import-preview');
+      if (importMode === 'students') {
+        preview.innerHTML = `
+      <div class="text-sm font-semibold mb-2">พบข้อมูลพร้อมนำเข้า ${rows.length} รายการ:</div>
+      <div class="table-wrapper" style="max-height:180px;overflow-y:auto;">
+        <table>
+          <thead><tr><th>รหัส</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>ห้อง</th><th>เลขที่</th><th>หอพัก</th></tr></thead>
+          <tbody>
+            ${rows.slice(0, 10).map(r => `
+              <tr>
+                <td>${normalizeStudentCode(r[0]) || '–'}</td>
+                <td><strong>${r[1] || '–'}</strong></td>
+                <td>ม.${r[2] || '–'}</td>
+                <td>${r[3] || '–'}</td>
+                <td>${r[4] || '–'}</td>
+                <td>${r[5] || '–'}</td>
+              </tr>`).join('')}
+            ${rows.length > 10 ? `<tr><td colspan="6" class="text-muted text-center">...และอีก ${rows.length - 10} รายการ</td></tr>` : ''}
+          </tbody>
+        </table>
+      </div>`;
+      } else if (importMode === 'staff') {
+        preview.innerHTML = `
+      <div class="text-sm font-semibold mb-2">พบข้อมูลพร้อมนำเข้า ${rows.length} รายการ:</div>
+      <div class="table-wrapper" style="max-height:180px;overflow-y:auto;">
+        <table>
+          <thead><tr><th>#</th><th>ชื่อ-สกุลเจ้าหน้าที่</th></tr></thead>
+          <tbody>
+            ${rows.slice(0, 10).map(r => `
+              <tr>
+                <td>${r[0] || '–'}</td>
+                <td><strong>${r[1] || r[0] || '–'}</strong></td>
+              </tr>`).join('')}
+            ${rows.length > 10 ? `<tr><td colspan="2" class="text-muted text-center">...และอีก ${rows.length - 10} รายการ</td></tr>` : ''}
+          </tbody>
+        </table>
+      </div>`;
+      } else {
+        preview.innerHTML = `
+      <div class="text-sm font-semibold mb-2">พบข้อมูลพร้อมนำเข้า ${rows.length} รายการ:</div>
+      <div class="table-wrapper" style="max-height:180px;overflow-y:auto;">
+        <table>
+          <thead><tr><th>#</th><th>ชื่อ-สกุลครูผู้สอน</th><th>Email</th></tr></thead>
+          <tbody>
+            ${rows.slice(0, 10).map(r => `
+              <tr>
+                <td>${r[0] || '–'}</td>
+                <td><strong>${r[1] || r[0] || '–'}</strong></td>
+                <td>${r[2] || r[1] || '–'}</td>
+              </tr>`).join('')}
+            ${rows.length > 10 ? `<tr><td colspan="3" class="text-muted text-center">...และอีก ${rows.length - 10} รายการ</td></tr>` : ''}
+          </tbody>
+        </table>
+      </div>`;
+      }
+    }
+
+    async function importCSV() {
+      const text = document.getElementById('csv-paste').value.trim();
+      if (!text) { showToast('ไม่มีข้อมูล', '', 'warning'); return; }
+      let rows = parseCSV(text);
+      if (!rows.length) return;
+
+      // Skip header row if present
+      const first = rows[0].join(' ');
+      if (first.includes('ชื่อ') || first.includes('name') || first.includes('รหัส') || first.includes('ลำดับ')) {
+        rows = rows.slice(1);
+      }
+
+      let count = 0;
+      if (importMode === 'students') {
+        // Dorm name → code mapping (fuzzy match)
+        const dormNameMap = {
+          'บัวอุบล': 'D1', 'd1': 'D1', 'D1': 'D1',
+          'บุษกร': 'D2', 'd2': 'D2', 'D2': 'D2',
+          'บัวชมพู': 'D3', 'd3': 'D3', 'D3': 'D3',
+          'นิลกมล': 'D4', 'd4': 'D4', 'D4': 'D4',
+          'โกเมน': 'D5', 'd5': 'D5', 'D5': 'D5',
+          'นิลปัทม์': 'D6', 'd6': 'D6', 'D6': 'D6'
+        };
+        function resolveDorm(raw) {
+          if (!raw || raw === 'none') return 'D1';
+          const trimmed = raw.trim();
+          // Exact or uppercase match first
+          if (dormNameMap[trimmed]) return dormNameMap[trimmed];
+          // Search by partial name (case-insensitive)
+          const lower = trimmed.toLowerCase();
+          for (const [key, code] of Object.entries(dormNameMap)) {
+            if (lower.includes(key.toLowerCase()) || key.toLowerCase().includes(lower)) return code;
+          }
+          // If it already looks like D1-D6
+          if (/^D[1-6]$/i.test(trimmed)) return trimmed.toUpperCase();
+          return 'D1'; // fallback
+        }
+
+        const students = rows.map(r => {
+          // Support formats: [code, name, grade, room, num, dorm] OR [name, grade, room, num, dorm, code]
+          let code = r[0], name = r[1], grade = r[2], room = r[3], num = r[4], dorm = r[5];
+          if (isNaN(Number(code)) && isNaN(Number(grade)) && !isNaN(Number(r[1]))) {
+            // format is name, grade, room, num, dorm, code
+            name = r[0]; grade = r[1]; room = r[2]; num = r[3]; dorm = r[4]; code = r[5];
+          }
+          return {
+            studentCode: normalizeStudentCode(code),
+            name: name || '',
+            grade: Number(grade) || 1,
+            room: Number(room) || 1,
+            number: Number(num) || 1,
+            dormitory: resolveDorm(dorm)
+          };
+        }).filter(s => s.name);
+
+        await DataService.importStudents(students);
+        count = students.length;
+        await loadStudents();
+      } else if (importMode === 'staff') {
+        // Staff: [seq, name] or [name]
+        const staffList = [];
+        rows.forEach(r => {
+          let name = r[1];
+          if (isNaN(Number(r[0]))) name = r[0]; // [name] format
+          if (name && name.trim()) staffList.push({ name: name.trim() });
+        });
+        for (const s of staffList) {
+          await DataService.saveStaff(s);
+        }
+        count = staffList.length;
+        await loadStaff();
+        await loadDutyStaffForSelectedWeek();
+      } else {
+        // Teachers: [seq, name, email] or [name, email]
+        const teachersList = [];
+        rows.forEach(r => {
+          let name = r[1], email = r[2];
+          if (isNaN(Number(r[0]))) {
+            // [name, email]
+            name = r[0]; email = r[1];
+          }
+          if (name) {
+            teachersList.push({
+              name: name,
+              email: email || ''
+            });
+          }
+        });
+        await DataService.importTeachers(teachersList);
+        count = teachersList.length;
+        await loadTeachers();
+      }
+
+      closeModal('modal-import');
+      showToast('นำเข้าสำเร็จ', `นำเข้าข้อมูลสำเร็จ ${count} รายการ`, 'success');
+    }
+
+    // ─── ANNOUNCEMENTS ────────────────────────────────────────
+    // ─── ANNOUNCEMENTS (DUAL-POSITION: บน & ล่าง) ─────────────
+    async function loadAnnouncementConfig() {
+      const cfg = await DataService.getAnnouncementsConfig();
+
+      // Top announcement
+      const topActive = document.getElementById('ann-top-active');
+      const topBadge = document.getElementById('ann-top-badge');
+      const topText = document.getElementById('ann-top-text');
+      if (topActive) topActive.checked = cfg.top ? (cfg.top.active !== false && cfg.top.active !== 'false') : true;
+      if (topBadge) topBadge.value = cfg.top?.badge || '📢 อัปเดตล่าสุด:';
+      if (topText) topText.value = cfg.top?.text || '';
+
+      // Bottom announcement
+      const btmActive = document.getElementById('ann-bottom-active');
+      const btmTitle = document.getElementById('ann-bottom-title');
+      const btmText = document.getElementById('ann-bottom-text');
+      if (btmActive) btmActive.checked = cfg.bottom ? (cfg.bottom.active !== false && cfg.bottom.active !== 'false') : true;
+      if (btmTitle) btmTitle.value = cfg.bottom?.title || '📌 หมายเหตุ:';
+      if (btmText) btmText.value = cfg.bottom?.text || '';
+    }
+
+    function getCurrentAnnouncementConfigFromForm() {
+      return {
+        top: {
+          active: document.getElementById('ann-top-active')?.checked ?? true,
+          badge: (document.getElementById('ann-top-badge')?.value || '').trim() || '📢 ประกาศ:',
+          text: (document.getElementById('ann-top-text')?.value || '').trim()
+        },
+        bottom: {
+          active: document.getElementById('ann-bottom-active')?.checked ?? true,
+          title: (document.getElementById('ann-bottom-title')?.value || '').trim() || '📌 หมายเหตุ:',
+          text: (document.getElementById('ann-bottom-text')?.value || '').trim()
+        }
+      };
+    }
+
+    async function saveTopAnnouncement() {
+      const cfg = getCurrentAnnouncementConfigFromForm();
+      await DataService.saveAnnouncementsConfig(cfg);
+      showToast('บันทึกสำเร็จ', 'อัปเดตข้อความประกาศด้านบน (แถบบนก่อนตาราง) เรียบร้อยแล้ว', 'success');
+    }
+
+    async function saveBottomAnnouncement() {
+      const cfg = getCurrentAnnouncementConfigFromForm();
+      await DataService.saveAnnouncementsConfig(cfg);
+      showToast('บันทึกสำเร็จ', 'อัปเดตข้อความประกาศด้านล่าง (หมายเหตุด้านล่างตาราง) เรียบร้อยแล้ว', 'success');
+    }
+
+    async function saveAllAnnouncements() {
+      const cfg = getCurrentAnnouncementConfigFromForm();
+      await DataService.saveAnnouncementsConfig(cfg);
+      showToast('บันทึกสำเร็จ', 'อัปเดตข้อความประกาศทั้งสองส่วน (ด้านบนและด้านล่าง) เรียบร้อยแล้ว', 'success');
+    }
+
+    // ─── CLEAR PERSONNEL LISTS HELPERS ───────────────────────
+    async function clearTeachersList() {
+      if (!confirm('ยืนยันที่จะลบรายชื่อครูทั้งหมดใช่หรือไม่? ข้อมูลจะถูกล้างเพื่อให้คุณกรอกใหม่')) return;
+      LocalDB.setList('teachers', []);
+      if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
+        SheetsAPI.saveTeachers([]);
+      }
+      await loadTeachers();
+      showToast('ล้างรายชื่อครูเรียบร้อย', 'คุณสามารถเพิ่มหรือนำเข้าข้อมูลใหม่ได้ทันที', 'success');
+    }
+
+    async function clearStudentsList() {
+      if (!confirm('ยืนยันที่จะลบรายชื่อนักเรียนทั้งหมดใช่หรือไม่? ข้อมูลจะถูกล้างเพื่อให้คุณกรอกใหม่')) return;
+      LocalDB.setList('students', []);
+      if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
+        SheetsAPI.saveStudents([]);
+      }
+      await loadStudents();
+      showToast('ล้างรายชื่อนักเรียนเรียบร้อย', 'คุณสามารถเพิ่มหรือนำเข้าข้อมูลใหม่ได้ทันที', 'success');
+    }
+
+    async function clearStaffList() {
+      if (!confirm('ยืนยันที่จะลบรายชื่อเจ้าหน้าที่ทั้งหมดใช่หรือไม่? ข้อมูลจะถูกล้างเพื่อให้คุณกรอกใหม่')) return;
+      LocalDB.setList('staff', []);
+      LocalDB.set('duty_staff_map', {});
+      if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
+        SheetsAPI.saveStaff([]);
+      }
+      await loadStaff();
+      await loadDutyStaffUI();
+      showToast('ล้างรายชื่อเจ้าหน้าที่เรียบร้อย', 'คุณสามารถเพิ่มหรือนำเข้าข้อมูลใหม่ได้ทันที', 'success');
+    }
+
+    async function clearAllPersonnelData() {
+      if (!confirm('ยืนยันที่จะล้างข้อมูลรายชื่อครู รายชื่อนักเรียน และรายชื่อเจ้าหน้าที่ทั้งหมดใช่หรือไม่?')) return;
+      LocalDB.clearAllPersonnel();
+      if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
+        SheetsAPI.saveTeachers([]);
+        SheetsAPI.saveStudents([]);
+        SheetsAPI.saveStaff([]);
+      }
+      await loadTeachers();
+      await loadStudents();
+      await loadStaff();
+      await loadDutyStaffUI();
+      showToast('ล้างข้อมูลบุคลากรทั้งหมดเรียบร้อย', 'ข้อมูลรายชื่อครู นักเรียน และเจ้าหน้าที่ถูกล้างหมดแล้ว พร้อมให้กรอกใหม่', 'success');
+    }
+
+    // ─── DUTY STAFF (เจ้าหน้าที่ประจำวัน) ────────────────────────
+    async function loadDutyStaffUI() {
+      const weeks = await DataService.getWeeks();
+      const sel = document.getElementById('duty-week-select');
+      if (!sel) return;
+      const curVal = sel.value;
+      sel.innerHTML = '';
+      weeks.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w.weekId;
+        opt.textContent = w.label + (w.noClasses ? ' (งดสอน)' : '');
+        sel.appendChild(opt);
+      });
+      if (curVal && weeks.some(w => w.weekId === curVal)) {
+        sel.value = curVal;
+      }
+      await loadDutyStaffForSelectedWeek();
+    }
+
+    async function loadDutyStaffForSelectedWeek() {
+      const weekId = document.getElementById('duty-week-select')?.value;
+      const container = document.getElementById('duty-days-container');
+      if (!container) return;
+
+      const weeks = await DataService.getWeeks();
+      const week = weeks.find(w => w.weekId === weekId) || weeks[0];
+      if (!week) {
+        container.innerHTML = '<div class="text-muted p-3">กรุณาเพิ่มสัปดาห์ก่อนกำหนดเจ้าหน้าที่ประจำวัน</div>';
+        return;
+      }
+
+      const staff = await DataService.getStaff();
+      const dutyAssignments = await DataService.getDutyStaffForWeek(week.weekId);
+      const dutyMap = await DataService.getDutyStaffMap();
+
+      const dayNames = ['วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี'];
+      let html = '';
+
+      for (let i = 0; i < 4; i++) {
+        let dateStr = '';
+        let dateLabel = '';
+        if (week.startDate) {
+          const baseD = parseDateSafe(week.startDate) || new Date();
+          const d = new Date(baseD);
+          d.setDate(d.getDate() + i);
+          dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          dateLabel = formatDateThai(dateStr);
+        }
+        const currentAssigned = dutyAssignments[i] || (dateStr ? dutyMap[dateStr] : '') || '';
+
+        html += `
+      <div style="background:var(--white);border:1.5px solid var(--gray-200);border-radius:var(--radius-md);padding:12px 14px;box-shadow:var(--shadow-sm);">
+        <div style="font-weight:700;font-size:.9rem;color:var(--blue-deep);margin-bottom:2px;">
+          📅 ${dayNames[i]}
+        </div>
+        <div style="font-size:.75rem;color:var(--gray-500);margin-bottom:8px;">
+          ${dateLabel || '–'}
+        </div>
+        <div class="form-group mb-0">
+          <label class="form-label" style="font-size:.78rem;">เจ้าหน้าที่ประจำวัน:</label>
+          <select class="form-control form-control-sm duty-day-select" id="duty-day-${i}" style="font-size:.85rem;">
+            <option value="">-- ยังไม่ได้กำหนด --</option>
+            ${staff.map(s => `
+              <option value="${s.name}" ${currentAssigned === s.name ? 'selected' : ''}>
+                ${s.name}
+              </option>
+            `).join('')}
+          </select>
+        </div>
+      </div>
+    `;
+      }
+      container.innerHTML = html;
+    }
+
+    async function saveDutyStaffAssignments() {
+      const weekId = document.getElementById('duty-week-select')?.value;
+      if (!weekId) {
+        showToast('แจ้งเตือน', 'กรุณาเลือกสัปดาห์ก่อนบันทึก', 'warning');
+        return;
+      }
+      const dutyObj = {};
+      for (let i = 0; i < 4; i++) {
+        const sel = document.getElementById(`duty-day-${i}`);
+        if (sel) dutyObj[i] = sel.value.trim();
+      }
+      await DataService.saveDutyStaffForWeek(weekId, dutyObj);
+      showToast('บันทึกสำเร็จ', 'อัปเดตเจ้าหน้าที่ประจำวันเรียบร้อยแล้ว (มีผลในทุกระดับชั้น)', 'success');
+    }
+
+    // ─── PASSWORD CHANGE HANDLERS ─────────────────────────────
+    function changeAdminPassword() {
+      const oldPass = document.getElementById('admin-old-pass').value;
+      const newPass = document.getElementById('admin-new-pass').value;
+      const cnfPass = document.getElementById('admin-confirm-pass').value;
+
+      if (!oldPass || !newPass) {
+        showToast('กรุณากรอกข้อมูลให้ครบ', 'ต้องระบุรหัสผ่านเดิมและรหัสผ่านใหม่', 'warning');
+        return;
+      }
+      if (newPass !== cnfPass) {
+        showToast('รหัสผ่านไม่ตรงกัน', 'รหัสผ่านใหม่และการยืนยันรหัสผ่านต้องตรงกัน', 'warning');
+        return;
+      }
+
+      const res = AuthService.changePassword('admin', oldPass, newPass);
+      if (res.success) {
+        showToast('เปลี่ยนรหัสผ่านสำเร็จ', 'รหัสผ่าน Admin ได้รับการอัปเดตเรียบร้อยแล้ว', 'success');
+        document.getElementById('admin-old-pass').value = '';
+        document.getElementById('admin-new-pass').value = '';
+        document.getElementById('admin-confirm-pass').value = '';
+      } else {
+        showToast('เกิดข้อผิดพลาด', res.message, 'error');
+      }
+    }
+
+    function changeTeacherPassword() {
+      const newPass = document.getElementById('teacher-new-pass').value;
+      const cnfPass = document.getElementById('teacher-confirm-pass').value;
+
+      if (!newPass) {
+        showToast('กรุณากรอกรหัสผ่านใหม่', '', 'warning');
+        return;
+      }
+      if (newPass !== cnfPass) {
+        showToast('รหัสผ่านไม่ตรงกัน', 'รหัสผ่านและการยืนยันรหัสผ่านต้องตรงกัน', 'warning');
+        return;
+      }
+
+      const res = AuthService.setTeacherPassword(newPass);
+      if (res.success) {
+        showToast('ตั้งรหัสผ่านสำเร็จ', 'รหัสผ่านสำหรับครูผู้สอนได้รับการอัปเดตเรียบร้อยแล้ว', 'success');
+        document.getElementById('teacher-new-pass').value = '';
+        document.getElementById('teacher-confirm-pass').value = '';
+      } else {
+        showToast('เกิดข้อผิดพลาด', res.message, 'error');
+      }
+    }
+
+    // ─── SETTINGS & BACKUP ────────────────────────────────────
+    function clearScheduleData() {
+      LocalDB.setList('clinics', []);
+      LocalDB.setList('weeks', []);
+      LocalDB.set('_seeded_v2', null);
+      showToast('ล้างข้อมูลเรียบร้อย', '', 'success');
+      loadAdminData();
+    }
+
+    function exportAllData() {
+      const data = {
+        teachers: LocalDB.getTeachers(),
+        students: LocalDB.getStudents(),
+        staff: LocalDB.getStaff(),
+        weeks: LocalDB.getWeeks(),
+        clinics: LocalDB.getClinics(),
+        attendance: LocalDB.getAttendance(),
+        announcements: LocalDB.getAnnouncements(),
+        announcements_config: LocalDB.getAnnouncementsConfig(),
+        school_settings: LocalDB.get('school_settings') || {},
+        duty_by_date: LocalDB.get('duty_by_date') || {},
+        exportedAt: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pccpt_clinic_backup_${todayStr()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Export สำเร็จ', 'ดาวน์โหลดไฟล์สำรองข้อมูล JSON เรียบร้อย', 'success');
+    }
+
+    function importAllData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async e => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (Array.isArray(data.teachers)) LocalDB.setList('teachers', data.teachers);
+          if (Array.isArray(data.students)) LocalDB.setList('students', data.students);
+          if (Array.isArray(data.staff)) LocalDB.setList('staff', data.staff);
+          if (Array.isArray(data.weeks)) LocalDB.setList('weeks', data.weeks);
+          if (Array.isArray(data.clinics)) LocalDB.setList('clinics', data.clinics);
+          if (Array.isArray(data.attendance)) LocalDB.setList('attendance', data.attendance);
+          if (Array.isArray(data.announcements)) LocalDB.setList('announcements', data.announcements);
+          if (data.announcements_config) LocalDB.saveAnnouncementsConfig(data.announcements_config);
+          if (data.school_settings) LocalDB.set('school_settings', data.school_settings);
+          if (data.duty_by_date) LocalDB.set('duty_by_date', data.duty_by_date);
+
+          showToast('นำเข้าสำเร็จ!', 'กู้คืนข้อมูลทั้งหมดจากไฟล์ JSON เรียบร้อยแล้ว', 'success');
+          await loadAdminData();
+        } catch(err) {
+          showToast('เกิดข้อผิดพลาด', 'ไม่สามารถอ่านไฟล์ JSON ได้: ' + err.message, 'error');
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+      event.target.value = '';
+    }
+
+    // ─── DRAG AND DROP ────────────────────────────────────────
+    const dropzone = document.getElementById('import-dropzone');
+    if (dropzone) {
+      dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+      dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+      dropzone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropzone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (!file) return;
+        const ext = file.name.split('.').pop().toLowerCase();
+        if (ext === 'xlsx' || ext === 'xls') {
+          const reader = new FileReader();
+          reader.onload = ev => {
+            try {
+              const data = new Uint8Array(ev.target.result);
+              const wb = XLSX.read(data, { type: 'array' });
+              const ws = wb.Sheets[wb.SheetNames[0]];
+              const jsonRows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+              const csvText = jsonRows.map(r => r.map(c => String(c).replace(/,/g, '،')).join(',')).join('\n');
+              document.getElementById('csv-paste').value = csvText;
+              previewCSV();
+              showToast('โหลดไฟล์สำเร็จ', `อ่านข้อมูลจาก Excel (${jsonRows.length} แถว) เรียบร้อยแล้ว`, 'success');
+            } catch (err) {
+              showToast('เกิดข้อผิดพลาด', 'ไม่สามารถอ่านไฟล์ Excel ได้', 'error');
+            }
+          };
+          reader.readAsArrayBuffer(file);
+        } else {
+          const reader = new FileReader();
+          reader.onload = ev => {
+            document.getElementById('csv-paste').value = ev.target.result;
+            previewCSV();
+          };
+          reader.readAsText(file, 'UTF-8');
+        }
+      });
+    }
+
+    // ─── SCHOOL SETTINGS (ปีการศึกษา / ภาคเรียน) ─────────────
+    function loadSchoolSettings() {
+      const settings = LocalDB.get('school_settings') || {};
+      const semEl = document.getElementById('setting-semester');
+      const yearEl = document.getElementById('setting-academic-year');
+      if (semEl) semEl.value = settings.semester || '1';
+      if (yearEl) yearEl.value = settings.academicYear || (typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.academicYear : '2569') || '2569';
+    }
+
+    function saveSchoolSettings() {
+      const semester = document.getElementById('setting-semester').value;
+      const academicYear = document.getElementById('setting-academic-year').value.trim();
+      if (!academicYear || isNaN(Number(academicYear))) {
+        showToast('กรุณากรอกปีการศึกษา', 'กรุณาระบุปีการศึกษา (พ.ศ.) ให้ถูกต้อง เช่น 2569', 'warning');
+        return;
+      }
+      LocalDB.set('school_settings', { semester, academicYear });
+      if (typeof SheetsAPI !== 'undefined' && SheetsAPI.isConfigured()) {
+        SheetsAPI.saveSettings(LocalDB.get('school_settings') || {});
+      }
+      showToast('บันทึกสำเร็จ', `ตั้งค่าภาคเรียนที่ ${semester} ปีการศึกษา ${academicYear} เรียบร้อยแล้ว`, 'success');
+    }
+
+    // ─── GOOGLE SHEETS MANAGEMENT ─────────────────────────────
+    function loadSheetsSettings() {
+      if (typeof SheetsAPI === 'undefined') return;
+      const url = SheetsAPI.getUrl();
+      const input = document.getElementById('setting-sheets-url');
+      if (input) input.value = url;
+      updateSheetsBadge(Boolean(url));
+    }
+
+    function updateSheetsBadge(isConnected, msg = '') {
+      const badge = document.getElementById('sheets-connection-badge');
+      const statusMsg = document.getElementById('sheets-status-msg');
+      if (badge) {
+        if (isConnected) {
+          badge.textContent = '🟢 เชื่อมต่อ Google Sheets แล้ว';
+          badge.style.background = '#2e7d32';
+          badge.style.color = '#fff';
+        } else {
+          badge.textContent = '⚪ โหมดออฟไลน์ (Local)';
+          badge.style.background = '#757575';
+          badge.style.color = '#fff';
+        }
+      }
+      if (statusMsg) {
+        statusMsg.innerHTML = msg;
+      }
+    }
+
+    async function testAndSaveSheetsUrl() {
+      const input = document.getElementById('setting-sheets-url');
+      const url = (input ? input.value : '').trim();
+      if (!url) {
+        SheetsAPI.setUrl('');
+        updateSheetsBadge(false, '<span style="color:var(--gray-600);">ลบการเชื่อมต่อแล้ว (กลับสู่โหมดบันทึกในเครื่อง)</span>');
+        showToast('ลบการเชื่อมต่อแล้ว', 'กลับสู่โหมดบันทึกในเครื่อง LocalStorage', 'info');
+        return;
+      }
+
+      updateSheetsBadge(false, '<span style="color:var(--blue-main);">⏳ กำลังทดสอบเชื่อมต่อ...</span>');
+      showToast('กำลังทดสอบ...', 'กำลังส่งสัญญาณทดสอบไปยัง Google Sheets', 'info');
+      const testRes = await SheetsAPI.testConnection(url);
+      if (testRes && testRes.success) {
+        SheetsAPI.setUrl(url);
+        updateSheetsBadge(true, '<span style="color:#2e7d32;">✅ ทดสอบสำเร็จ! เชื่อมต่อ Google Sheets เรียบร้อยแล้ว</span>');
+        showToast('เชื่อมต่อสำเร็จ!', 'ระบบบันทึก Google Sheets URL เรียบร้อยแล้ว', 'success');
+      } else {
+        updateSheetsBadge(false, `<span style="color:#c62828;">❌ เชื่อมต่อไม่สำเร็จ: ${testRes ? testRes.message : 'กรุณาตรวจสอบ URL หรือสิทธิ์การเข้าถึงเป็น Anyone'}</span>`);
+        showToast('เชื่อมต่อไม่สำเร็จ', testRes ? testRes.message : 'กรุณาตรวจสอบ URL', 'error');
+      }
+    }
+
+    async function syncDataToSheets() {
+      if (!SheetsAPI.isConfigured()) {
+        showToast('ยังไม่ได้เชื่อมต่อ', 'กรุณาระบุ URL เว็บแอป Google Apps Script และกดบันทึกก่อน', 'warning');
+        return;
+      }
+      showToast('กำลังอัปโหลด...', 'ส่งข้อมูลขึ้น Google Sheets กรุณารอสักครู่ (ประมาณ 3–5 วินาที)', 'info');
+      const res = await SheetsAPI.uploadAll();
+      if (res && res.success) {
+        showToast('อัปโหลดสำเร็จ!', 'ข้อมูลทั้งหมดถูกบันทึกลงใน Google Sheets เรียบร้อยแล้ว', 'success');
+      } else {
+        showToast('อัปโหลดไม่สำเร็จ', res ? res.message : '', 'error');
+      }
+    }
+
+    async function syncDataFromSheets() {
+      if (!SheetsAPI.isConfigured()) {
+        showToast('ยังไม่ได้เชื่อมต่อ', 'กรุณาระบุ URL เว็บแอป Google Apps Script ก่อน', 'warning');
+        return;
+      }
+      showToast('กำลังดึงข้อมูล...', 'กำลังโหลดข้อมูลล่าสุดจาก Google Sheets', 'info');
+      const ok = await SheetsAPI.fetchAll();
+      if (ok) {
+        showToast('ดึงข้อมูลสำเร็จ!', 'อัปเดตข้อมูลล่าสุดจาก Google Sheets เรียบร้อยแล้ว', 'success');
+        await loadAdminData();
+      } else {
+        showToast('เกิดข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลจาก Google Sheets ได้ กรุณาลองใหม่อีกครั้ง', 'error');
+      }
+    }
+    function loadSupabaseSettings() {
+      if (typeof SupabaseAPI === 'undefined') return;
+      const cfg = SupabaseAPI.getConfig();
+      const urlInput = document.getElementById('setting-supabase-url');
+      const keyInput = document.getElementById('setting-supabase-key');
+      const badge = document.getElementById('supabase-connection-badge');
+      if (urlInput) urlInput.value = cfg.url || '';
+      if (keyInput) keyInput.value = cfg.anonKey || '';
+      if (badge) {
+        if (cfg.url && cfg.anonKey) {
+          badge.textContent = '🟢 เชื่อมต่อ Realtime แล้ว';
+          badge.style.background = '#059669';
+        } else {
+          badge.textContent = '⚪ ยังไม่ได้ตั้งค่า';
+          badge.style.background = '#757575';
+        }
+      }
+    }
+
+    async function saveSupabaseSettings() {
+      const url = document.getElementById('setting-supabase-url')?.value.trim();
+      const anonKey = document.getElementById('setting-supabase-key')?.value.trim();
+      LocalDB.set('supabase_settings', { url, anonKey });
+      SupabaseAPI.init();
+      loadSupabaseSettings();
+      showToast('สำเร็จ', 'บันทึกการตั้งค่า Supabase เรียบร้อยแล้ว', 'success');
+    }
+
+    async function syncDataToSupabase() {
+      const btn = document.getElementById('btn-sync-to-supabase');
+      if (btn) btn.disabled = true;
+      showToast('กำลังส่งข้อมูล...', 'กำลังอัปโหลดข้อมูลทั้งหมดขึ้น Supabase', 'info');
+      try {
+        const res = await SupabaseAPI.uploadAll();
+        if (res && res.success) {
+          showToast('สำเร็จ', 'ส่งข้อมูลทั้งหมดขึ้น Supabase เรียบร้อยแล้ว', 'success');
+        } else {
+          showToast('ข้อผิดพลาด', res ? res.message : 'ไม่สามารถส่งข้อมูลได้', 'danger');
+        }
+      } catch (err) {
+        showToast('ข้อผิดพลาด', err.message, 'danger');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    async function syncDataFromSupabase() {
+      const btn = document.getElementById('btn-sync-from-supabase');
+      if (btn) btn.disabled = true;
+      showToast('กำลังดึงข้อมูล...', 'กำลังโหลดข้อมูลสดจาก Supabase', 'info');
+      try {
+        const ok = await SupabaseAPI.fetchAll();
+        if (ok) {
+          await loadAdminData();
+          showToast('สำเร็จ', 'ดึงข้อมูลสดจาก Supabase เรียบร้อยแล้ว', 'success');
+        } else {
+          showToast('ข้อผิดพลาด', 'ไม่สามารถดึงข้อมูลจาก Supabase ได้', 'danger');
+        }
+      } catch (err) {
+        showToast('ข้อผิดพลาด', err.message, 'danger');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+
+</html>

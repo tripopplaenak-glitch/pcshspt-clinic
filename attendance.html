@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>สรุปการเข้าเรียน — คลินิกวิชาการ PCCPT</title>
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+  <!-- ═══ NAVBAR ════════════════════════════════════════════ -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="navbar-brand">
+        <img src="assets/logo.png" alt="โลโก้" class="navbar-logo">
+        <div class="navbar-title">
+          <h1>โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</h1>
+          <p>ระบบคลินิกวิชาการ | ภาคเรียนที่ 1 ปีการศึกษา 2570</p>
+        </div>
+      </div>
+      <nav class="navbar-nav">
+        <a href="schedule.html" class="nav-link">📅 ตารางสอน</a>
+        <a href="attendance.html" class="nav-link active">📋 สรุปการเข้าเรียน</a>
+        <a href="login.html" class="nav-link nav-btn nav-btn-login" id="nav-login-btn">🔑 เข้าสู่ระบบ</a>
+        <span class="nav-link hidden" id="nav-user-info"
+          style="background:rgba(255,255,255,.1);border-radius:8px;"></span>
+        <a href="teacher.html" class="nav-link hidden" id="nav-teacher-link">👩‍🏫 ระบบครู</a>
+        <a href="admin.html" class="nav-link hidden" id="nav-admin-link">⚙️ Admin</a>
+        <button class="nav-btn nav-btn-logout hidden" id="nav-logout-btn"
+          onclick="AuthService.logout()">ออกจากระบบ</button>
+      </nav>
+    </div>
+  </nav>
+
+  <!-- ═══ HERO ══════════════════════════════════════════════ -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">📋</div>
+      <div class="hero-text">
+        <h1>สรุปการเข้าเรียนคลินิกวิชาการ</h1>
+        <p>ดูรายชื่อนักเรียนที่เข้าเรียน แยกตามวัน ชั้นเรียน หอพัก หรือวิชา</p>
+        <span class="hero-sub">ภาคเรียนที่ 1 ปีการศึกษา 2570</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="main-content">
+
+    <!-- FILTER BAR -->
+    <div class="filter-bar" style="margin-bottom:16px;">
+      <span class="filter-label">📅 วันที่:</span>
+      <input type="date" class="filter-input" id="filter-date" onchange="loadAttendance()">
+
+      <span class="filter-label">📌 กรองโดย:</span>
+      <button class="filter-chip active" id="chip-all" onclick="setGroupBy('all')">ทั้งหมด</button>
+      <button class="filter-chip" id="chip-grade" onclick="setGroupBy('grade')">แยกชั้นเรียน</button>
+      <button class="filter-chip" id="chip-dorm" onclick="setGroupBy('dorm')">แยกหอพัก</button>
+      <button class="filter-chip" id="chip-subject" onclick="setGroupBy('subject')">แยกวิชา</button>
+
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+        <span class="filter-label">ค้นหา:</span>
+        <input type="text" class="filter-input" id="search-input" placeholder="ชื่อ / ชั้น / ห้อง"
+          oninput="renderTable()" style="width:200px;">
+        <button class="btn btn-outline btn-sm" onclick="printPage()">🖨️ พิมพ์</button>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row" style="margin-bottom:20px;">
+      <div class="stat-card">
+        <div class="stat-icon green">👥</div>
+        <div>
+          <div class="stat-num" id="att-count">0</div>
+          <div class="stat-label">นักเรียนทั้งหมด</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon blue">📚</div>
+        <div>
+          <div class="stat-num" id="att-subjects">0</div>
+          <div class="stat-label">วิชาที่เปิดสอน</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon gold">🏠</div>
+        <div>
+          <div class="stat-num" id="att-dorms">0</div>
+          <div class="stat-label">หอพักที่มีนักเรียน</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red">🎓</div>
+        <div>
+          <div class="stat-num" id="att-grades">0</div>
+          <div class="stat-label">ระดับชั้นที่เรียน</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE CONTENT -->
+    <div class="card">
+      <div class="card-header">
+        <span style="font-size:1.1rem;">📋</span>
+        <span class="section-title" style="font-size:1rem;" id="table-header-title">รายชื่อนักเรียนที่เข้าเรียน</span>
+        <span class="badge badge-blue ml-auto" id="row-count-badge">0 คน</span>
+      </div>
+      <div class="card-body" style="padding:0;">
+        <div id="attendance-content" class="table-wrapper">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <div class="mt-3">กำลังโหลด...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="js/firebase-config.js?v=2569_8"></script>
+  <script src="js/supabase-api.js?v=2569_8"></script>
+  <script src="js/sheets-api.js?v=2569_8"></script>
+  <script src="js/db.js?v=2569_8"></script>
+  <script src="js/auth.js?v=2569_8"></script>
+  <script>
+    // ─── DORMITORY DIRECTORY & OFFICIAL NAMES (6 หอพัก)
+    const DORM_MAP = {
+      'D1': 'D1 บัวอุบล',
+      'D2': 'D2 บุษกร',
+      'D3': 'D3 บัวชมพู',
+      'D4': 'D4 นิลกมล',
+      'D5': 'D5 โกเมน',
+      'D6': 'D6 นิลปัทม์'
+    };
+
+    function formatDormTitle(dormId) {
+      if (!dormId) return 'หอพัก';
+      if (typeof formatDormitory === 'function') {
+        const d = formatDormitory(dormId);
+        if (d && d !== '–') return `หอพัก ${d}`;
+      }
+      if (DORM_MAP[dormId]) return `หอพัก ${DORM_MAP[dormId]}`;
+      const found = APP_CONFIG.dormitories.find(x => x.id === dormId);
+      if (found) return `หอพัก ${found.name}`;
+      return dormId.startsWith('D') ? `หอพัก ${dormId}` : `หอพัก ${dormId}`;
+    }
+
+    function formatDormBadge(dormId) {
+      const name = (typeof formatDormitory === 'function' ? formatDormitory(dormId) : null) || DORM_MAP[dormId] || (APP_CONFIG.dormitories.find(x => x.id === dormId)?.name) || dormId;
+      return `<span class="badge badge-blue">หอพัก ${name}</span>`;
+    }
+
+    // ─── STATE
+    let groupBy = 'all';
+    let allAttendance = [];
+    let allClinics = [];
+    let allTeachers = [];
+    let allStudents = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      seedDemoData();
+      updateNavbarAuth();
+      updateNavbarLinks();
+
+      // Set default date to today
+      document.getElementById('filter-date').value = todayStr();
+
+      allTeachers = await DataService.getTeachers();
+      allClinics = await DataService.getClinics();
+      allStudents = await DataService.getStudents();
+
+      await loadAttendance();
+
+      // Connect Supabase Realtime
+      if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+        SupabaseAPI.init(async () => {
+          allTeachers = await DataService.getTeachers();
+          allClinics = await DataService.getClinics();
+          allStudents = await DataService.getStudents();
+          await loadAttendance();
+        });
+      }
+
+      // Background sync from Cloud
+      await refreshAttendanceData();
+
+      // 1. Sync on visibility change or window focus
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) refreshAttendanceData();
+      });
+      window.addEventListener('focus', () => {
+        refreshAttendanceData();
+      });
+
+      // 2. Periodic sync every 20 seconds
+      setInterval(() => {
+        if (!document.hidden) refreshAttendanceData();
+      }, 20000);
+    });
+
+    async function refreshAttendanceData() {
+      if (typeof SheetsAPI === 'undefined' || !SheetsAPI.isConfigured()) return;
+      const updated = await DataService.initSync();
+      if (updated) {
+        allTeachers = await DataService.getTeachers();
+        allClinics = await DataService.getClinics();
+        allStudents = await DataService.getStudents();
+        await loadAttendance();
+      }
+    }
+
+    function updateNavbarLinks() {
+      const s = AuthService.getSession();
+      if (!s) return;
+      const tl = document.getElementById('nav-teacher-link');
+      const al = document.getElementById('nav-admin-link');
+      if (s.role === 'teacher' || s.role === 'admin') tl && tl.classList.remove('hidden');
+      if (s.role === 'admin') al && al.classList.remove('hidden');
+    }
+
+    function setGroupBy(mode) {
+      groupBy = mode;
+      ['all', 'grade', 'dorm', 'subject'].forEach(m => {
+        document.getElementById('chip-' + m).classList.toggle('active', m === mode);
+      });
+      renderTable();
+    }
+
+    async function loadAttendance() {
+      const date = document.getElementById('filter-date').value;
+      allAttendance = date ? await DataService.getAttByDate(date) : await DataService.getAttendance();
+      renderTable();
+    }
+
+    function renderTable() {
+      const searchVal = (document.getElementById('search-input').value || '').trim().toLowerCase();
+      let rows = [...allAttendance];
+
+      // Search filter
+      if (searchVal) {
+        rows = rows.filter(r =>
+          (r.studentName || '').toLowerCase().includes(searchVal) ||
+          String(r.grade || '').includes(searchVal) ||
+          String(r.room || '').includes(searchVal) ||
+          (r.subject || '').toLowerCase().includes(searchVal) ||
+          formatDormTitle(r.dormitory).toLowerCase().includes(searchVal)
+        );
+      }
+
+      // Stats
+      const subjects = new Set(rows.map(r => r.subject));
+      const dorms = new Set(rows.map(r => r.dormitory).filter(d => d && d !== 'none'));
+      const grades = new Set(rows.map(r => r.grade));
+      document.getElementById('att-count').textContent = rows.length;
+      document.getElementById('att-subjects').textContent = subjects.size;
+      document.getElementById('att-dorms').textContent = dorms.size;
+      document.getElementById('att-grades').textContent = grades.size;
+      document.getElementById('row-count-badge').textContent = rows.length + ' คน';
+
+      const teacherMap = Object.fromEntries(allTeachers.map(t => [t.id, t]));
+      const content = document.getElementById('attendance-content');
+
+      if (!rows.length) {
+        const dateStr = document.getElementById('filter-date').value;
+        content.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <div class="empty-title">ไม่มีข้อมูลการเข้าเรียน</div>
+      <div class="empty-sub">${dateStr ? `วันที่ ${formatDateThai(dateStr)}` : ''} ยังไม่มีรายชื่อนักเรียน</div>
+    </div>`;
+        return;
+      }
+
+      // Render based on groupBy
+      let html = '';
+      if (groupBy === 'all') {
+        html = renderFlatTable(rows, teacherMap);
+      } else if (groupBy === 'grade') {
+        html = renderGroupedTable(rows, teacherMap, 'grade',
+          r => `ม.${r.grade}`,
+          g => `ระดับชั้น ม.${g[0].grade}`,
+          APP_CONFIG.grades.map(g => g));
+      } else if (groupBy === 'dorm') {
+        html = renderGroupedTable(rows, teacherMap, 'dormitory',
+          r => r.dormitory,
+          g => formatDormTitle(g[0].dormitory),
+          ['D1', 'D2', 'D3', 'D4', 'D5', 'D6']);
+      } else if (groupBy === 'subject') {
+        html = renderGroupedTable(rows, teacherMap, 'subject',
+          r => r.subject,
+          g => `วิชา ${g[0].subject}`,
+          []);
+      }
+
+      content.innerHTML = html;
+    }
+
+    const TABLE_COLGROUP = `
+  <colgroup>
+    <col style="width: 5%;">
+    <col style="width: 22%;">
+    <col style="width: 8%;">
+    <col style="width: 8%;">
+    <col style="width: 8%;">
+    <col style="width: 17%;">
+    <col style="width: 18%;">
+    <col style="width: 14%;">
+  </colgroup>
+`;
+
+    function renderFlatTable(rows, teacherMap) {
+      return `
+    <table class="table-fixed">
+      ${TABLE_COLGROUP}
+      <thead>
+        <tr>
+          <th>#</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>ห้อง</th><th>เลขที่</th>
+          <th>หอพัก</th><th>วิชาที่เรียน</th><th>ครูผู้สอน</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map((r, i) => {
+        const t = teacherMap[r.teacherId] || {};
+        return `<tr>
+            <td>${i + 1}</td>
+            <td><strong>${r.studentName || '–'}</strong></td>
+            <td><span class="badge badge-blue">ม.${r.grade}</span></td>
+            <td>${r.room || '–'}</td>
+            <td>${r.number || '–'}</td>
+            <td>${formatDormBadge(r.dormitory)}</td>
+            <td>${getSubjectIcon(r.subject)} ${r.subject || '–'}</td>
+            <td>${t.name || '–'}</td>
+          </tr>`;
+      }).join('')}
+      </tbody>
+    </table>`;
+    }
+
+    function renderGroupedTable(rows, teacherMap, groupKey, keyFn, labelFn, order) {
+      const groups = {};
+      rows.forEach(r => {
+        const k = keyFn(r);
+        if (!groups[k]) groups[k] = [];
+        groups[k].push(r);
+      });
+
+      // Sort groups according to order list if provided
+      let keys = Object.keys(groups);
+      if (order && order.length) {
+        keys.sort((a, b) => {
+          const ia = order.indexOf(a);
+          const ib = order.indexOf(b);
+          if (ia !== -1 && ib !== -1) return ia - ib;
+          if (ia !== -1) return -1;
+          if (ib !== -1) return 1;
+          return a.localeCompare(b, 'th');
+        });
+      } else {
+        keys.sort((a, b) => a.localeCompare(b, 'th'));
+      }
+
+      let html = '';
+      keys.forEach((k) => {
+        const groupRows = groups[k];
+        const groupIcon = groupKey === 'grade' ? '🎓' : groupKey === 'dormitory' ? '🏠' : '📚';
+        html += `
+      <div style="margin-bottom:24px;border:1px solid var(--gray-200);border-radius:var(--radius-md);overflow:hidden;background:var(--white);">
+        <div style="background:var(--blue-pale);border-left:5px solid var(--blue-main);padding:10px 16px;font-family:'Kanit',sans-serif;font-weight:700;color:var(--blue-deep);display:flex;align-items:center;gap:8px;">
+          <span style="font-size:1.15rem;">${groupIcon}</span>
+          <span>${labelFn(groupRows)}</span>
+          <span class="badge badge-blue" style="margin-left:auto;">${groupRows.length} คน</span>
+        </div>
+        <table class="table-fixed">
+          ${TABLE_COLGROUP}
+          <thead>
+            <tr>
+              <th>#</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>ห้อง</th><th>เลขที่</th><th>หอพัก</th><th>วิชาที่เรียน</th><th>ครูผู้สอน</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${groupRows.map((r, i) => {
+          const t = teacherMap[r.teacherId] || {};
+          return `<tr>
+                <td>${i + 1}</td>
+                <td><strong>${r.studentName || '–'}</strong></td>
+                <td><span class="badge badge-blue">ม.${r.grade}</span></td>
+                <td>${r.room || '–'}</td>
+                <td>${r.number || '–'}</td>
+                <td>${formatDormBadge(r.dormitory)}</td>
+                <td>${getSubjectIcon(r.subject)} ${r.subject || '–'}</td>
+                <td>${t.name || '–'}</td>
+              </tr>`;
+        }).join('')}
+          </tbody>
+        </table>
+      </div>`;
+      });
+      return html;
+    }
+
+    function printPage() {
+      window.print();
+    }
+  </script>
+</body>
+
+</html>
