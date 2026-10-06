@@ -175,12 +175,6 @@
       // Set default date to today
       document.getElementById('filter-date').value = todayStr();
 
-      allTeachers = await DataService.getTeachers();
-      allClinics = await DataService.getClinics();
-      allStudents = await DataService.getStudents();
-
-      await loadAttendance();
-
       // Connect Supabase Realtime
       if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
         SupabaseAPI.init(async () => {
@@ -191,8 +185,14 @@
         });
       }
 
-      // Background sync from Cloud
+      // Initial Sync from Cloud
       await refreshAttendanceData();
+
+      allTeachers = await DataService.getTeachers();
+      allClinics = await DataService.getClinics();
+      allStudents = await DataService.getStudents();
+
+      await loadAttendance();
 
       // 1. Sync on visibility change or window focus
       document.addEventListener('visibilitychange', () => {

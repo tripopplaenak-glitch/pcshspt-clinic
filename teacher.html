@@ -194,9 +194,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('nav-admin-link')?.classList.remove('hidden');
   }
 
-  await loadWeeks();
-  await loadTeacherClinics();
-
   // Connect Supabase Realtime for instant updates
   if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
     SupabaseAPI.init(async () => {
@@ -207,8 +204,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Background sync from Cloud
+  // Initial Sync from Cloud
   await refreshTeacherClinicsData();
+  await loadWeeks();
+  await loadTeacherClinics();
 
   // 1. Sync on visibility change or window focus
   document.addEventListener('visibilitychange', () => {

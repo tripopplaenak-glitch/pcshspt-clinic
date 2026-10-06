@@ -275,9 +275,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   updateNavbarLinks();
   initGradeTabs();
   loadSchoolInfo();
-  await loadAnnouncements();
-  await loadWeeks();
-  await renderSchedule();
 
   // 0. Connect Supabase Realtime WebSockets (< 0.1s instant sync)
   if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
@@ -292,10 +289,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // Background sync from Cloud
+  // 1. Initial Cloud Sync from Supabase/Sheets (loads live data for fresh browsers)
   await refreshScheduleData();
 
-  // 1. Sync immediately when switching back to tab or unlocking phone
+  await loadAnnouncements();
+  await loadWeeks();
+  await renderSchedule();
+
+  // 2. Sync immediately when switching back to tab or unlocking phone
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) refreshScheduleData();
   });
@@ -303,7 +304,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshScheduleData();
   });
 
-  // 2. Fast background sync interval to catch updates live
+  // 3. Fast background sync interval to catch updates live
   setInterval(() => {
     if (!document.hidden) refreshScheduleData();
   }, 15000);

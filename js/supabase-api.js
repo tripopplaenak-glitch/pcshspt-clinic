@@ -10,9 +10,10 @@ const SupabaseAPI = {
   // รับค่าการตั้งค่า Supabase
   getConfig() {
     const saved = LocalDB.get('supabase_settings') || {};
+    const defaultCfg = (typeof SUPABASE_CONFIG !== 'undefined') ? SUPABASE_CONFIG : {};
     return {
-      url: saved.url || 'https://tzxhffzlblkehyzmggdu.supabase.co',
-      anonKey: saved.anonKey || ''
+      url: saved.url || defaultCfg.url || 'https://tzxhffzlblkehyzmggdu.supabase.co',
+      anonKey: saved.anonKey || defaultCfg.anonKey || 'sb_publishable_UnAxE0Dr5Z6fGf1zo-nd2g_QKqXOIc9'
     };
   },
 
