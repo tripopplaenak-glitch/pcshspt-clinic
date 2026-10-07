@@ -901,7 +901,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal('modal-clinic-batch')">ยกเลิก</button>
-        <button class="btn btn-primary" onclick="saveClinicBatch()">💾 บันทึกทั้งสัปดาห์</button>
+        <button class="btn btn-primary" id="btn-save-batch" onclick="saveClinicBatch()">💾 บันทึกทั้งสัปดาห์</button>
       </div>
     </div>
   </div>
@@ -911,10 +911,10 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="js/firebase-config.js?v=2569_14"></script>
-  <script src="js/supabase-api.js?v=2569_14"></script>
-  <script src="js/db.js?v=2569_14"></script>
-  <script src="js/auth.js?v=2569_14"></script>
+  <script src="js/firebase-config.js?v=2569_15"></script>
+  <script src="js/supabase-api.js?v=2569_15"></script>
+  <script src="js/db.js?v=2569_15"></script>
+  <script src="js/auth.js?v=2569_15"></script>
   <script src="js/xlsx.full.min.js"></script>
   <script>
     // ─── AUTH GUARD ───────────────────────────────────────────
@@ -1386,49 +1386,86 @@
     }
 
     async function saveClinicBatch() {
-      const weekId = document.getElementById('batch-week-id').value;
-      const grade = Number(document.getElementById('batch-grade').value);
-      const ts = document.getElementById('batch-time-start').value;
-      const te = document.getElementById('batch-time-end').value;
-
-      if (!weekId) {
-        showToast('กรุณาเลือกสัปดาห์', '', 'warning');
-        return;
+      const btn = document.getElementById('btn-save-batch');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ กำลังบันทึก...';
       }
 
-      const weeks = await DataService.getWeeks();
-      const currentWeek = weeks.find(w => w.weekId === weekId || String(w.id) === String(weekId));
-      let startDateStr = currentWeek ? currentWeek.startDate : weekId.replace('week_', '');
+      try {
+        const weekId = document.getElementById('batch-week-id')?.value;
+        const grade = Number(document.getElementById('batch-grade')?.value) || 1;
+        const ts = document.getElementById('batch-time-start')?.value || '18:30';
+        const te = document.getElementById('batch-time-end')?.value || '20:30';
 
-      let saved = 0;
-      for (let i = 0; i < 4; i++) {
-        const subject = document.getElementById(`batch-subject-${i}`)?.value.trim();
-        const teacherId = document.getElementById(`batch-teacher-${i}`)?.value;
-        if (!subject) continue; // skip if no subject entered
+        if (!weekId) {
+          showToast('กรุณาเลือกสัปดาห์', 'ยังไม่มีสัปดาห์ที่เลือก กรุณาเลือกหรือเพิ่มสัปดาห์ก่อนบันทึก', 'warning');
+          return;
+        }
 
-        const room = document.getElementById(`batch-room-${i}`)?.value.trim() || '';
-        const status = document.getElementById(`batch-status-${i}`)?.value || 'active';
+        const weeks = await DataService.getWeeks();
+        const currentWeek = weeks.find(w => w.weekId === weekId || String(w.id) === String(weekId));
+        let startDateStr = currentWeek ? currentWeek.startDate : weekId.replace('week_', '');
 
-        const baseD = parseDateSafe(startDateStr) || new Date();
-        const d = new Date(baseD);
-        d.setDate(d.getDate() + i);
-        const obj = {
-          weekId, grade, dayOfWeek: i, date: dateStr, subject, teacherId,
-          time: `${ts}–${te}`, room, status, notes: '',
-          studentCount: 0, studentList: [], attendanceIds: []
-        };
-        await DataService.saveClinic(obj);
-        saved++;
+        let saved = 0;
+        for (let i = 0; i < 4; i++) {
+          const subject = document.getElementById(`batch-subject-${i}`)?.value.trim();
+          if (!subject) continue; // skip if no subject entered
+
+          const teacherId = document.getElementById(`batch-teacher-${i}`)?.value || '';
+          const teacherObj = (batchTeachersList || []).find(t => String(t.id) === String(teacherId));
+          const teacherName = teacherObj ? teacherObj.name : '';
+
+          const room = document.getElementById(`batch-room-${i}`)?.value.trim() || '';
+          const status = document.getElementById(`batch-status-${i}`)?.value || 'active';
+
+          const baseD = parseDateSafe(startDateStr) || new Date();
+          const d = new Date(baseD);
+          d.setDate(d.getDate() + i);
+          const dateStr = toYMD(d);
+
+          const obj = {
+            weekId,
+            grade,
+            dayOfWeek: i,
+            date: dateStr,
+            subject,
+            subjectName: subject,
+            teacherId,
+            teacherName,
+            time: `${ts}–${te}`,
+            room,
+            status,
+            notes: '',
+            topic: '',
+            studentCount: 0,
+            studentList: [],
+            attendanceIds: []
+          };
+          await DataService.saveClinic(obj);
+          saved++;
+        }
+
+        if (saved > 0) {
+          closeModal('modal-clinic-batch');
+          showToast('บันทึกสำเร็จ', `เพิ่ม ${saved} รายการ ในตารางคลินิกสำเร็จ`, 'success');
+          const filterSel = document.getElementById('clinic-week-filter');
+          if (filterSel && filterSel.value && filterSel.value !== weekId) {
+            filterSel.value = weekId;
+          }
+          await loadAdminClinics();
+        } else {
+          showToast('ไม่ได้บันทึก', 'กรุณากรอกชื่อวิชาอย่างน้อย 1 วัน', 'warning');
+        }
+      } catch (err) {
+        console.error('saveClinicBatch error:', err);
+        showToast('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกได้: ' + (err.message || err), 'error');
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '💾 บันทึกทั้งสัปดาห์';
+        }
       }
-
-      closeModal('modal-clinic-batch');
-      if (saved > 0) {
-        showToast('บันทึกสำเร็จ', `เพิ่ม ${saved} วัน ในตารางคลินิกสำเร็จ`, 'success');
-      } else {
-        showToast('ไม่ได้บันทึก', 'กรุณากรอกชื่อวิชาอย่างน้อย 1 วัน', 'warning');
-        return;
-      }
-      await loadAdminClinics();
     }
 
     let cachedTeachersList = [];
