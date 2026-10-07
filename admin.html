@@ -704,6 +704,11 @@
           </div>
         </div>
         <div class="form-group">
+          <label class="form-label">🎯 หัวข้อการสอน / เรื่องที่ติว (Topic / Objective)</label>
+          <input type="text" class="form-control" id="clinic-topic"
+            placeholder="เช่น ตะลุยโจทย์ฟิสิกส์เรื่องคลื่นกล, สรุปไวยากรณ์ภาษาอังกฤษ">
+        </div>
+        <div class="form-group">
           <label class="form-label">หมายเหตุ</label>
           <textarea class="form-control" id="clinic-notes" rows="2" placeholder="หมายเหตุเพิ่มเติม..."></textarea>
         </div>
@@ -998,6 +1003,10 @@
 
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
 
     // ─── EXCEL / CSV DOWNLOAD HELPER ─────────────────────────
     function downloadCSV(filename, csvContent) {
@@ -1250,7 +1259,7 @@
                 <td><span class="badge badge-gray text-xs">${w.weekNum ? 'สัปดาห์ที่ ' + w.weekNum : '–'}</span></td>
                 <td><span class="badge badge-blue">ม.${c.grade}</span></td>
                 <td><strong>วัน${dayNames[c.dayOfWeek] || '–'}</strong><br><span class="text-xs text-muted">${formatDateThai(c.date)}</span></td>
-                <td><strong>${getSubjectIcon(c.subject)} ${c.subject}</strong></td>
+                <td><strong>${getSubjectIcon(c.subject)} ${c.subject}</strong>${c.topic ? `<br><span class="text-xs" style="color:#16a34a;font-weight:600;">🎯 ${escapeHtml(c.topic)}</span>` : ''}</td>
                 <td>${t.name || '–'}</td>
                 <td class="text-xs">${typeof formatClinicTime === 'function' ? formatClinicTime(c.time) : (c.time || '18:30–20:30 น.')}</td>
                 <td>${c.room || '–'}</td>
@@ -1272,6 +1281,7 @@
       document.getElementById('clinic-edit-id').value = '';
       document.getElementById('clinic-subject').value = '';
       document.getElementById('clinic-room').value = '';
+      document.getElementById('clinic-topic').value = '';
       document.getElementById('clinic-notes').value = '';
       await populateWeekSelects();
       const curFilterWeek = document.getElementById('clinic-week-filter')?.value;
@@ -1522,6 +1532,7 @@
       const ts = document.getElementById('clinic-time-start').value;
       const te = document.getElementById('clinic-time-end').value;
       const room = document.getElementById('clinic-room').value.trim();
+      const topic = (document.getElementById('clinic-topic')?.value || '').trim();
       const status = document.getElementById('clinic-status').value;
       const notes = document.getElementById('clinic-notes').value.trim();
 
@@ -1559,7 +1570,7 @@
         return;
       }
 
-      const obj = { weekId, grade, dayOfWeek, date, subject, teacherId, time: `${ts}–${te}`, room, status, notes };
+      const obj = { weekId, grade, dayOfWeek, date, subject, teacherId, time: `${ts}–${te}`, room, status, notes, topic };
       if (id) obj.id = id;
       await DataService.saveClinic(obj);
       closeModal('modal-clinic');
@@ -1587,6 +1598,7 @@
       document.getElementById('clinic-time-start').value = ts;
       document.getElementById('clinic-time-end').value = te;
       document.getElementById('clinic-room').value = c.room || '';
+      document.getElementById('clinic-topic').value = c.topic || '';
       document.getElementById('clinic-status').value = c.status || 'active';
       document.getElementById('clinic-notes').value = c.notes || '';
       openModal('modal-clinic');

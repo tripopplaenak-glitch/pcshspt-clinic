@@ -223,6 +223,7 @@ const SupabaseAPI = {
           const custom = customData[String(item.id)] || {};
           if (custom.time) item.time = custom.time;
           if (custom.notes !== undefined && (!item.notes || custom.notes)) item.notes = custom.notes;
+          if (custom.topic !== undefined) item.topic = custom.topic;
           return item;
         });
         LocalDB.setList('clinics', clinics);
@@ -299,11 +300,12 @@ const SupabaseAPI = {
   async saveClinic(c) {
     if (!this.client) return;
     try {
-      // 1. Sync custom time & notes to Supabase settings table (works 100% across all devices)
+      // 1. Sync custom time, notes & topic to Supabase settings table (works 100% across all devices)
       const customData = LocalDB.get('clinic_custom_data') || {};
       customData[String(c.id)] = {
         time: c.time || '18:30–20:30',
-        notes: c.notes || ''
+        notes: c.notes || '',
+        topic: c.topic || ''
       };
       LocalDB.set('clinic_custom_data', customData);
       await this.client.from('settings').upsert({
@@ -312,13 +314,14 @@ const SupabaseAPI = {
         updated_at: new Date()
       });
 
-      // 2. Upsert to clinics table (including time & notes if columns exist, with safe fallback)
+      // 2. Upsert to clinics table (including time, notes & topic if columns exist, with safe fallback)
       const dbRow = this.mapClinicToDb(c);
       const { error } = await this.client.from('clinics').upsert(dbRow);
-      if (error && (error.code === '42703' || String(error.message).includes('time') || String(error.message).includes('notes'))) {
+      if (error && (error.code === '42703' || String(error.message).includes('time') || String(error.message).includes('notes') || String(error.message).includes('topic'))) {
         const safeRow = { ...dbRow };
         delete safeRow.time;
         delete safeRow.notes;
+        delete safeRow.topic;
         await this.client.from('clinics').upsert(safeRow);
       }
     } catch (e) { console.warn('Supabase saveClinic error:', e); }
@@ -467,6 +470,7 @@ const SupabaseAPI = {
       status: c.status || 'active',
       time: c.time || '18:30–20:30',
       notes: c.notes || '',
+      topic: c.topic || '',
       student_count: Number(c.studentCount || (c.studentList && c.studentList.length) || 0),
       student_list: c.studentList || []
     };
@@ -488,6 +492,7 @@ const SupabaseAPI = {
       status: row.status || 'active',
       time: row.time || '',
       notes: row.notes || '',
+      topic: row.topic || '',
       studentCount: Number(row.student_count || (row.student_list && row.student_list.length) || 0),
       studentList: row.student_list || []
     };

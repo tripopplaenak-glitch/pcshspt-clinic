@@ -304,6 +304,11 @@
         <input type="text" class="form-control" id="edit-room" placeholder="เช่น ห้อง 2208">
       </div>
       <div class="form-group">
+        <label class="form-label">🎯 หัวข้อการสอน / เรื่องที่ติว (Topic / Objective)</label>
+        <input type="text" class="form-control" id="edit-topic" placeholder="เช่น ตะลุยโจทย์ฟิสิกส์เรื่องคลื่นกล, สรุปไวยากรณ์ภาษาอังกฤษ">
+        <small class="text-muted" style="display:block;margin-top:4px;font-size:0.75rem;">* หัวข้อนี้จะแสดงบนหน้าตารางสอนคลินิกวิชาการให้นักเรียนเห็น</small>
+      </div>
+      <div class="form-group">
         <label class="form-label">สถานะ</label>
         <select class="form-control" id="edit-status">
           <option value="active">✅ มีสอน</option>
@@ -510,10 +515,69 @@ async function loadTeacherClinics() {
   container.innerHTML = html;
 }
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function generateGoogleCalendarUrl(clinic, teacherName) {
+  if (!clinic) return '#';
+  const title = `คลินิกวิชาการ: ${clinic.subject || 'วิชาการ'} (ม.${clinic.grade || 1})`;
+  const loc = `${clinic.room ? clinic.room + ' ' : ''}โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี`;
+  
+  let details = `กิจกรรมคลินิกวิชาการ โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี\n`;
+  details += `วิชา: ${clinic.subject || '–'} (ระดับชั้น ม.${clinic.grade || 1})\n`;
+  details += `ครูผู้สอน: ${teacherName || '–'}\n`;
+  if (clinic.topic) details += `หัวข้อการสอน / เรื่องที่ติว: ${clinic.topic}\n`;
+  if (clinic.room)  details += `ห้องเรียน: ${clinic.room}\n`;
+  if (clinic.time)  details += `เวลา: ${clinic.time}\n`;
+  if (clinic.notes) details += `หมายเหตุ: ${clinic.notes}\n`;
+
+  const dStr = toYMD(clinic.date);
+  let startIso = '';
+  let endIso = '';
+  
+  if (dStr && /^\d{4}-\d{2}-\d{2}$/.test(dStr)) {
+    const timeRaw = (clinic.time || '18:30–20:30').replace(/น\.?/g, '').trim();
+    const parts = timeRaw.split(/[-–—]/);
+    const startPart = (parts[0] || '18:30').trim().replace('.', ':');
+    const endPart = (parts[1] || '20:30').trim().replace('.', ':');
+    
+    const [sh = '18', sm = '30'] = startPart.split(':');
+    const [eh = '20', em = '30'] = endPart.split(':');
+    
+    const pad = n => String(n).padStart(2, '0');
+    const [year, month, day] = dStr.split('-').map(Number);
+    
+    const startUtc = new Date(Date.UTC(year, month - 1, day, Number(sh) - 7, Number(sm)));
+    const endUtc = new Date(Date.UTC(year, month - 1, day, Number(eh) - 7, Number(em)));
+    
+    const fmtUtc = dt => `${dt.getUTCFullYear()}${pad(dt.getUTCMonth()+1)}${pad(dt.getUTCDate())}T${pad(dt.getUTCHours())}${pad(dt.getUTCMinutes())}00Z`;
+    startIso = fmtUtc(startUtc);
+    endIso = fmtUtc(endUtc);
+  }
+
+  let url = 'https://calendar.google.com/calendar/render?action=TEMPLATE';
+  url += `&text=${encodeURIComponent(title)}`;
+  if (startIso && endIso) {
+    url += `&dates=${startIso}/${endIso}`;
+  }
+  url += `&details=${encodeURIComponent(details)}`;
+  url += `&location=${encodeURIComponent(loc)}`;
+  url += `&ctz=Asia/Bangkok`;
+  return url;
+}
+
 function renderClinicCard(c, teacherMap) {
   const t = teacherMap[String(c.teacherId)] || {};
   const st = getStatusLabel(c.status);
   const attCount = Array.isArray(c.attendanceIds) ? c.attendanceIds.length : (Number(c.studentCount) || 0);
+  const gcalUrl = generateGoogleCalendarUrl(c, t.name);
   return `
     <div class="card" style="border-left:4px solid var(--blue-main);">
       <div class="card-body" style="padding:16px;">
@@ -523,13 +587,23 @@ function renderClinicCard(c, teacherMap) {
           </div>
           <span class="badge badge-blue">ม.${c.grade}</span>
         </div>
+        ${c.topic ? `
+        <div style="font-size:0.85rem;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:6px 10px;margin-bottom:10px;font-weight:500;display:flex;align-items:flex-start;gap:6px;line-height:1.4;">
+          <span style="flex-shrink:0;">🎯</span>
+          <span style="word-break:break-word;"><strong>เรื่อง:</strong> ${escapeHtml(c.topic)}</span>
+        </div>` : ''}
         <div class="clinic-meta" style="margin-bottom:10px;">
           <span>👩‍🏫 ${t.name || '–'}</span>
           <span>🕐 ${typeof formatClinicTime === 'function' ? formatClinicTime(c.time) : (c.time || '18:30–20:30 น.')}</span>
           ${c.room ? `<span>📍 ${c.room}</span>` : ''}
           <span>👥 ${c.studentCount || 0} คน</span>
         </div>
-        <span class="status-badge ${st.cls}">${st.icon} ${st.text}</span>
+        <div class="flex items-center justify-between" style="flex-wrap:wrap;gap:8px;">
+          <span class="status-badge ${st.cls}">${st.icon} ${st.text}</span>
+          <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="font-size:0.75rem;padding:3px 9px;border-color:#bfdbfe;color:#1d4ed8;text-decoration:none;" title="บันทึกเข้า Google Calendar">
+            📅 ลงปฏิทิน
+          </a>
+        </div>
         ${c.notes ? `<div class="text-xs text-muted mt-2">💬 ${c.notes}</div>` : ''}
         <div class="flex gap-2 mt-3" style="flex-wrap:wrap;">
           <button class="btn btn-outline btn-sm" onclick="openEditClinic('${c.id}')">✏️ แก้ไขข้อมูล</button>
@@ -565,6 +639,7 @@ async function openEditClinic(clinicId) {
   document.getElementById('edit-time-start').value = ts;
   document.getElementById('edit-time-end').value   = te;
   document.getElementById('edit-room').value   = c.room || '';
+  document.getElementById('edit-topic').value  = c.topic || '';
   document.getElementById('edit-status').value = c.status || 'active';
   openModal('modal-edit-clinic');
 }
@@ -574,6 +649,7 @@ async function saveClinicEdit() {
   const ts    = document.getElementById('edit-time-start').value;
   const te    = document.getElementById('edit-time-end').value;
   const room  = document.getElementById('edit-room').value.trim();
+  const topic = (document.getElementById('edit-topic')?.value || '').trim();
   const status= document.getElementById('edit-status').value;
 
   const clinics = await DataService.getClinics();
@@ -584,6 +660,7 @@ async function saveClinicEdit() {
   }
   c.time = `${ts}–${te}`;
   c.room = room;
+  c.topic = topic;
   c.status = status;
   c.notes = c.notes || '';
   await DataService.saveClinic(c);

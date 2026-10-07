@@ -121,7 +121,8 @@ class LocalDB {
       return {
         ...c,
         time: c.time || custom.time || '18:30–20:30',
-        notes: c.notes !== undefined && c.notes !== '' ? c.notes : (custom.notes || '')
+        notes: c.notes !== undefined && c.notes !== '' ? c.notes : (custom.notes || ''),
+        topic: c.topic !== undefined && c.topic !== '' ? c.topic : (custom.topic || '')
       };
     });
   }
@@ -137,7 +138,8 @@ class LocalDB {
       const customData = LocalDB.get('clinic_custom_data') || {};
       customData[String(c.id)] = {
         time: c.time,
-        notes: c.notes || ''
+        notes: c.notes || '',
+        topic: c.topic || ''
       };
       LocalDB.set('clinic_custom_data', customData);
     }
