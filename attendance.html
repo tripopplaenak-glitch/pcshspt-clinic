@@ -10,6 +10,37 @@
   <title>สรุปการเข้าเรียน — คลินิกวิชาการ PCCPT</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    @media print {
+      .navbar, .hero, .filter-bar, footer, #btn-download-pdf, #nav-logout-btn {
+        display: none !important;
+      }
+      body, .main-content {
+        background: #fff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .card {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+      }
+      .card-header {
+        border-bottom: 2px solid #0284c7 !important;
+        padding-bottom: 8px !important;
+      }
+      .table-wrapper {
+        overflow: visible !important;
+      }
+      table {
+        page-break-inside: auto !important;
+      }
+      tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -453,11 +484,25 @@
       return html;
     }
 
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    }
+
     function printPage() {
       window.print();
     }
 
     async function downloadAttendancePDF() {
+      const contentEl = document.getElementById('attendance-content');
+      const tableEl = contentEl ? contentEl.querySelector('table') : null;
+      const countNum = parseInt(document.getElementById('att-count')?.textContent || '0', 10);
+
+      if (!contentEl || !tableEl || countNum <= 0) {
+        showToast('แจ้งเตือน', 'ไม่พบข้อมูลนักเรียนสำหรับดาวน์โหลด', 'warning');
+        return;
+      }
+
       const dateVal = document.getElementById('filter-date').value;
       const dateText = dateVal ? formatDateThai(dateVal) : 'ข้อมูลทั้งหมดทุกวัน';
       const s = LocalDB.get('school_settings') || {};
@@ -469,76 +514,82 @@
       const dorms = document.getElementById('att-dorms')?.textContent || '0';
       const grades = document.getElementById('att-grades')?.textContent || '0';
 
-      const tableEl = document.getElementById('attendance-table');
-      if (!tableEl || !tableEl.innerHTML.trim() || count === '0') {
-        showToast('แจ้งเตือน', 'ไม่มีข้อมูลนักเรียนสำหรับดาวน์โหลด', 'warning');
-        return;
-      }
-
       const btn = document.getElementById('btn-download-pdf');
       const originalText = btn ? btn.innerHTML : '';
       if (btn) { btn.disabled = true; btn.innerHTML = '⏳ กำลังสร้าง PDF...'; }
 
+      // Create printable report container in DOM
+      const reportDiv = document.createElement('div');
+      reportDiv.id = 'attendance-pdf-render-area';
+      reportDiv.style.width = '794px';
+      reportDiv.style.background = '#ffffff';
+      reportDiv.style.color = '#0f172a';
+      reportDiv.style.fontFamily = "'Sarabun', 'TH Sarabun New', sans-serif";
+      reportDiv.style.padding = '18px 24px';
+      reportDiv.style.boxSizing = 'border-box';
+
+      reportDiv.innerHTML = `
+        <div style="text-align:center;border-bottom:2.5px solid #0284c7;padding-bottom:12px;margin-bottom:14px;">
+          <div style="font-size:16pt;font-weight:700;color:#0f172a;font-family:'Kanit',sans-serif;">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
+          <div style="font-size:13pt;font-weight:600;color:#0284c7;margin-top:2px;">รายงานสรุปการเข้าเรียนคลินิกวิชาการ</div>
+          <div style="font-size:10pt;color:#334155;margin-top:4px;">
+            <span>📅 วันที่: <strong>${escapeHtml(dateText)}</strong></span> &bull; 
+            <span>ภาคเรียนที่ <strong>${escapeHtml(sem)}</strong> ปีการศึกษา <strong>${escapeHtml(year)}</strong></span>
+          </div>
+          <div style="display:flex;justify-content:center;gap:14px;margin-top:8px;font-size:9.5pt;background:#f8fafc;padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;">
+            <span>👥 นักเรียนทั้งหมด: <strong>${count}</strong> คน</span> &bull;
+            <span>📚 วิชาที่เปิดสอน: <strong>${subjects}</strong> วิชา</span> &bull;
+            <span>🏠 หอพัก: <strong>${dorms}</strong> หอ</span> &bull;
+            <span>🎓 ระดับชั้น: <strong>${grades}</strong> ชั้น</span>
+          </div>
+        </div>
+        <div id="pdf-report-content" style="font-size:8.5pt;">
+          ${contentEl.innerHTML}
+        </div>
+        <div style="margin-top:14px;padding-top:6px;border-top:1px dashed #cbd5e1;display:flex;justify-content:space-between;font-size:8pt;color:#64748b;">
+          <span>ระบบบริหารจัดการคลินิกวิชาการ PCCPT</span>
+          <span>สร้างรายงานเมื่อ: ${new Date().toLocaleString('th-TH')}</span>
+        </div>
+      `;
+
+      reportDiv.querySelectorAll('button, input, select, .empty-state, .spinner').forEach(el => el.remove());
+
+      reportDiv.querySelectorAll('table').forEach(tbl => {
+        tbl.style.width = '100%';
+        tbl.style.borderCollapse = 'collapse';
+        tbl.style.marginBottom = '12px';
+      });
+      reportDiv.querySelectorAll('th').forEach(th => {
+        th.style.background = '#f1f5f9';
+        th.style.color = '#1e293b';
+        th.style.border = '1px solid #cbd5e1';
+        th.style.padding = '6px 6px';
+        th.style.fontSize = '8pt';
+        th.style.fontWeight = '600';
+        th.style.textAlign = 'center';
+      });
+      reportDiv.querySelectorAll('td').forEach(td => {
+        td.style.border = '1px solid #e2e8f0';
+        td.style.padding = '5px 6px';
+        td.style.fontSize = '8pt';
+        td.style.color = '#0f172a';
+      });
+      reportDiv.querySelectorAll('tr').forEach(tr => {
+        tr.style.pageBreakInside = 'avoid';
+        tr.style.breakInside = 'avoid';
+      });
+
+      document.body.appendChild(reportDiv);
+
+      const opt = {
+        margin: [6, 6, 6, 6],
+        filename: `สรุปการเข้าเรียนคลินิกวิชาการ_${dateVal || 'ทุกวัน'}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 1.5, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
       try {
-        const reportDiv = document.createElement('div');
-        reportDiv.style.fontFamily = "'Sarabun', 'TH Sarabun New', sans-serif";
-        reportDiv.style.padding = '14px 18px';
-        reportDiv.style.color = '#0f172a';
-        reportDiv.style.background = '#ffffff';
-
-        reportDiv.innerHTML = `
-          <div style="text-align:center;border-bottom:2.5px solid #0284c7;padding-bottom:12px;margin-bottom:14px;">
-            <div style="font-size:16pt;font-weight:700;color:#0f172a;font-family:'Kanit',sans-serif;">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
-            <div style="font-size:13pt;font-weight:600;color:#0284c7;margin-top:2px;">รายงานสรุปการเข้าเรียนคลินิกวิชาการ</div>
-            <div style="font-size:10.5pt;color:#334155;margin-top:4px;">
-              <span>📅 วันที่: <strong>${escapeHtml(dateText)}</strong></span> &bull; 
-              <span>ภาคเรียนที่ <strong>${escapeHtml(sem)}</strong> ปีการศึกษา <strong>${escapeHtml(year)}</strong></span>
-            </div>
-            <div style="display:flex;justify-content:center;gap:16px;margin-top:8px;font-size:9.5pt;background:#f8fafc;padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;">
-              <span>👥 นักเรียนทั้งหมด: <strong>${count}</strong> คน</span> &bull;
-              <span>📚 วิชาที่เปิดสอน: <strong>${subjects}</strong> วิชา</span> &bull;
-              <span>🏠 หอพัก: <strong>${dorms}</strong> หอ</span> &bull;
-              <span>🎓 ระดับชั้น: <strong>${grades}</strong> ชั้น</span>
-            </div>
-          </div>
-          <div id="pdf-report-content" style="font-size:9pt;">
-            ${tableEl.innerHTML}
-          </div>
-          <div style="margin-top:16px;padding-top:8px;border-top:1px dashed #cbd5e1;display:flex;justify-content:space-between;font-size:8pt;color:#64748b;">
-            <span>ระบบบริหารจัดการคลินิกวิชาการ PCCPT</span>
-            <span>สร้างรายงานเมื่อ: ${new Date().toLocaleString('th-TH')}</span>
-          </div>
-        `;
-
-        reportDiv.querySelectorAll('button, input, select, .filter-chip').forEach(el => el.remove());
-
-        reportDiv.querySelectorAll('table').forEach(tbl => {
-          tbl.style.width = '100%';
-          tbl.style.borderCollapse = 'collapse';
-          tbl.style.marginBottom = '12px';
-        });
-        reportDiv.querySelectorAll('th').forEach(th => {
-          th.style.background = '#f1f5f9';
-          th.style.color = '#1e293b';
-          th.style.border = '1px solid #cbd5e1';
-          th.style.padding = '6px 8px';
-          th.style.fontSize = '8.5pt';
-          th.style.textAlign = 'center';
-        });
-        reportDiv.querySelectorAll('td').forEach(td => {
-          td.style.border = '1px solid #e2e8f0';
-          td.style.padding = '5px 8px';
-          td.style.fontSize = '8.5pt';
-        });
-
-        const opt = {
-          margin: [8, 8, 8, 8],
-          filename: `สรุปการเข้าเรียนคลินิกวิชาการ_${dateVal || 'ทุกวัน'}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, logging: false },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
         if (typeof html2pdf !== 'undefined') {
           await html2pdf().set(opt).from(reportDiv).save();
           showToast('สำเร็จ', 'ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว', 'success');
@@ -547,9 +598,10 @@
         }
       } catch (err) {
         console.error('PDF generation error:', err);
-        showToast('ผิดพลาด', 'กำลังเปิดหน้าต่างพิมพ์เอกสารแทน...', 'error');
+        showToast('ผิดพลาด', 'ไม่สามารถสร้าง PDF ได้ กำลังเปิดหน้าต่างพิมพ์เอกสารแทน', 'error');
         window.print();
       } finally {
+        reportDiv.remove();
         if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
       }
     }
