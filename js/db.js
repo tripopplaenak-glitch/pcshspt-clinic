@@ -128,12 +128,41 @@ class LocalDB {
       };
     });
   }
+  static nextClinicId() {
+    const clinics = LocalDB.getList('clinics');
+    const att = LocalDB.getList('attendance');
+    let maxId = Number(LocalDB.get('__id_clinic') || 0);
+    clinics.forEach(c => {
+      const num = parseInt(c.id, 10);
+      if (!isNaN(num) && num > maxId) maxId = num;
+    });
+    att.forEach(a => {
+      const num = parseInt(a.clinicId || a.clinic_id, 10);
+      if (!isNaN(num) && num > maxId) maxId = num;
+    });
+    const nextId = maxId + 1;
+    LocalDB.set('__id_clinic', nextId);
+    return String(nextId);
+  }
   static saveClinic(c)            {
     c.time = c.time || '18:30–20:30';
     const list = LocalDB.getList('clinics');
     const idx = list.findIndex(x => String(x.id) === String(c.id));
-    if (idx >= 0) list[idx] = c;
-    else { c.id = LocalDB.nextId('clinic'); list.push(c); }
+    if (idx >= 0) {
+      const old = list[idx];
+      if (c.studentCount === undefined && old.studentCount !== undefined) c.studentCount = old.studentCount;
+      if (c.studentList === undefined && old.studentList !== undefined) c.studentList = old.studentList;
+      if (c.attendanceIds === undefined && old.attendanceIds !== undefined) c.attendanceIds = old.attendanceIds;
+      list[idx] = c;
+    } else {
+      if (!c.id) c.id = LocalDB.nextClinicId();
+      c.studentCount = c.studentCount || 0;
+      c.studentList = c.studentList || [];
+      c.attendanceIds = c.attendanceIds || [];
+      // Clean any stale attendance with this clinic ID
+      LocalDB.setList('attendance', LocalDB.getList('attendance').filter(a => String(a.clinicId) !== String(c.id)));
+      list.push(c);
+    }
     LocalDB.setList('clinics', list);
 
     if (c.id) {
@@ -152,6 +181,8 @@ class LocalDB {
   }
   static deleteClinic(id)         {
     LocalDB.setList('clinics', LocalDB.getClinics().filter(x => String(x.id) !== String(id)));
+    // Also remove attendance records for this deleted clinic
+    LocalDB.setList('attendance', LocalDB.getList('attendance').filter(x => String(x.clinicId) !== String(id)));
     const customData = LocalDB.get('clinic_custom_data') || {};
     if (customData[String(id)]) {
       delete customData[String(id)];
@@ -218,9 +249,14 @@ class LocalDB {
     return LocalDB.getAttendance().filter(x => toYMD(x.date) === dStr);
   }
   static getAttByClinic(clinicId) {
-    const fromAtt = LocalDB.getAttendance().filter(a => String(a.clinicId) === String(clinicId));
-    if (fromAtt.length) return fromAtt;
     const c = LocalDB.getClinics().find(x => String(x.id) === String(clinicId));
+    const cDate = c ? toYMD(c.date) : null;
+    const fromAtt = LocalDB.getAttendance().filter(a => {
+      if (String(a.clinicId) !== String(clinicId)) return false;
+      if (cDate && a.date && toYMD(a.date) !== cDate) return false;
+      return true;
+    });
+    if (fromAtt.length) return fromAtt;
     if (c && Array.isArray(c.studentList) && c.studentList.length) {
       return c.studentList;
     }

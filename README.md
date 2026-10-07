@@ -7,16 +7,22 @@
 ├── index.html          ← หน้าหลัก (redirect ไปหน้าตาราง)
 ├── schedule.html       ← หน้าตารางสอนเสริม (สาธารณะ)
 ├── attendance.html     ← หน้าสรุปการเข้าเรียน (สาธารณะ)
+├── manual.html         ← หน้าคู่มือการใช้งานระบบ (สาธารณะ + ดาวน์โหลด PDF)
 ├── login.html          ← หน้าเข้าสู่ระบบ
 ├── teacher.html        ← ระบบครูผู้สอน (ต้อง login)
 ├── admin.html          ← ระบบ Admin (ต้อง login Admin)
+├── 1_คู่มือการใช้งาน_ส่วนของนักเรียน.pdf
+├── 2_คู่มือการใช้งาน_ส่วนของครูหอพัก.pdf
+├── 3_คู่มือการใช้งาน_ส่วนของครูผู้สอน.pdf
+├── คู่มือการใช้งาน_ระบบคลินิกวิชาการ_PCCPT.pdf (เล่มรวม 8 หน้า)
 ├── assets/
 │   └── logo.png        ← โลโก้โรงเรียน
+├── docs/               ← ไฟล์ HTML/PDF คู่มือฉบับเต็ม
 ├── css/
 │   └── style.css       ← Design System CSS
 └── js/
     ├── firebase-config.js  ← Config + ค่าคงที่
-    ├── db.js               ← ฐานข้อมูล (localStorage / Firebase)
+    ├── db.js               ← ฐานข้อมูล (localStorage / Firebase / Supabase)
     └── auth.js             ← ระบบ Login + เปลี่ยนรหัสผ่าน + Utilities
 ```
 

@@ -249,7 +249,16 @@ const SupabaseAPI = {
         LocalDB.setList('clinics', clinics);
       }
       if (Array.isArray(attendanceData)) {
-        LocalDB.setList('attendance', attendanceData.map(a => this.mapAttendanceFromDb(a)));
+        const clinicMap = Object.fromEntries((clinicsData || []).map(c => [String(c.id), c]));
+        const cleanAtt = attendanceData.filter(a => {
+          const c = clinicMap[String(a.clinic_id)];
+          if (!c) return false;
+          const cDate = toYMD(c.date);
+          const aDate = toYMD(a.date);
+          if (cDate && aDate && cDate !== aDate) return false;
+          return true;
+        });
+        LocalDB.setList('attendance', cleanAtt.map(a => this.mapAttendanceFromDb(a)));
       }
 
       return true;
@@ -361,6 +370,7 @@ const SupabaseAPI = {
           updated_at: new Date()
         });
       }
+      await this.client.from('attendance').delete().eq('clinic_id', String(id));
       await this.client.from('clinics').delete().eq('id', String(id));
     } catch (e) { console.warn('Supabase deleteClinic error:', e); }
   },

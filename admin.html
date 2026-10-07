@@ -113,6 +113,7 @@
       <nav class="navbar-nav">
         <a href="schedule.html" class="nav-link">📅 หน้าแรก</a>
         <a href="attendance.html" class="nav-link">📋 สรุปการเข้าเรียน</a>
+        <a href="manual.html" class="nav-link">📖 คู่มือการใช้งาน</a>
         <a href="teacher.html" class="nav-link">👩‍🏫 ระบบครู</a>
         <a href="admin.html" class="nav-link active">⚙️ Admin</a>
         <button class="nav-btn nav-btn-logout" onclick="AuthService.logout()">ออกจากระบบ</button>
@@ -1405,9 +1406,11 @@
         const baseD = parseDateSafe(startDateStr) || new Date();
         const d = new Date(baseD);
         d.setDate(d.getDate() + i);
-        const dateStr = toYMD(d);
-
-        const obj = { weekId, grade, dayOfWeek: i, date: dateStr, subject, teacherId, time: `${ts}–${te}`, room, status, notes: '' };
+        const obj = {
+          weekId, grade, dayOfWeek: i, date: dateStr, subject, teacherId,
+          time: `${ts}–${te}`, room, status, notes: '',
+          studentCount: 0, studentList: [], attendanceIds: []
+        };
         await DataService.saveClinic(obj);
         saved++;
       }
@@ -1571,7 +1574,20 @@
       }
 
       const obj = { weekId, grade, dayOfWeek, date, subject, teacherId, time: `${ts}–${te}`, room, status, notes, topic };
-      if (id) obj.id = id;
+      if (id) {
+        obj.id = id;
+        const allClinics = await DataService.getClinics();
+        const existing = allClinics.find(x => String(x.id) === String(id));
+        if (existing) {
+          obj.studentCount = existing.studentCount || 0;
+          obj.studentList = existing.studentList || [];
+          obj.attendanceIds = existing.attendanceIds || [];
+        }
+      } else {
+        obj.studentCount = 0;
+        obj.studentList = [];
+        obj.attendanceIds = [];
+      }
       await DataService.saveClinic(obj);
       closeModal('modal-clinic');
       showToast('บันทึกสำเร็จ', '', 'success');

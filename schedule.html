@@ -21,6 +21,36 @@
       gap: 8px;
       flex-wrap: wrap;
     }
+    .clinic-slot-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .btn-clinic-gcal {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-decoration: none;
+      background: #ffffff;
+      color: #1a73e8;
+      border: 1px solid #bfdbfe;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      box-shadow: 0 1px 2px rgba(66, 133, 244, 0.08);
+      font-family: 'Sarabun', sans-serif;
+    }
+    .btn-clinic-gcal:hover {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1d4ed8;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(29, 78, 216, 0.16);
+    }
     .btn-clinic-students {
       display: inline-flex;
       align-items: center;
@@ -33,6 +63,7 @@
       transition: all 0.2s ease;
       font-family: 'Sarabun', sans-serif;
       border: 1px solid transparent;
+      white-space: nowrap;
     }
     .btn-clinic-students.has-students {
       background: #eff6ff;
@@ -89,6 +120,9 @@
     .cs-table tr:hover td {
       background: #f8fafc;
     }
+    .btn-modal-header-gcal:hover {
+      background: rgba(255,255,255,0.35) !important;
+    }
     @media (max-width: 600px) {
       .cs-table th, .cs-table td {
         padding: 8px 6px;
@@ -96,7 +130,36 @@
       }
       .btn-clinic-students {
         font-size: 0.76rem;
-        padding: 4px 9px;
+        padding: 4px 8px;
+      }
+      .btn-clinic-gcal {
+        font-size: 0.74rem;
+        padding: 4px 8px;
+      }
+      .clinic-slot-footer {
+        gap: 6px;
+      }
+      .clinic-slot-actions {
+        width: 100%;
+        justify-content: flex-end;
+        gap: 5px;
+      }
+      .cs-modal-footer {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 8px !important;
+        padding: 10px 14px !important;
+      }
+      .cs-modal-footer-btns {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+      }
+      .btn-modal-gcal {
+        flex: 1;
+        justify-content: center;
+        font-size: 0.82rem !important;
+        padding: 8px 10px !important;
       }
     }
   </style>
@@ -116,6 +179,7 @@
     <nav class="navbar-nav">
       <a href="schedule.html" class="nav-link active">📅 ตารางสอน</a>
       <a href="attendance.html" class="nav-link">📋 สรุปการเข้าเรียน</a>
+      <a href="manual.html" class="nav-link">📖 คู่มือการใช้งาน</a>
       <a href="login.html" class="nav-link nav-btn nav-btn-login" id="nav-login-btn">🔑 เข้าสู่ระบบ</a>
       <span class="nav-link hidden" id="nav-user-info" style="background:rgba(255,255,255,.1);border-radius:8px;"></span>
       <a href="teacher.html" class="nav-link hidden" id="nav-teacher-link">👩‍🏫 ระบบครู</a>
@@ -132,6 +196,11 @@
       <h1>ตารางสอนเสริมหลังเลิกเรียน (คลินิกวิชาการ)</h1>
       <p>โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</p>
       <span class="hero-sub">ภาคเรียนที่ <span id="hero-semester">1</span> ปีการศึกษา <span id="hero-academic-year">2569</span></span>
+      <div style="margin-top:10px;">
+        <a href="manual.html" class="btn btn-sm" style="background:rgba(255,255,255,.95);color:#0284c7;border:1px solid #ffffff;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.12);display:inline-flex;align-items:center;gap:6px;">
+          📖 คู่มือการใช้งาน (นักเรียน &bull; ครูผู้สอน)
+        </a>
+      </div>
     </div>
   </div>
 </div>
@@ -181,14 +250,14 @@
       <label class="filter-label">ระดับชั้น:</label>
       <div class="grade-tabs" id="grade-tabs" style="margin-bottom:0;"></div>
       <div class="flex gap-2" style="margin-left:8px;">
-        <button class="btn btn-primary btn-sm" id="btn-single-week" onclick="setViewMode('single')" title="ดูสัปดาห์เดียว">📄 1 สัปดาห์</button>
-        <button class="btn btn-outline btn-sm" id="btn-multi-week" onclick="setViewMode('multi')" title="ดูหลายสัปดาห์">📚 หลายสัปดาห์</button>
+        <button class="btn btn-outline btn-sm" id="btn-single-week" onclick="setViewMode('single')" title="ดูสัปดาห์เดียว">📄 1 สัปดาห์</button>
+        <button class="btn btn-primary btn-sm" id="btn-multi-week" onclick="setViewMode('multi')" title="ดูหลายสัปดาห์">📚 หลายสัปดาห์</button>
       </div>
     </div>
   </div>
 
   <!-- WEEK NAVIGATOR (single mode) -->
-  <div id="week-nav-bar" class="week-nav">
+  <div id="week-nav-bar" class="week-nav" style="display:none;">
     <button class="week-btn" id="btn-prev-week" onclick="changeWeek(-1)">‹ สัปดาห์ก่อนหน้า</button>
     <div class="week-nav-center">
       <span>📅</span>
@@ -198,7 +267,7 @@
   </div>
 
   <!-- MULTI-WEEK PICKER (multi mode) -->
-  <div id="multi-week-bar" class="multi-week-picker hidden">
+  <div id="multi-week-bar" class="multi-week-picker">
     <div class="flex items-center justify-between mb-2">
       <div style="font-weight:700;font-size:.9rem;color:var(--blue-deep);">
         🗓️ เลือกสัปดาห์ที่ต้องการดู (สูงสุด 4 สัปดาห์):
@@ -234,28 +303,28 @@
 
 <!-- MODAL: VIEW CLINIC STUDENTS -->
 <div class="modal-overlay" id="modal-clinic-students" onclick="if(event.target===this)closeModal('modal-clinic-students')">
-  <div class="modal" style="max-width:680px;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.18);">
-    <div class="modal-header" style="background:linear-gradient(135deg, #1e3a8a, #0284c7);color:#fff;padding:18px 24px;border:none;">
-      <div>
+  <div class="modal" style="max-width:680px;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.18);display:flex;flex-direction:column;max-height:calc(100dvh - 32px);">
+    <div class="modal-header" style="background:linear-gradient(135deg, #1e3a8a, #0284c7);color:#fff;padding:16px 20px;border:none;flex-shrink:0;">
+      <div style="flex:1;min-width:0;padding-right:8px;">
         <div class="modal-title" id="cs-modal-title" style="color:#fff;font-size:1.15rem;display:flex;align-items:center;gap:8px;">
           <span>📋</span> <span id="cs-subject-title">รายชื่อนักเรียน</span>
         </div>
-        <div id="cs-modal-subtitle" style="font-size:0.85rem;color:#e0f2fe;margin-top:4px;font-weight:400;"></div>
+        <div id="cs-modal-subtitle" style="font-size:0.85rem;color:#e0f2fe;margin-top:4px;font-weight:400;line-height:1.4;"></div>
       </div>
-      <button class="modal-close" onclick="closeModal('modal-clinic-students')" style="background:rgba(255,255,255,0.2);color:#fff;border:none;">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-clinic-students')" style="background:rgba(255,255,255,0.2);color:#fff;border:none;flex-shrink:0;" title="ปิดหน้าต่าง">✕</button>
     </div>
     
-    <div class="modal-body" id="cs-modal-body" style="padding:20px 24px;max-height:65vh;overflow-y:auto;">
+    <div class="modal-body" id="cs-modal-body" style="padding:16px 20px;flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;">
     </div>
     
-    <div class="modal-footer" style="padding:12px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+    <div class="modal-footer cs-modal-footer" style="padding:12px 20px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;flex-shrink:0;">
       <div id="cs-modal-footer-info" style="font-size:0.85rem;color:#64748b;font-weight:500;"></div>
-      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-        <a id="btn-add-gcal" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="background:#ffffff;border-color:#4285f4;color:#1a73e8;font-weight:600;display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:8px;text-decoration:none;transition:all .2s;box-shadow:0 1px 3px rgba(66,133,244,0.15);">
-          <svg style="width:16px;height:16px;" viewBox="0 0 24 24"><path fill="#4285F4" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/><path fill="#4285F4" d="M12 11h5v5h-5z"/></svg>
+      <div class="cs-modal-footer-btns" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <a id="btn-add-gcal" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm btn-modal-gcal" style="background:#ffffff;border-color:#4285f4;color:#1a73e8;font-weight:600;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;text-decoration:none;transition:all .2s;box-shadow:0 1px 3px rgba(66,133,244,0.15);" title="บันทึกลง Google Calendar">
+          <svg style="width:16px;height:16px;flex-shrink:0;" viewBox="0 0 24 24"><path fill="#4285F4" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/><path fill="#4285F4" d="M12 11h5v5h-5z"/></svg>
           <span>📅 บันทึกลง Google Calendar</span>
         </a>
-        <button class="btn btn-outline btn-sm" onclick="closeModal('modal-clinic-students')" style="padding:6px 18px;border-radius:8px;">ปิด</button>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('modal-clinic-students')" style="padding:7px 18px;border-radius:8px;">ปิด</button>
       </div>
     </div>
   </div>
@@ -353,7 +422,7 @@ function loadSchoolInfo() {
 let currentGrade = 1;
 let allWeeks = [];
 let currentWeekIdx = 0;
-let viewMode = 'single'; // 'single' | 'multi'
+let viewMode = 'multi'; // Always default to multi-week
 let selectedMultiWeekIds = []; // Up to 4 weeks
 
 // ─── Navbar links based on role
@@ -441,21 +510,6 @@ async function loadWeeks() {
   }
   updateWeekLabel();
 
-  // Auto-switch to grade that has clinics if current grade has none
-  const activeW = allWeeks[currentWeekIdx];
-  if (activeW) {
-    const s = toYMD(activeW.startDate);
-    const e = toYMD(activeW.endDate);
-    const wClinics = allClinics.filter(c => c.weekId === activeW.weekId || (toYMD(c.date) >= s && toYMD(c.date) <= e));
-    if (wClinics.length > 0 && !wClinics.some(c => Number(c.grade) === currentGrade)) {
-      const firstActive = wClinics.find(c => c.grade);
-      if (firstActive) {
-        currentGrade = Number(firstActive.grade);
-        initGradeTabs();
-      }
-    }
-  }
-
   // Initialize multi-week selection with first up to 4 weeks starting from current
   if (selectedMultiWeekIds.length === 0) {
     const start = Math.max(0, currentWeekIdx);
@@ -464,6 +518,9 @@ async function loadWeeks() {
       selectedMultiWeekIds = allWeeks.slice(0, 4).map(w => w.weekId);
     }
   }
+
+  // Always keep default view as multi-week
+  setViewMode('multi');
 }
 
 function renderMultiWeekPills() {
@@ -809,6 +866,7 @@ function renderDayCard(day, clinics, teacherMap, dutyOfficer) {
         const t = teacherMap[c.teacherId] || {};
         const st = getStatusLabel(c.status);
         const count = Number(c.studentCount || 0);
+        const gcalUrl = generateGoogleCalendarUrl(c, t.name);
         return `
           <div class="clinic-slot">
             <div class="clinic-subject">${getSubjectIcon(c.subject)} ${c.subject}</div>
@@ -824,12 +882,20 @@ function renderDayCard(day, clinics, teacherMap, dutyOfficer) {
             </div>
             <div class="clinic-slot-footer">
               <span class="status-badge ${st.cls}">${st.icon} ${st.text}</span>
-              <button class="btn-clinic-students ${count > 0 ? 'has-students' : 'empty-students'}" 
-                      onclick="openClinicStudentsModal('${c.id}')"
-                      title="คลิกเพื่อดูรายละเอียดและรายชื่อนักเรียน">
-                👥 ${count > 0 ? `รายชื่อนักเรียน (${count} คน)` : 'ดูรายละเอียด'}
-                <span style="font-weight:bold;margin-left:2px;">›</span>
-              </button>
+              <div class="clinic-slot-actions">
+                <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" 
+                   class="btn-clinic-gcal" 
+                   title="บันทึกเข้า Google Calendar"
+                   onclick="event.stopPropagation();">
+                  📅 ลงปฏิทิน
+                </a>
+                <button class="btn-clinic-students ${count > 0 ? 'has-students' : 'empty-students'}" 
+                        onclick="openClinicStudentsModal('${c.id}')"
+                        title="คลิกเพื่อดูรายละเอียดและรายชื่อนักเรียน">
+                  👥 ${count > 0 ? `รายชื่อนักเรียน (${count} คน)` : 'ดูรายละเอียด'}
+                  <span style="font-weight:bold;margin-left:2px;">›</span>
+                </button>
+              </div>
             </div>
           </div>`;
       }).join('')
@@ -869,8 +935,9 @@ async function openClinicStudentsModal(clinicId) {
 
   // Bind Google Calendar button link
   const gcalBtn = document.getElementById('btn-add-gcal');
+  const gcalUrlModal = generateGoogleCalendarUrl(c, teacherName);
   if (gcalBtn) {
-    gcalBtn.href = generateGoogleCalendarUrl(c, teacherName);
+    gcalBtn.href = gcalUrlModal;
   }
 
   // Set modal header
@@ -889,22 +956,28 @@ async function openClinicStudentsModal(clinicId) {
       ${c.room ? ` &bull; <span>📍 ${escapeHtml(c.room)}</span>` : ''}
     </div>
     ${topicSubHtml}
+    <div style="margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+      <a href="${gcalUrlModal}" target="_blank" rel="noopener noreferrer" 
+         class="btn-modal-header-gcal"
+         style="color:#ffffff;background:rgba(255,255,255,0.22);border:1px solid rgba(255,255,255,0.4);padding:4px 12px;border-radius:6px;font-size:0.8rem;font-weight:600;text-decoration:none;display:inline-flex;align-items:center;gap:5px;box-shadow:0 1px 2px rgba(0,0,0,0.1);"
+         title="บันทึกเข้า Google Calendar">
+        📅 บันทึกลง Google Calendar
+      </a>
+    </div>
   `;
 
   // 1. First check if clinic has studentList saved directly
   let studentData = Array.isArray(c.studentList) && c.studentList.length > 0 ? c.studentList : [];
 
-  // 2. If not, check attendance records
+  // 2. If not, check attendance records strictly for this specific clinic and date
   if (studentData.length === 0) {
     const allAttendance = await DataService.getAttendance();
     const cDate = toYMD(c.date);
-    const cGrade = Number(c.grade);
-    const cSubj = (c.subject || '').trim();
 
     studentData = allAttendance.filter(a => {
-      if (a.clinicId && String(a.clinicId) === String(c.id)) return true;
-      if (cDate && a.date && toYMD(a.date) === cDate && Number(a.grade) === cGrade && (a.subject || '').trim() === cSubj) return true;
-      return false;
+      if (!a.clinicId || String(a.clinicId) !== String(c.id)) return false;
+      if (cDate && a.date && toYMD(a.date) !== cDate) return false;
+      return true;
     });
   }
 

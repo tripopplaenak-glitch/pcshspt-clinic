@@ -157,6 +157,7 @@
     <nav class="navbar-nav">
       <a href="schedule.html" class="nav-link">📅 ตารางสอน</a>
       <a href="attendance.html" class="nav-link">📋 สรุปการเข้าเรียน</a>
+      <a href="manual.html" class="nav-link">📖 คู่มือการใช้งาน</a>
       <a href="teacher.html" class="nav-link active">👩‍🏫 ระบบครู</a>
       <a href="admin.html" class="nav-link hidden" id="nav-admin-link">⚙️ Admin</a>
       <span class="nav-link" id="nav-user-info" style="background:rgba(255,255,255,.1);border-radius:8px;"></span>
@@ -711,9 +712,18 @@ async function openAttendance(clinicId) {
   // Load existing attendance for this clinic
   const existing = await DataService.getAttByClinic(c.id);
   const fromClinic = Array.isArray(c.studentList) ? c.studentList : [];
+  const cDate = toYMD(c.date);
+  const validExisting = existing.filter(a => {
+    if (cDate && a.date && toYMD(a.date) !== cDate) return false;
+    return true;
+  });
+  const validFromClinic = fromClinic.filter(a => {
+    if (cDate && a.date && toYMD(a.date) !== cDate) return false;
+    return true;
+  });
   const existingIds = [
-    ...existing.map(a => String(a.studentId)),
-    ...fromClinic.map(a => String(a.studentId || a.id))
+    ...validExisting.map(a => String(a.studentId)),
+    ...validFromClinic.map(a => String(a.studentId || a.id))
   ].filter(Boolean);
   selectedStudentIds = new Set(existingIds);
 

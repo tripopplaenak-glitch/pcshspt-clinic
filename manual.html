@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>คู่มือการใช้งานระบบ — คลินิกวิชาการ PCCPT</title>
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .manual-nav-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .manual-tab-btn {
+      flex: 1;
+      min-width: 220px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      cursor: pointer;
+      border: 2px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .manual-tab-btn:hover {
+      background: #f8fafc;
+      border-color: #0284c7;
+      color: #0284c7;
+      transform: translateY(-1px);
+    }
+    .manual-tab-btn.active {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #ffffff;
+      border-color: #0284c7;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+
+    .pdf-download-bar {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: linear-gradient(135deg, #f0fdf4, #e0f2fe);
+      border: 1.5px solid #bae6fd;
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
+    }
+    .pdf-btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-pdf {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    .btn-pdf:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .btn-pdf-student {
+      background: #0284c7;
+      color: #ffffff;
+    }
+    .btn-pdf-student:hover {
+      background: #0369a1;
+      color: #ffffff;
+    }
+    .btn-pdf-teacher {
+      background: #16a34a;
+      color: #ffffff;
+    }
+    .btn-pdf-teacher:hover {
+      background: #15803d;
+      color: #ffffff;
+    }
+    .btn-pdf-all {
+      background: #ffffff;
+      border: 1.5px solid #0284c7;
+      color: #0284c7;
+    }
+    .btn-pdf-all:hover {
+      background: #f0f9ff;
+      color: #0369a1;
+    }
+
+    .manual-content-panel {
+      display: none;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+    .manual-content-panel.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .guide-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .guide-step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 10px;
+    }
+    .step-badge {
+      background: #0284c7;
+      color: #ffffff;
+      font-family: 'Kanit', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 4px 14px;
+      border-radius: 8px;
+    }
+    .step-badge-green {
+      background: #16a34a;
+    }
+    .step-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+      font-family: 'Kanit', sans-serif;
+    }
+
+    .mockup-box {
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.95rem;
+    }
+    .mockup-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .flow-item {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .flow-item-num {
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      background: #0284c7;
+      color: #fff;
+      font-weight: 700;
+      border-radius: 50%;
+      margin: 0 auto 6px;
+      font-size: 0.9rem;
+    }
+    .flow-item-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #0f172a;
+      font-family: 'Kanit', sans-serif;
+    }
+    .flow-item-desc {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .alert-box-ui {
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+    .alert-tip-ui {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid #2563eb;
+      color: #1e3a8a;
+    }
+    .alert-warn-ui {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #d97706;
+      color: #78350f;
+    }
+    .alert-success-ui {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid #16a34a;
+      color: #14532d;
+    }
+
+    .tag-chip {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .tag-chip-blue { background: #e0f2fe; color: #0369a1; }
+    .tag-chip-green { background: #dcfce7; color: #166534; }
+    .tag-chip-red { background: #fee2e2; color: #991b1b; }
+    .tag-chip-yellow { background: #fef3c7; color: #92400e; }
+
+    @media (max-width: 768px) {
+      .manual-tab-btn {
+        min-width: 100%;
+      }
+      .pdf-download-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .btn-pdf {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="navbar-brand">
+        <img src="assets/logo.png" alt="โลโก้" class="navbar-logo">
+        <div class="navbar-title">
+          <h1>โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</h1>
+          <p>ระบบคลินิกวิชาการ | คู่มือการใช้งานระบบ</p>
+        </div>
+      </div>
+      <nav class="navbar-nav">
+        <a href="schedule.html" class="nav-link">📅 ตารางสอน</a>
+        <a href="attendance.html" class="nav-link">📋 สรุปการเข้าเรียน</a>
+        <a href="manual.html" class="nav-link active">📖 คู่มือการใช้งาน</a>
+        <a href="login.html" class="nav-link nav-btn nav-btn-login" id="nav-login-btn">🔑 เข้าสู่ระบบ</a>
+      </nav>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">📖</div>
+      <div class="hero-text">
+        <h1>คู่มือการใช้งานระบบคลินิกวิชาการ</h1>
+        <p>ขั้นตอนการใช้งานฉบับสมบูรณ์ พร้อมภาพประกอบและปุ่มดาวน์โหลดไฟล์ PDF</p>
+        <span class="hero-sub">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="main-content">
+
+    <!-- PDF DOWNLOAD ACTION BAR -->
+    <div class="pdf-download-bar">
+      <div>
+        <div style="font-weight:700;color:#0f172a;font-size:1.05rem;display:flex;align-items:center;gap:6px;">
+          <span>📥</span> <span>ดาวน์โหลดคู่มือฉบับเอกสาร PDF สำหรับพิมพ์หรือบันทึกเก็บไว้:</span>
+        </div>
+        <p style="margin:2px 0 0 0;font-size:0.88rem;color:#475569;">
+          จัดหน้าขนาดกระดาษ A4 สวยงาม คมชัด พร้อมภาพประกอบ สามารถกดดาวน์โหลดได้ทันที
+        </p>
+      </div>
+      <div class="pdf-btn-group">
+        <a href="คู่มือการใช้งาน_ส่วนของนักเรียน.pdf" download class="btn-pdf btn-pdf-student">
+          👨‍🎓 ดาวน์โหลด PDF นักเรียน (2 หน้า)
+        </a>
+        <a href="คู่มือการใช้งาน_ส่วนของครูผู้สอน.pdf" download class="btn-pdf btn-pdf-teacher">
+          👩‍🏫 ดาวน์โหลด PDF ครูผู้สอน (2 หน้า)
+        </a>
+        <a href="คู่มือการใช้งาน_ระบบคลินิกวิชาการ_PCCPT.pdf" download class="btn-pdf btn-pdf-all">
+          📑 ดาวน์โหลดฉบับเต็ม 2 ส่วน (5 หน้า)
+        </a>
+      </div>
+    </div>
+
+    <!-- MAIN ROLE TABS (2 ROLES ONLY) -->
+    <div class="manual-nav-tabs">
+      <button class="manual-tab-btn active" id="tab-btn-student" onclick="switchRoleTab('student')">
+        <span style="font-size:1.4rem;">👨‍🎓</span>
+        <span>1. ส่วนของนักเรียน (ม.1 – ม.6)</span>
+      </button>
+      <button class="manual-tab-btn" id="tab-btn-teacher" onclick="switchRoleTab('teacher')">
+        <span style="font-size:1.4rem;">👩‍🏫</span>
+        <span>2. ส่วนของครูผู้สอนรายวิชา</span>
+      </button>
+    </div>
+
+    <!-- ═════════════════════════════════════════════════════════ -->
+    <!-- PANEL 1: นักเรียน (STUDENT MANUAL)                     -->
+    <!-- ═════════════════════════════════════════════════════════ -->
+    <div id="panel-student" class="manual-content-panel active">
+
+      <div class="guide-card" style="border-left:4px solid #0284c7;background:#f0f9ff;">
+        <h3 style="font-size:1.15rem;color:#0369a1;margin:0 0 6px 0;font-family:'Kanit',sans-serif;">
+          🎯 สรุปภาพรวมสำหรับนักเรียน
+        </h3>
+        <p style="margin:0;font-size:0.95rem;color:#334155;line-height:1.6;">
+          นักเรียนสามารถเปิดตรวจสอบตารางสอนเสริมคลินิกวิชาการ ตรวจสอบรายชื่อว่าตนเองต้องเข้าเรียนหรือไม่ และกดบันทึกนัดหมายลงใน Google Calendar บนสมาร์ทโฟนได้ทันที 
+          <strong>โดยไม่ต้องเข้าสู่ระบบและไม่ต้องจำรหัสผ่าน</strong>
+        </p>
+      </div>
+
+      <!-- Quick Flow Grid -->
+      <div class="flow-grid">
+        <div class="flow-item">
+          <div class="flow-item-num">1</div>
+          <div class="flow-item-title">เปิดตารางสอน</div>
+          <div class="flow-item-desc">เข้าผ่านเว็บเบราว์เซอร์</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num">2</div>
+          <div class="flow-item-title">เลือกระดับชั้น</div>
+          <div class="flow-item-desc">ม.1 ถึง ม.6 (ค่าเริ่มต้น ม.1)</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num">3</div>
+          <div class="flow-item-title">ดูการ์ดวิชา</div>
+          <div class="flow-item-desc">วัน เวลา ห้อง และสถานะ</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num">4</div>
+          <div class="flow-item-title">ตรวจรายชื่อตนเอง</div>
+          <div class="flow-item-desc">คลิกดูรายชื่อนักเรียน</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num">5</div>
+          <div class="flow-item-title">+ Google Calendar</div>
+          <div class="flow-item-desc">แจ้งเตือนก่อนเรียนในมือถือ</div>
+        </div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge">ขั้นตอนที่ 1</span>
+          <h3 class="step-title">การเข้าใช้งานระบบ (Public Access ไม่ต้องล็อกอิน)</h3>
+        </div>
+        <p>เปิดเว็บเบราว์เซอร์บนสมาร์ทโฟน แท็บเล็ต หรือคอมพิวเตอร์ แล้วเข้าไปที่ลิงก์ระบบของโรงเรียน:</p>
+        <div class="mockup-box">
+          <div class="mockup-label">🌐 ที่อยู่เว็บไซต์ระบบ</div>
+          <div style="font-weight:700;color:#0284c7;font-size:1.05rem;">
+            https://pccpt-clinic.vercel.app/schedule.html
+          </div>
+        </div>
+        <div class="alert-box-ui alert-tip-ui">
+          💡 <strong>เคล็ดลับ:</strong> นักเรียนสามารถกด <strong>"Add to Home Screen (เพิ่มไปยังหน้าจอโฮม)"</strong> บนสมาร์ทโฟน เพื่อเปิดดูตารางเรียนได้สะดวกรวดเร็วเหมือนแอปพลิเคชัน
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge">ขั้นตอนที่ 2</span>
+          <h3 class="step-title">การเลือกระดับชั้นและโหมดดูหลายสัปดาห์</h3>
+        </div>
+        <p>เมื่อเข้าสู่หน้า <strong>"📅 ตารางสอน"</strong> ระบบจะตั้งค่าเริ่มต้นเป็น <strong>ม.1</strong> และเปิดโหมด <strong>"📚 หลายสัปดาห์"</strong> ให้อัตโนมัติ เพื่อให้นักเรียนเห็นภาพรวมตารางเรียนล่วงหน้าได้อย่างชัดเจน:</p>
+        
+        <div class="mockup-box">
+          <div class="mockup-label">🖥️ ภาพจำลองแถบเลือกระดับชั้นและโหมดสัปดาห์</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
+            <span style="font-weight:700;color:#334155;">ระดับชั้น:</span>
+            <span class="tag-chip tag-chip-blue" style="background:#0284c7;color:#fff;font-size:0.9rem;padding:4px 12px;">ม.1 (ค่าเริ่มต้น)</span>
+            <span class="tag-chip tag-chip-blue" style="padding:4px 12px;">ม.2</span>
+            <span class="tag-chip tag-chip-blue" style="padding:4px 12px;">ม.3</span>
+            <span class="tag-chip tag-chip-blue" style="padding:4px 12px;">ม.4</span>
+            <span class="tag-chip tag-chip-blue" style="padding:4px 12px;">ม.5</span>
+            <span class="tag-chip tag-chip-blue" style="padding:4px 12px;">ม.6</span>
+            <span style="margin-left:14px;font-weight:700;color:#334155;">โหมดแสดงผล:</span>
+            <span class="tag-chip tag-chip-blue" style="padding:4px 10px;">📄 1 สัปดาห์</span>
+            <span class="tag-chip tag-chip-blue" style="background:#0284c7;color:#fff;padding:4px 12px;">📚 หลายสัปดาห์ (ค่าเริ่มต้น)</span>
+          </div>
+        </div>
+        <ul>
+          <li>สามารถคลิกเปลี่ยนระดับชั้นเป็นชั้นของตนเองได้ตลอดเวลา</li>
+          <li>หากมีประกาศงดเรียนหรือสัปดาห์สอบ จะมีแถบข้อความแจ้งเตือนสีเหลืองเด่นชัดอยู่ด้านบน</li>
+        </ul>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge">ขั้นตอนที่ 3</span>
+          <h3 class="step-title">การอ่านข้อมูลการ์ดคลินิกประจำวัน (วันจันทร์ – วันศุกร์)</h3>
+        </div>
+        <p>ระบบจะแสดงการ์ดตารางคลินิกวิชาการแยกตามวันในสัปดาห์ ให้นักเรียนสังเกตจุดสำคัญในการ์ดดังนี้:</p>
+
+        <div class="mockup-box">
+          <div class="mockup-label">📋 ตัวอย่างการ์ดคลินิกวิชาการ</div>
+          <div style="background:#fff;border:2px solid #0284c7;border-radius:10px;padding:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <strong style="font-size:1.1rem;color:#0284c7;">⚛️ ฟิสิกส์เพิ่มเติม (กลศาสตร์)</strong>
+              <span class="tag-chip tag-chip-green">● เปิดสอน</span>
+            </div>
+            <div style="font-size:0.92rem;color:#475569;margin-top:8px;line-height:1.6;">
+              <div>👨‍🏫 <strong>ครูผู้สอน:</strong> อ.สมชาย รักการสอน &nbsp;&bull;&nbsp; 📍 <strong>ห้องเรียน:</strong> ห้อง Lab ฟิสิกส์ 2 (อาคาร 3)</div>
+              <div>⏰ <strong>เวลา:</strong> 18.30 - 20.00 น. &nbsp;&bull;&nbsp; 👥 <strong>นักเรียนที่มีสิทธิ์:</strong> 15 คน</div>
+            </div>
+            <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-outline btn-sm" style="color:#0284c7;border-color:#bfdbfe;background:#eff6ff;font-weight:600;">
+                👥 ดูรายชื่อนักเรียน (15 คน)
+              </button>
+              <button class="btn btn-sm" style="background:#1a73e8;color:#fff;border:none;font-weight:600;">
+                📅 + Google Calendar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:0.92rem;">
+          <tr style="background:#f1f5f9;border:1px solid #cbd5e1;">
+            <th style="padding:8px 12px;text-align:left;width:30%;">จุดสังเกต</th>
+            <th style="padding:8px 12px;text-align:left;">ความหมายและการปฏิบัติตัว</th>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;">
+            <td style="padding:8px 12px;"><strong><span class="tag-chip tag-chip-green">● เปิดสอน</span></strong></td>
+            <td style="padding:8px 12px;">มีการจัดการเรียนการสอนตามปกติ ให้นักเรียนเตรียมอุปกรณ์และเข้าห้องเรียนตรงเวลา</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
+            <td style="padding:8px 12px;"><strong><span class="tag-chip tag-chip-red">● งดสอน</span></strong></td>
+            <td style="padding:8px 12px;">ครูผู้สอนติดราชการหรืองดกิจกรรมในวันนั้น <strong>นักเรียนไม่ต้องเดินทางไปห้องเรียน</strong></td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;">
+            <td style="padding:8px 12px;"><strong>สถานที่เรียน</strong></td>
+            <td style="padding:8px 12px;">ตรวจสอบห้องเรียนล่วงหน้า เพราะบางรายวิชาอาจใช้ห้องปฏิบัติการเฉพาะ</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge">ขั้นตอนที่ 4</span>
+          <h3 class="step-title">การตรวจสอบรายชื่อนักเรียนที่มีสิทธิ์เข้าเรียน</h3>
+        </div>
+        <p>คลินิกวิชาการเป็นการสอนเสริมเฉพาะกลุ่มเป้าหมาย เพื่อตรวจสอบว่าตนเองต้องเข้าเรียนหรือไม่:</p>
+        <ol style="font-size:0.95rem;line-height:1.7;">
+          <li>คลิกที่ปุ่ม <strong>"👥 ดูรายชื่อนักเรียน"</strong> หรือคลิกที่ตัวการ์ดวิชา</li>
+          <li>หน้าต่างรายชื่อจะเปิดขึ้นมา พร้อมแสดงลำดับ เลขประจำตัว ชื่อ-นามสกุล และห้องเรียน</li>
+          <li><strong>ค้นหาชื่อตนเอง:</strong> พิมพ์ชื่อหรือเลขห้องในช่องค้นหาเพื่อความรวดเร็ว</li>
+          <li><strong>กรณีที่ขึ้นว่า <em>"ครูผู้สอนยังไม่ได้ลงทะเบียนรายชื่อนักเรียนสำหรับคลินิกนี้"</em>:</strong> หมายถึงคลินิกนี้ยังอยู่ระหว่างการจัดเตรียมรายชื่อ ให้เข้ามาตรวจสอบอีกครั้งในภายหลัง</li>
+        </ol>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge">ขั้นตอนที่ 5</span>
+          <h3 class="step-title">การเชื่อมต่อ Google Calendar (+ Google Calendar)</h3>
+        </div>
+        <p>ระบบรองรับการเชื่อมต่อไปยัง Google Calendar ทั้งบนสมาร์ทโฟนและคอมพิวเตอร์:</p>
+        <ul>
+          <li>คลิกปุ่ม <strong>"📅 + Google Calendar"</strong> บนการ์ดวิชาที่ตนเองต้องเข้าเรียน</li>
+          <li>ระบบจะเปิด Google Calendar ขึ้นมาพร้อมกรอกหัวข้อวิชา วัน เวลา ห้องเรียน และชื่อครูให้อัตโนมัติ</li>
+          <li>กดปุ่ม <strong>"บันทึก (Save)"</strong> ใน Google Calendar ปฏิทินในโทรศัพท์จะตั้งเวลาแจ้งเตือนล่วงหน้า 30 นาทีก่อนถึงเวลาเรียน ป้องกันการลืมเข้าเรียนได้อย่างสมบูรณ์แบบ</li>
+        </ul>
+      </div>
+
+      <!-- STEP 6 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge">ขั้นตอนที่ 6</span>
+          <h3 class="step-title">การตรวจสอบประวัติการเข้าเรียนย้อนหลัง</h3>
+        </div>
+        <p>นักเรียนสามารถตรวจสอบบันทึกการเช็คชื่อเข้าเรียนของตนเองได้ที่เมนู <strong>"📋 สรุปการเข้าเรียน"</strong>:</p>
+        <ul>
+          <li>คลิกเมนู <strong>"📋 สรุปการเข้าเรียน"</strong> ที่แถบด้านบน</li>
+          <li>พิมพ์ชื่อหรือเลขประจำตัวของตนเองในช่องค้นหา</li>
+          <li>ระบบจะแสดงประวัติว่าวิชาใดได้รับการเช็คชื่อ <strong>"มาเรียน"</strong> แล้ว เพื่อความถูกต้องและโปร่งใส</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- ═════════════════════════════════════════════════════════ -->
+    <!-- PANEL 2: ครูผู้สอน (TEACHER MANUAL - NO PASSWORD)        -->
+    <!-- ═════════════════════════════════════════════════════════ -->
+    <div id="panel-teacher" class="manual-content-panel">
+
+      <div class="guide-card" style="border-left:4px solid #16a34a;background:#f0fdf4;">
+        <h3 style="font-size:1.15rem;color:#166534;margin:0 0 6px 0;font-family:'Kanit',sans-serif;">
+          👩‍🏫 สรุปภาพรวมสำหรับคุณครูผู้สอน
+        </h3>
+        <p style="margin:0;font-size:0.95rem;color:#334155;line-height:1.6;">
+          คุณครูสามารถเข้าสู่ระบบเพื่อตรวจสอบรอบสอนที่รับผิดชอบ ปรับปรุงเวลาและห้องเรียน แจ้งสถานะเปิดสอนหรืองดสอน 
+          ตลอดจน<strong>ลงทะเบียนคัดเลือกนักเรียนแบบเลือกได้หลายห้องพร้อมกัน (Multi-Room)</strong> และเช็คชื่อเข้าเรียนแบบ Real-time ซิงก์สู่ฐานข้อมูลคลาวด์ทันที
+        </p>
+      </div>
+
+      <!-- Quick Flow Grid -->
+      <div class="flow-grid">
+        <div class="flow-item">
+          <div class="flow-item-num" style="background:#16a34a;">1</div>
+          <div class="flow-item-title">เข้าสู่ระบบ</div>
+          <div class="flow-item-desc">รหัสผ่านประจำตัวครู</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num" style="background:#16a34a;">2</div>
+          <div class="flow-item-title">แดชบอร์ดสอน</div>
+          <div class="flow-item-desc">ตรวจดูรอบที่รับผิดชอบ</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num" style="background:#16a34a;">3</div>
+          <div class="flow-item-title">ปรับเวลา/ห้อง</div>
+          <div class="flow-item-desc">เปิดสอน / งดสอน</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num" style="background:#16a34a;">4</div>
+          <div class="flow-item-title">เลือกเด็กหลายห้อง</div>
+          <div class="flow-item-desc">Multi-Room Selector</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num" style="background:#16a34a;">5</div>
+          <div class="flow-item-title">เช็คชื่อ & บันทึก</div>
+          <div class="flow-item-desc">ซิงก์ Cloud สด &lt;0.1s</div>
+        </div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ขั้นตอนที่ 1</span>
+          <h3 class="step-title">การเข้าสู่ระบบครูผู้สอน (Teacher Login)</h3>
+        </div>
+        <p>คุณครูผู้สอนเข้าสู่ระบบเพื่อจัดการข้อมูลคลินิกวิชาการตามขั้นตอนดังนี้:</p>
+        <div class="mockup-box">
+          <div class="mockup-label">🔐 ขั้นตอนการเข้าสู่ระบบ</div>
+          <ol style="margin:4px 0;padding-left:20px;line-height:1.8;">
+            <li>คลิกปุ่ม <strong>"🔑 เข้าสู่ระบบ"</strong> ที่มุมขวาบนของหน้าเว็บ (หรือไปที่หน้า <code>login.html</code>)</li>
+            <li>คลิกเลือกประเภทผู้ใช้: <strong>"ครูผู้สอน" (Teacher)</strong></li>
+            <li>กรอกรหัสผ่าน: <strong>กรอกรหัสผ่านประจำตัวที่คุณครูได้รับแจ้งจากผู้ดูแลระบบ (Admin)</strong></li>
+            <li>คลิกปุ่ม <strong>"เข้าสู่ระบบ"</strong> ระบบจะนำท่านเข้าสู่หน้า <strong>"ระบบครูผู้สอน" (teacher.html)</strong></li>
+          </ol>
+        </div>
+        <div class="alert-box-ui alert-tip-ui">
+          💡 <strong>หมายเหตุ:</strong> ระบบจำการเข้าสู่ระบบไว้ในเบราว์เซอร์ เมื่อเปิดใช้งานในครั้งถัดไปจะไม่ต้องกรอกรหัสผ่านซ้ำจนกว่าจะกด "ออกจากระบบ"
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ขั้นตอนที่ 2</span>
+          <h3 class="step-title">หน้าแดชบอร์ดและการตรวจสอบรอบการสอน</h3>
+        </div>
+        <p>ในหน้าแดชบอร์ดครูผู้สอน ระบบจะแสดงเฉพาะรายการรอบการสอนที่ท่านรับผิดชอบ พร้อมปุ่มเครื่องมือในการ์ด:</p>
+        <ul>
+          <li><strong><code>✏️ แก้ไขข้อมูล</code> :</strong> ปรับเปลี่ยนเวลาสอน ห้องเรียน หรือแจ้งสถานะงดสอน</li>
+          <li><strong><code>👥 บันทึกรายชื่อ / เช็คชื่อ</code> :</strong> ลงทะเบียนคัดเลือกนักเรียนและเช็คชื่อเข้าเรียน</li>
+          <li><strong><code>📅 + Google Calendar</code> :</strong> เพิ่มรอบสอนเข้า Google Calendar ส่วนตัวของครู</li>
+        </ul>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ขั้นตอนที่ 3</span>
+          <h3 class="step-title">การปรับปรุงข้อมูลรอบสอน (เวลา / ห้อง / สถานะงดสอน)</h3>
+        </div>
+        <p>หากมีการเปลี่ยนแปลงสถานที่ เวลา หรือติดราชการจำเป็น:</p>
+        <ol style="line-height:1.7;">
+          <li>คลิกปุ่ม <strong>"✏️ แก้ไข"</strong> ในการ์ดรอบการสอนนั้น</li>
+          <li>ปรับเปลี่ยนข้อมูล: <strong>เวลาสอน</strong>, <strong>ห้องเรียน</strong> (เช่น เปลี่ยนเป็น ห้อง Lab ดาราศาสตร์), หรือ <strong>สถานะการสอน</strong> (เปิดสอน หรือ งดสอน)</li>
+          <li>คลิก <strong>"บันทึกข้อมูล"</strong> ข้อมูลจะอัปเดตไปยังหน้าตารางสอนของนักเรียนทันที</li>
+        </ol>
+        <div class="alert-box-ui alert-warn-ui">
+          ⚠️ <strong>ข้อควรปฏิบัติเมื่อต้องงดสอน:</strong> กรุณาเปลี่ยนสถานะเป็น "งดสอน" ล่วงหน้าอย่างน้อยภายในเวลา 16.30 น. ของวันนั้น เพื่อให้นักเรียนและครูหอพักทราบล่วงหน้า
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ขั้นตอนที่ 4</span>
+          <h3 class="step-title">การลงทะเบียนนักเรียนแบบเลือกได้หลายห้อง (Multi-Room Selector)</h3>
+        </div>
+        <p>ระบบได้รับการอัปเกรดให้สามารถเลือกนักเรียนจากหลายห้องเรียนได้พร้อมกันในหน้าเดียวอย่างสะดวกรวดเร็ว:</p>
+
+        <div class="mockup-box">
+          <div class="mockup-label">👥 หน้าต่างจัดการรายชื่อนักเรียน (ATTENDANCE MODAL)</div>
+          <div style="background:#fff;border:1px solid #cbd5e1;padding:12px;border-radius:8px;">
+            <div style="font-weight:700;margin-bottom:6px;color:#0f172a;">1. เลือกห้องเรียนที่ต้องการ (เลือกได้หลายห้องพร้อมกัน):</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+              <span class="tag-chip tag-chip-blue" style="background:#0284c7;color:#fff;">✓ ม.5/1</span>
+              <span class="tag-chip tag-chip-blue" style="background:#0284c7;color:#fff;">✓ ม.5/2</span>
+              <span class="tag-chip tag-chip-blue">ม.5/3</span>
+              <span class="tag-chip tag-chip-blue">ม.5/4</span>
+              <span class="tag-chip tag-chip-blue">ม.5/5</span>
+              <span class="tag-chip tag-chip-blue">ม.5/6</span>
+              <span class="tag-chip tag-chip-yellow" style="cursor:pointer;">[ เลือกทุกห้อง ]</span>
+              <span class="tag-chip tag-chip-yellow" style="cursor:pointer;">[ ล้างห้อง ]</span>
+            </div>
+            <div style="border-top:1px dashed #e2e8f0;padding-top:8px;display:flex;gap:10px;flex-wrap:wrap;">
+              <span class="tag-chip tag-chip-green" style="cursor:pointer;">✓ ติ๊กทั้งหมดในห้องที่แสดง</span>
+              <span class="tag-chip tag-chip-red" style="cursor:pointer;">✕ ล้างที่เลือกทั้งหมด</span>
+            </div>
+          </div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:0.92rem;">
+          <tr style="background:#f1f5f9;border:1px solid #cbd5e1;">
+            <th style="padding:8px 12px;text-align:left;width:30%;">ปุ่มฟังก์ชัน</th>
+            <th style="padding:8px 12px;text-align:left;">ประโยชน์และการทำงาน</th>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;">
+            <td style="padding:8px 12px;"><strong>ปุ่มเลือกห้อง (1, 2, 3...)</strong></td>
+            <td style="padding:8px 12px;">สามารถคลิกเลือกหลายห้องพร้อมกันได้ รายชื่อเด็กของทุกห้องที่เลือกจะนำมาแสดงรวมกันทันที</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
+            <td style="padding:8px 12px;"><strong>เลือกทุกห้อง / ล้างห้อง</strong></td>
+            <td style="padding:8px 12px;">ช่วยเปิดดูนักเรียนทั้งระดับชั้นในคลิกเดียว หรือรีเซ็ตเพื่อเลือกเฉพาะบางห้อง</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;">
+            <td style="padding:8px 12px;"><strong>ติ๊กทั้งหมดในห้องที่แสดง</strong></td>
+            <td style="padding:8px 12px;">ติ๊กเลือกนักเรียนทุกคนในห้องที่กำลังแสดงอยู่ทันที เหมาะสำหรับวิชาที่เรียนทั้งห้อง</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
+            <td style="padding:8px 12px;"><strong>ระบบจำสถานะข้ามห้อง</strong></td>
+            <td style="padding:8px 12px;">นักเรียนที่ติ๊กเลือกไว้แล้ว จะไม่สูญหายแม้คุณครูจะสลับไปคลิกดูห้องอื่น</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ขั้นตอนที่ 5</span>
+          <h3 class="step-title">การเช็คชื่อเข้าเรียนและบันทึกสู่คลาวด์ Real-time</h3>
+        </div>
+        <p>ในระหว่างการจัดกิจกรรมคลินิกวิชาการ:</p>
+        <ol style="line-height:1.7;">
+          <li>ตรวจเช็คนักเรียนที่เข้าเรียนจริงในห้องเรียน</li>
+          <li>ปรับสถานะของนักเรียนแต่ละคน: 
+            <span class="tag-chip tag-chip-green">มาเรียน</span> (มาเรียนจริง), 
+            <span class="tag-chip tag-chip-red">ขาดเรียน</span> (มีชื่อแต่ไม่ปรากฏตัว), หรือ 
+            <span class="tag-chip tag-chip-yellow">ลา</span> (แจ้งลาป่วย/ลากิจ)
+          </li>
+          <li>กดปุ่ม <strong>"💾 บันทึกข้อมูล"</strong></li>
+          <li>ระบบจะส่งข้อมูลบันทึกลงฐานข้อมูล <strong>Supabase Realtime Cloud</strong> ในเวลาไม่ถึง 0.1 วินาที</li>
+          <li>จำนวนยอดนักเรียนจะปรากฏบนการ์ดในหน้าตารางสอนของนักเรียนทันที</li>
+        </ol>
+        <div class="alert-box-ui alert-success-ui">
+          ✅ <strong>ระบบสำรองข้อมูล:</strong> ข้อมูลจะถูกบันทึกไว้อย่างปลอดภัย ไม่สูญหายแม้ปิดหน้าต่างเว็บ
+        </div>
+      </div>
+
+      <!-- STEP 6 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ขั้นตอนที่ 6</span>
+          <h3 class="step-title">การซิงก์รอบสอนลง Google Calendar และการออกจากระบบ</h3>
+        </div>
+        <ul>
+          <li><strong>+ Google Calendar:</strong> คลิกปุ่มบนการ์ดรอบสอน เพื่อเพิ่มตารางสอนลง Google Calendar ส่วนตัวของครู</li>
+          <li><strong>การออกจากระบบ:</strong> เมื่อเสร็จสิ้นการใช้งาน ให้คลิกปุ่ม <strong>"ออกจากระบบ"</strong> ที่มุมขวาบน</li>
+        </ul>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer>
+    โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี &bull; ระบบคลินิกวิชาการ
+  </footer>
+
+  <script>
+    function switchRoleTab(role) {
+      document.getElementById('tab-btn-student').classList.toggle('active', role === 'student');
+      document.getElementById('tab-btn-teacher').classList.toggle('active', role === 'teacher');
+      
+      document.getElementById('panel-student').classList.toggle('active', role === 'student');
+      document.getElementById('panel-teacher').classList.toggle('active', role === 'teacher');
+
+      window.scrollTo({ top: 200, behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>
