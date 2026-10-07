@@ -216,7 +216,7 @@ const SupabaseAPI = {
       if (Array.isArray(staffData) && staffData.length) {
         LocalDB.setList('staff', staffData.map(s => this.mapStaffFromDb(s)));
       }
-      if (Array.isArray(weeksData) && weeksData.length) {
+      if (Array.isArray(weeksData)) {
         const weeks = weeksData.map(w => this.mapWeekFromDb(w));
         weeks.sort((a, b) => (toYMD(a.startDate) || '') > (toYMD(b.startDate) || '') ? 1 : -1);
         LocalDB.setList('weeks', weeks);
@@ -436,14 +436,19 @@ const SupabaseAPI = {
   },
 
   async clearTable(tableName) {
+    if (!this.client) this.init();
     if (!this.client) return;
     try {
+      let res;
       if (tableName === 'duty_staff') {
-        await this.client.from('duty_staff').delete().neq('date', '___none___');
+        res = await this.client.from('duty_staff').delete().neq('date', '___none___');
       } else if (tableName === 'settings') {
-        await this.client.from('settings').delete().neq('key', '___none___');
+        res = await this.client.from('settings').delete().neq('key', '___none___');
       } else {
-        await this.client.from(tableName).delete().neq('id', '___none___');
+        res = await this.client.from(tableName).delete().neq('id', '___none___');
+      }
+      if (res && res.error) {
+        console.warn(`Supabase clearTable(${tableName}) error:`, res.error);
       }
     } catch (e) {
       console.warn(`Supabase clearTable(${tableName}) error:`, e);

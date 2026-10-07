@@ -149,7 +149,10 @@
             <div class="section-title">
               <div class="section-title-icon">📅</div>จัดการสัปดาห์
             </div>
-            <button class="btn btn-primary" onclick="openAddWeek()">➕ เพิ่มสัปดาห์</button>
+            <div class="flex gap-2">
+              <button class="btn btn-danger btn-sm" onclick="clearScheduleData()">🗑️ ล้างตารางและสัปดาห์ทั้งหมด</button>
+              <button class="btn btn-primary" onclick="openAddWeek()">➕ เพิ่มสัปดาห์</button>
+            </div>
           </div>
           <div class="alert alert-info mb-4">
             💡 กำหนดช่วงวันที่ของแต่ละสัปดาห์ เพื่อให้โชว์ในหน้าหลักของเว็บไซต์ โดยสามารถกำหนดให้
@@ -552,9 +555,7 @@
                 <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-json-file').click()">📥 Import นำเข้าข้อมูลจากไฟล์ JSON</button>
                 <input type="file" id="import-json-file" accept=".json" style="display:none;" onchange="importAllData(event)">
                 <button class="btn btn-danger btn-sm" onclick="clearAllPersonnelData()">🗑️ ล้างรายชื่อบุคลากรทั้งหมด (ครู นักเรียน เจ้าหน้าที่)</button>
-                <button class="btn btn-danger btn-sm"
-                  onclick="if(confirm('ยืนยันล้างข้อมูลตารางและสัปดาห์ทั้งหมด?')){clearScheduleData();}">🗑️
-                  ล้างตารางและสัปดาห์</button>
+                <button class="btn btn-danger btn-sm" onclick="clearScheduleData()">🗑️ ล้างตารางและสัปดาห์</button>
               </div>
             </div>
           </div>
@@ -910,10 +911,10 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="js/firebase-config.js?v=2569_11"></script>
-  <script src="js/supabase-api.js?v=2569_11"></script>
-  <script src="js/db.js?v=2569_11"></script>
-  <script src="js/auth.js?v=2569_11"></script>
+  <script src="js/firebase-config.js?v=2569_12"></script>
+  <script src="js/supabase-api.js?v=2569_12"></script>
+  <script src="js/db.js?v=2569_12"></script>
+  <script src="js/auth.js?v=2569_12"></script>
   <script src="js/xlsx.full.min.js"></script>
   <script>
     // ─── AUTH GUARD ───────────────────────────────────────────
@@ -2412,12 +2413,19 @@
     }
 
     // ─── SETTINGS & BACKUP ────────────────────────────────────
-    function clearScheduleData() {
-      LocalDB.setList('clinics', []);
-      LocalDB.setList('weeks', []);
-      LocalDB.set('_seeded_v2', null);
-      showToast('ล้างข้อมูลเรียบร้อย', '', 'success');
-      loadAdminData();
+    async function clearScheduleData() {
+      if (!confirm('ยืนยันที่จะล้างข้อมูลตารางคลินิกและข้อมูลสัปดาห์ทั้งหมดใช่หรือไม่?\n\n⚠️ ข้อมูลตารางคลินิกทั้งหมด, ข้อมูลสัปดาห์ทั้งหมด, และประวัติการเช็คชื่อจะถูกลบออกจากระบบอย่างสมบูรณ์ (ทั้งบนเซิร์ฟเวอร์และอุปกรณ์นี้)')) {
+        return;
+      }
+
+      try {
+        await DataService.clearScheduleAndWeeks();
+        await loadAdminData();
+        showToast('ล้างข้อมูลเรียบร้อย', 'ข้อมูลสัปดาห์และตารางคลินิกทั้งหมดถูกลบออกจากระบบแล้ว', 'success');
+      } catch (err) {
+        console.error('clearScheduleData error:', err);
+        showToast('เกิดข้อผิดพลาด', 'ไม่สามารถล้างข้อมูลได้: ' + (err.message || err), 'error');
+      }
     }
 
     function exportAllData() {

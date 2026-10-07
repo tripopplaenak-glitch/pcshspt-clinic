@@ -442,6 +442,21 @@ class LocalDB {
     weeks.forEach(w => { delete w.dutyStaff; });
     LocalDB.setList('weeks', weeks);
   }
+
+  // Clear schedule and weeks (คลินิก, สัปดาห์, การเช็คชื่อ และเวรประจำวัน)
+  static clearScheduleAndWeeks() {
+    LocalDB.setList('clinics', []);
+    LocalDB.setList('weeks', []);
+    LocalDB.setList('attendance', []);
+    LocalDB.set('clinic_custom_data', {});
+    LocalDB.set('duty_by_date', {});
+    LocalDB.set('duty_staff_map', {});
+    LocalDB.set('duty_staff_by_week', {});
+    LocalDB.set('_cleared_all_demo_data_v4', true);
+    LocalDB.set('_seeded_v4', true);
+    LocalDB.set('_seeded_v3', true);
+    LocalDB.set('_seeded_v2', true);
+  }
 }
 
 // ─── SEED DEMO DATA (for first run) ──────────────────────
@@ -654,5 +669,27 @@ const DataService = {
       if (ok) return true;
     }
     return false;
+  },
+
+  // Clear all schedule data (ทั้ง LocalDB และ Supabase Cloud)
+  async clearScheduleAndWeeks() {
+    LocalDB.clearScheduleAndWeeks();
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+      try {
+        await SupabaseAPI.clearTable('attendance');
+        await SupabaseAPI.clearTable('clinics');
+        await SupabaseAPI.clearTable('weeks');
+        await SupabaseAPI.clearTable('duty_staff');
+        if (SupabaseAPI.client) {
+          try {
+            await SupabaseAPI.client.from('settings').upsert({ key: 'clinic_custom_data', value: {} });
+          } catch (e) {
+            console.warn('Supabase reset clinic_custom_data error:', e);
+          }
+        }
+      } catch (err) {
+        console.warn('DataService.clearScheduleAndWeeks cloud error:', err);
+      }
+    }
   }
 };

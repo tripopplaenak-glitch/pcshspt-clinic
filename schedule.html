@@ -332,10 +332,10 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/firebase-config.js?v=2569_11"></script>
-<script src="js/supabase-api.js?v=2569_11"></script>
-<script src="js/db.js?v=2569_11"></script>
-<script src="js/auth.js?v=2569_11"></script>
+<script src="js/firebase-config.js?v=2569_12"></script>
+<script src="js/supabase-api.js?v=2569_12"></script>
+<script src="js/db.js?v=2569_12"></script>
+<script src="js/auth.js?v=2569_12"></script>
 <script>
 // ─── INIT ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -475,7 +475,11 @@ function setViewMode(mode) {
 // ─── Load weeks
 async function loadWeeks() {
   allWeeks = await DataService.getWeeks();
-  if (allWeeks.length === 0) return;
+  if (allWeeks.length === 0) {
+    updateWeekLabel();
+    renderSchedule();
+    return;
+  }
 
   const today = todayStr();
   const idx = allWeeks.findIndex(w => {
