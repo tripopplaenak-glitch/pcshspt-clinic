@@ -122,6 +122,8 @@ class LocalDB {
         ...c,
         subject: custom.subject || c.subject || c.subjectName || '',
         subjectName: custom.subject || c.subject || c.subjectName || '',
+        teacherId: custom.teacherId !== undefined && custom.teacherId !== '' ? custom.teacherId : (c.teacherId || c.teacher_id || ''),
+        teacherName: custom.teacherName !== undefined && custom.teacherName !== '' ? custom.teacherName : (c.teacherName || c.teacher_name || ''),
         time: c.time || custom.time || '18:30–20:30',
         notes: c.notes !== undefined && c.notes !== '' ? c.notes : (custom.notes || ''),
         topic: c.topic !== undefined && c.topic !== '' ? c.topic : (custom.topic || '')
@@ -171,7 +173,9 @@ class LocalDB {
         time: c.time,
         notes: c.notes || '',
         topic: c.topic || '',
-        subject: c.subject || c.subjectName || ''
+        subject: c.subject || c.subjectName || '',
+        teacherId: String(c.teacherId || c.teacher_id || ''),
+        teacherName: c.teacherName || c.teacher_name || ''
       };
       LocalDB.set('clinic_custom_data', customData);
     }

@@ -274,6 +274,30 @@
         <label class="form-label">📖 ชื่อวิชา</label>
         <input type="text" class="form-control" id="edit-subject" placeholder="เช่น คณิตศาสตร์พื้นฐาน, ฟิสิกส์ 1">
       </div>
+      <div class="form-group">
+        <label class="form-label" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>👩‍🏫 ครูผู้สอน</span>
+          <span style="display:flex;align-items:center;gap:6px;">
+            <span id="edit-teacher-search-count" class="text-xs text-muted"></span>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-rename-teacher" onclick="openRenameTeacherPrompt()" style="display:none;padding:1px 7px;font-size:0.75rem;line-height:1.3;border-color:#93c5fd;color:#1d4ed8;" title="แก้ไขชื่อครูผู้สอนท่านนี้">✏️ แก้ไขชื่อครู</button>
+          </span>
+        </label>
+        <div style="position:relative;margin-bottom:6px;">
+          <input type="text" class="form-control" id="edit-teacher-search"
+            placeholder="🔍 พิมพ์ค้นหาหรือระบุชื่อครู..." oninput="filterTeacherEditOptions(this.value)"
+            autocomplete="off" style="padding-left:36px;font-size:.9rem;">
+          <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--gray-400);pointer-events:none;">🔍</span>
+          <button type="button" id="btn-clear-teacher-edit-search" onclick="clearTeacherEditSearch()"
+            style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--gray-400);font-size:1rem;">✕</button>
+        </div>
+        <select class="form-control" id="edit-teacher" onchange="onEditTeacherChange()">
+          <option value="">-- ไม่ระบุ / เลือกครูผู้สอน --</option>
+        </select>
+        <div id="quick-add-teacher-box" style="display:none;margin-top:6px;background:#f0fdf4;border:1px dashed #86efac;border-radius:6px;padding:6px 10px;font-size:0.82rem;color:#166534;align-items:center;justify-content:space-between;">
+          <span>💡 ไม่พบในระบบ? เพิ่ม <strong><span id="quick-add-teacher-name"></span></strong> เป็นครูใหม่:</span>
+          <button type="button" class="btn btn-success btn-sm" onclick="quickAddTeacherFromEdit()" style="padding:2px 8px;font-size:0.75rem;">+ เพิ่มชื่อครูนี้</button>
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">เวลาสอน (เริ่ม)</label>
@@ -584,9 +608,10 @@ function generateGoogleCalendarUrl(clinic, teacherName) {
 
 function renderClinicCard(c, teacherMap) {
   const t = teacherMap[String(c.teacherId)] || {};
+  const teacherDisplayName = t.name || c.teacherName || '–';
   const st = getStatusLabel(c.status);
   const attCount = Array.isArray(c.attendanceIds) ? c.attendanceIds.length : (Number(c.studentCount) || 0);
-  const gcalUrl = generateGoogleCalendarUrl(c, t.name);
+  const gcalUrl = generateGoogleCalendarUrl(c, teacherDisplayName);
   return `
     <div class="card" style="border-left:4px solid var(--blue-main);">
       <div class="card-body" style="padding:16px;">
@@ -602,7 +627,7 @@ function renderClinicCard(c, teacherMap) {
           <span style="word-break:break-word;">${escapeHtml(c.topic)}</span>
         </div>` : ''}
         <div class="clinic-meta" style="margin-bottom:10px;">
-          <span>👩‍🏫 ${t.name || '–'}</span>
+          <span>👩‍🏫 ${teacherDisplayName}</span>
           <span>🕐 ${typeof formatClinicTime === 'function' ? formatClinicTime(c.time) : (c.time || '18:30–20:30 น.')}</span>
           ${c.room ? `<span>📍 ${c.room}</span>` : ''}
           <span>👥 ${c.studentCount || 0} คน</span>
@@ -632,7 +657,182 @@ function openModal(id) {
   if (el) el.classList.add('open');
 }
 
-// ─── EDIT CLINIC ──────────────────────────────────────────
+// ─── EDIT CLINIC & TEACHER ────────────────────────────────
+let cachedTeacherEditList = [];
+
+async function populateTeacherEditSelect(selectedId = '', fallbackName = '') {
+  cachedTeacherEditList = await DataService.getTeachers();
+  const searchInput = document.getElementById('edit-teacher-search');
+  if (searchInput) searchInput.value = '';
+  const clearBtn = document.getElementById('btn-clear-teacher-edit-search');
+  if (clearBtn) clearBtn.style.display = 'none';
+  const quickAdd = document.getElementById('quick-add-teacher-box');
+  if (quickAdd) quickAdd.style.display = 'none';
+
+  let effectiveId = selectedId ? String(selectedId) : '';
+  if (!effectiveId && fallbackName) {
+    const foundByName = cachedTeacherEditList.find(t => (t.name || '').trim().toLowerCase() === fallbackName.trim().toLowerCase());
+    if (foundByName) effectiveId = String(foundByName.id);
+  }
+
+  renderTeacherEditOptions(cachedTeacherEditList, effectiveId, fallbackName);
+  onEditTeacherChange();
+}
+
+function renderTeacherEditOptions(teachers, selectedId = '', fallbackName = '') {
+  const sel = document.getElementById('edit-teacher');
+  if (!sel) return;
+  const currentVal = selectedId !== '' ? String(selectedId) : String(sel.value || '');
+  sel.innerHTML = '<option value="">-- ไม่ระบุ / เลือกครูผู้สอน --</option>';
+
+  let foundMatch = false;
+  teachers.forEach(t => {
+    const o = document.createElement('option');
+    o.value = String(t.id);
+    o.textContent = t.name;
+    if (String(t.id) === currentVal) {
+      o.selected = true;
+      foundMatch = true;
+    }
+    sel.appendChild(o);
+  });
+
+  // If currentVal was selected from outside the current filtered list, keep it visible
+  if (currentVal && !foundMatch) {
+    const activeT = cachedTeacherEditList.find(t => String(t.id) === currentVal);
+    if (activeT) {
+      const o = document.createElement('option');
+      o.value = String(activeT.id);
+      o.textContent = `${activeT.name} (เลือกอยู่)`;
+      o.selected = true;
+      sel.insertBefore(o, sel.children[1] || null);
+      foundMatch = true;
+    } else if (fallbackName) {
+      const o = document.createElement('option');
+      o.value = currentVal;
+      o.textContent = `${fallbackName} (เลือกอยู่)`;
+      o.selected = true;
+      sel.insertBefore(o, sel.children[1] || null);
+      foundMatch = true;
+    }
+  }
+
+  if (currentVal && foundMatch) {
+    sel.value = currentVal;
+  }
+
+  const countEl = document.getElementById('edit-teacher-search-count');
+  if (countEl) {
+    if (teachers.length === cachedTeacherEditList.length) {
+      countEl.textContent = `(ทั้งหมด ${cachedTeacherEditList.length} ท่าน)`;
+    } else {
+      countEl.textContent = `(พบ ${teachers.length} จาก ${cachedTeacherEditList.length} ท่าน)`;
+    }
+  }
+}
+
+function filterTeacherEditOptions(keyword) {
+  const q = (keyword || '').trim().toLowerCase();
+  const clearBtn = document.getElementById('btn-clear-teacher-edit-search');
+  if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+  const quickAdd = document.getElementById('quick-add-teacher-box');
+  const quickName = document.getElementById('quick-add-teacher-name');
+
+  const sel = document.getElementById('edit-teacher');
+  const currentVal = sel ? sel.value : '';
+
+  if (!q) {
+    if (quickAdd) quickAdd.style.display = 'none';
+    renderTeacherEditOptions(cachedTeacherEditList, currentVal);
+    onEditTeacherChange();
+    return;
+  }
+
+  const filtered = cachedTeacherEditList.filter(t => (t.name || '').toLowerCase().includes(q));
+  renderTeacherEditOptions(filtered, currentVal);
+
+  if (filtered.length === 1 && sel) {
+    sel.value = String(filtered[0].id);
+  }
+
+  const hasExact = cachedTeacherEditList.some(t => (t.name || '').trim().toLowerCase() === q);
+  if (!hasExact && q.length >= 2) {
+    if (quickAdd && quickName) {
+      quickName.textContent = keyword.trim();
+      quickAdd.style.display = 'flex';
+    }
+  } else {
+    if (quickAdd) quickAdd.style.display = 'none';
+  }
+
+  onEditTeacherChange();
+}
+
+function clearTeacherEditSearch() {
+  const input = document.getElementById('edit-teacher-search');
+  if (input) input.value = '';
+  filterTeacherEditOptions('');
+  if (input) input.focus();
+}
+
+function onEditTeacherChange() {
+  const sel = document.getElementById('edit-teacher');
+  const btnRename = document.getElementById('btn-rename-teacher');
+  if (!btnRename) return;
+  const val = sel ? sel.value : '';
+  const currentT = cachedTeacherEditList.find(t => String(t.id) === String(val));
+  if (val && currentT) {
+    btnRename.style.display = 'inline-block';
+  } else {
+    btnRename.style.display = 'none';
+  }
+}
+
+async function quickAddTeacherFromEdit() {
+  const input = document.getElementById('edit-teacher-search');
+  const name = (input ? input.value : '').trim();
+  if (!name) return;
+  try {
+    const newT = await DataService.saveTeacher({
+      name: name,
+      subject_group: 'ทั่วไป'
+    });
+    showToast('สำเร็จ', `เพิ่มคุณครู "${name}" เรียบร้อยแล้ว`, 'success');
+    await populateTeacherEditSelect(newT.id);
+  } catch (err) {
+    console.error('Error adding teacher:', err);
+    showToast('เกิดข้อผิดพลาด', 'ไม่สามารถเพิ่มชื่อครูได้', 'error');
+  }
+}
+
+async function openRenameTeacherPrompt() {
+  const sel = document.getElementById('edit-teacher');
+  const tId = sel ? sel.value : '';
+  const teacher = cachedTeacherEditList.find(t => String(t.id) === String(tId));
+  if (!teacher) return;
+
+  const newName = prompt(`แก้ไขชื่อครูผู้สอน:`, teacher.name);
+  if (newName === null) return;
+  const trimmed = newName.trim();
+  if (!trimmed) {
+    showToast('แจ้งเตือน', 'ชื่อครูผู้สอนต้องไม่เป็นค่าว่าง', 'warning');
+    return;
+  }
+  if (trimmed === teacher.name) return;
+
+  try {
+    teacher.name = trimmed;
+    await DataService.saveTeacher(teacher);
+    showToast('สำเร็จ', `อัปเดตชื่อครูเป็น "${trimmed}" เรียบร้อยแล้ว`, 'success');
+    await populateTeacherEditSelect(teacher.id);
+    await loadTeacherClinics();
+  } catch (err) {
+    console.error('Rename teacher error:', err);
+    showToast('เกิดข้อผิดพลาด', 'ไม่สามารถแก้ไขชื่อครูได้', 'error');
+  }
+}
+
 async function openEditClinic(clinicId) {
   const clinics = await DataService.getClinics();
   const c = clinics.find(x => String(x.id) === String(clinicId));
@@ -651,12 +851,17 @@ async function openEditClinic(clinicId) {
   document.getElementById('edit-room').value   = c.room || '';
   document.getElementById('edit-topic').value  = c.topic || '';
   document.getElementById('edit-status').value = c.status || 'active';
+
+  await populateTeacherEditSelect(c.teacherId || c.teacher_id || '', c.teacherName || c.teacher_name || '');
+
   openModal('modal-edit-clinic');
 }
 
 async function saveClinicEdit() {
   const id      = document.getElementById('edit-clinic-id').value;
   const subject = (document.getElementById('edit-subject')?.value || '').trim();
+  let teacherId = (document.getElementById('edit-teacher')?.value || '').trim();
+  const searchTeacherVal = (document.getElementById('edit-teacher-search')?.value || '').trim();
   const ts      = document.getElementById('edit-time-start').value;
   const te      = document.getElementById('edit-time-end').value;
   const room    = document.getElementById('edit-room').value.trim();
@@ -668,6 +873,30 @@ async function saveClinicEdit() {
     return;
   }
 
+  // If no teacher was selected from dropdown, but user typed a name into the search box:
+  if (!teacherId && searchTeacherVal) {
+    const existing = cachedTeacherEditList.find(t => (t.name || '').trim().toLowerCase() === searchTeacherVal.toLowerCase());
+    if (existing) {
+      teacherId = String(existing.id);
+    } else {
+      try {
+        const newT = await DataService.saveTeacher({
+          name: searchTeacherVal,
+          subject_group: 'ทั่วไป'
+        });
+        teacherId = String(newT.id);
+        cachedTeacherEditList.push(newT);
+      } catch (err) {
+        console.warn('Auto create teacher warning:', err);
+      }
+    }
+  }
+
+  if (!teacherId) {
+    showToast('กรุณาระบุครูผู้สอน', 'เลือกหรือระบุชื่อครูผู้สอน', 'warning');
+    return;
+  }
+
   const clinics = await DataService.getClinics();
   const c = clinics.find(x => String(x.id) === String(id));
   if (!c) {
@@ -675,9 +904,19 @@ async function saveClinicEdit() {
     return;
   }
   const oldSubject = c.subject || c.subjectName || '';
+  const oldTeacherId = c.teacherId || c.teacher_id || '';
+
+  const teachers = await DataService.getTeachers();
+  const matchedT = teachers.find(t => String(t.id) === String(teacherId));
+  const teacherName = matchedT ? matchedT.name : (c.teacherName || searchTeacherVal || '');
+
   c.subject = subject;
   c.subjectName = subject;
   c.subject_name = subject;
+  c.teacherId = teacherId;
+  c.teacher_id = teacherId;
+  c.teacherName = teacherName;
+  c.teacher_name = teacherName;
   c.time = `${ts}–${te}`;
   c.room = room;
   c.topic = topic;
@@ -688,22 +927,25 @@ async function saveClinicEdit() {
   }
   await DataService.saveClinic(c);
 
-  // Sync attendance records if subject changed
-  if (oldSubject && oldSubject !== subject) {
+  // Sync attendance records if subject or teacher changed
+  if ((oldSubject && oldSubject !== subject) || (oldTeacherId && String(oldTeacherId) !== String(teacherId))) {
     try {
       const allAtt = await DataService.getAttendance();
       const relatedAtt = allAtt.filter(a => String(a.clinicId) === String(id));
       if (relatedAtt.length > 0) {
-        relatedAtt.forEach(a => { a.subject = subject; });
+        relatedAtt.forEach(a => {
+          a.subject = subject;
+          a.teacherId = teacherId;
+        });
         await DataService.setAttendanceForClinic(id, relatedAtt);
       }
     } catch (attErr) {
-      console.warn('Attendance subject sync warning:', attErr);
+      console.warn('Attendance sync warning:', attErr);
     }
   }
 
   closeModal('modal-edit-clinic');
-  showToast('บันทึกสำเร็จ', 'อัปเดตข้อมูลการสอนเรียบร้อยแล้ว', 'success');
+  showToast('บันทึกสำเร็จ', 'อัปเดตข้อมูลการสอนและครูผู้สอนเรียบร้อยแล้ว', 'success');
   await loadTeacherClinics();
 }
 

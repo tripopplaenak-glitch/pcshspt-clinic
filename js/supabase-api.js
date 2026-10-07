@@ -335,7 +335,9 @@ const SupabaseAPI = {
         time: c.time || '18:30–20:30',
         notes: c.notes || '',
         topic: c.topic || '',
-        subject: c.subject || c.subjectName || ''
+        subject: c.subject || c.subjectName || '',
+        teacherId: String(c.teacherId || c.teacher_id || ''),
+        teacherName: c.teacherName || c.teacher_name || ''
       };
       LocalDB.set('clinic_custom_data', customData);
       await this.client.from('settings').upsert({

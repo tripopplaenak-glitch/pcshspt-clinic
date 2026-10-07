@@ -863,9 +863,10 @@ function renderDayCard(day, clinics, teacherMap, dutyOfficer) {
   const slotsHtml = clinics.length
     ? clinics.map(c => {
         const t = teacherMap[c.teacherId] || {};
+        const teacherDisplayName = t.name || c.teacherName || '–';
         const st = getStatusLabel(c.status);
         const count = Number(c.studentCount || 0);
-        const gcalUrl = generateGoogleCalendarUrl(c, t.name);
+        const gcalUrl = generateGoogleCalendarUrl(c, teacherDisplayName);
         return `
           <div class="clinic-slot">
             <div class="clinic-subject">${getSubjectIcon(c.subject)} ${c.subject}</div>
@@ -875,7 +876,7 @@ function renderDayCard(day, clinics, teacherMap, dutyOfficer) {
               <span style="word-break:break-word;">${escapeHtml(c.topic)}</span>
             </div>` : ''}
             <div class="clinic-meta">
-              <span>👩‍🏫 ${t.name || '–'}</span>
+              <span>👩‍🏫 ${teacherDisplayName}</span>
               <span>🕐 ${formatClinicTime(c.time)}</span>
               ${c.room ? `<span>📍 ${c.room}</span>` : ''}
             </div>
