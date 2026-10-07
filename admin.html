@@ -911,10 +911,10 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="js/firebase-config.js?v=2569_12"></script>
-  <script src="js/supabase-api.js?v=2569_12"></script>
-  <script src="js/db.js?v=2569_12"></script>
-  <script src="js/auth.js?v=2569_12"></script>
+  <script src="js/firebase-config.js?v=2569_14"></script>
+  <script src="js/supabase-api.js?v=2569_14"></script>
+  <script src="js/db.js?v=2569_14"></script>
+  <script src="js/auth.js?v=2569_14"></script>
   <script src="js/xlsx.full.min.js"></script>
   <script>
     // ─── AUTH GUARD ───────────────────────────────────────────
@@ -2419,14 +2419,18 @@
 
     // ─── SETTINGS & BACKUP ────────────────────────────────────
     async function clearScheduleData() {
-      if (!confirm('ยืนยันที่จะล้างข้อมูลตารางคลินิกและข้อมูลสัปดาห์ทั้งหมดใช่หรือไม่?\n\n⚠️ ข้อมูลตารางคลินิกทั้งหมด, ข้อมูลสัปดาห์ทั้งหมด, และประวัติการเช็คชื่อจะถูกลบออกจากระบบอย่างสมบูรณ์ (ทั้งบนเซิร์ฟเวอร์และอุปกรณ์นี้)')) {
+      if (!confirm('ยืนยันที่จะล้างข้อมูลตารางคลินิกและข้อมูลสัปดาห์ทั้งหมดใช่หรือไม่?\n\n⚠️ ระบบจะลบ:\n• ข้อมูลสัปดาห์ทั้งหมด\n• ข้อมูลตารางคลินิกทั้งหมด\n• ข้อมูลการเช็คชื่อเข้าเรียนทั้งหมด\n• เวรประจำวันทั้งหมด\n(ทั้งบนเซิร์ฟเวอร์ Cloud และบนอุปกรณ์นี้)\n\n✅ ข้อมูลที่จะยังคงอยู่: รายชื่อครู, รายชื่อนักเรียน, รายชื่อเจ้าหน้าที่, ประกาศ, และคู่มือการใช้งาน')) {
         return;
       }
 
       try {
+        showToast('กำลังล้างข้อมูล...', 'ระบบกำลังลบข้อมูลตารางและสัปดาห์ออกจากเซิร์ฟเวอร์และอุปกรณ์...', 'info');
         await DataService.clearScheduleAndWeeks();
         await loadAdminData();
         showToast('ล้างข้อมูลเรียบร้อย', 'ข้อมูลสัปดาห์และตารางคลินิกทั้งหมดถูกลบออกจากระบบแล้ว', 'success');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
       } catch (err) {
         console.error('clearScheduleData error:', err);
         showToast('เกิดข้อผิดพลาด', 'ไม่สามารถล้างข้อมูลได้: ' + (err.message || err), 'error');

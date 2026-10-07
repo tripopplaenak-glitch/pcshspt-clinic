@@ -461,69 +461,10 @@ class LocalDB {
 
 // ─── SEED DEMO DATA (for first run) ──────────────────────
 function seedDemoData() {
-  // One-time auto-clear of all demo data so user starts with a 100% clean database
-  if (!LocalDB.get('_cleared_all_demo_data_v4')) {
-    LocalDB.setList('clinics', []);
-    LocalDB.setList('teachers', []);
-    LocalDB.setList('students', []);
-    LocalDB.setList('staff', []);
-    LocalDB.setList('attendance', []);
-    LocalDB.setList('announcements', []);
-    LocalDB.set('duty_by_date', {});
-    LocalDB.set('duty_staff_map', {});
-    LocalDB.set('duty_staff_by_week', {});
-    const weeks = LocalDB.getWeeks();
-    weeks.forEach(w => { delete w.dutyStaff; });
-    LocalDB.setList('weeks', weeks);
-    LocalDB.set('_cleared_all_demo_data_v4', true);
-  }
-
-  if (LocalDB.get('_seeded_v4')) return;
-
-  const today = new Date();
-  const monday = new Date(today);
-  const dow = today.getDay(); // 0=Sun
-  const diff = dow === 0 ? -6 : 1 - dow;
-  monday.setDate(today.getDate() + diff);
-
-  const fmt = d => {
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const yyyy = d.getFullYear();
-    return `${yyyy}-${mm}-${dd}`;
-  };
-  const thDate = d => {
-    const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear() + 543}`;
-  };
-
-  const fri = new Date(monday); fri.setDate(monday.getDate() + 4);
-  const weekId = 'week_' + fmt(monday);
-
-  // If no weeks exist yet, create Week 1
-  if (!LocalDB.getWeeks().length) {
-    LocalDB.saveWeek({
-      weekId,
-      weekNum: 1,
-      startDate: fmt(monday),
-      endDate: fmt(fri),
-      label: `สัปดาห์ที่ 1 (${thDate(monday)} – ${thDate(fri)})`,
-      noClasses: false
-    });
-  }
-
-  // All data tables are kept 100% empty for user to enter real data
-  LocalDB.setList('teachers', []);
-  LocalDB.setList('staff', []);
-  LocalDB.setList('students', []);
-  LocalDB.setList('clinics', []);
-  LocalDB.setList('attendance', []);
-  LocalDB.setList('announcements', []);
-
+  LocalDB.set('_cleared_all_demo_data_v4', true);
   LocalDB.set('_seeded_v2', true);
   LocalDB.set('_seeded_v3', true);
   LocalDB.set('_seeded_v4', true);
-  console.log('[DB] Database initialized in clean mode.');
 }
 
 // ─── UNIFIED DATA API ─────────────────────────────────────
@@ -685,23 +626,44 @@ const DataService = {
 
   // Clear all schedule data (ทั้ง LocalDB และ Supabase Cloud)
   async clearScheduleAndWeeks() {
+    // 1. ล้างข้อมูลใน LocalDB ก่อนทันที
     LocalDB.clearScheduleAndWeeks();
+    try { sessionStorage.removeItem('teacher_selected_week'); } catch {}
+
+    // 2. ล้างข้อมูลบน Supabase Cloud Database แบบหมดจด
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
-      try {
-        await SupabaseAPI.clearTable('attendance');
-        await SupabaseAPI.clearTable('clinics');
-        await SupabaseAPI.clearTable('weeks');
-        await SupabaseAPI.clearTable('duty_staff');
-        if (SupabaseAPI.client) {
-          try {
-            await SupabaseAPI.client.from('settings').upsert({ key: 'clinic_custom_data', value: {} });
-          } catch (e) {
-            console.warn('Supabase reset clinic_custom_data error:', e);
-          }
-        }
-      } catch (err) {
-        console.warn('DataService.clearScheduleAndWeeks cloud error:', err);
+      if (!SupabaseAPI.client) SupabaseAPI.init();
+      if (SupabaseAPI.client) {
+        try {
+          await SupabaseAPI.client.from('attendance').delete().neq('id', '___none___');
+        } catch (e) { console.warn('Clear attendance error:', e); }
+
+        try {
+          await SupabaseAPI.client.from('clinics').delete().neq('id', '___none___');
+        } catch (e) { console.warn('Clear clinics error:', e); }
+
+        try {
+          await SupabaseAPI.client.from('weeks').delete().neq('id', '___none___');
+          await SupabaseAPI.client.from('weeks').delete().neq('week_id', '___none___');
+        } catch (e) { console.warn('Clear weeks error:', e); }
+
+        try {
+          await SupabaseAPI.client.from('duty_staff').delete().neq('date', '___none___');
+        } catch (e) { console.warn('Clear duty_staff error:', e); }
+
+        try {
+          await SupabaseAPI.client.from('settings').upsert({ key: 'clinic_custom_data', value: {} });
+        } catch (e) { console.warn('Clear clinic_custom_data error:', e); }
       }
     }
+
+    // 3. ย้ำ LocalDB ให้ว่าง 100%
+    LocalDB.setList('clinics', []);
+    LocalDB.setList('weeks', []);
+    LocalDB.setList('attendance', []);
+    LocalDB.set('clinic_custom_data', {});
+    LocalDB.set('duty_by_date', {});
+    LocalDB.set('duty_staff_map', {});
+    LocalDB.set('duty_staff_by_week', {});
   }
 };
