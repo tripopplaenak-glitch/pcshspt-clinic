@@ -430,7 +430,14 @@
                       min="2560" max="2600">
                   </div>
                 </div>
-                <button class="btn btn-primary" onclick="saveSchoolSettings()">💾 บันทึกการตั้งค่าปีการศึกษา</button>
+                <div class="form-group" style="margin-top:14px;border-top:1px dashed var(--gray-200);padding-top:14px;">
+                  <label class="form-label font-semibold">🏢 ลิงก์เว็บไซต์จองสถานที่ (แสดงในระบบครู)</label>
+                  <input type="url" class="form-control" id="setting-booking-url" placeholder="https://sites.google.com/pcshspt.ac.th/ga-pcshspt/home/service">
+                  <div style="font-size:0.8rem;color:var(--gray-500);margin-top:4px;">
+                    💡 ลิงก์นี้จะแสดงในป๊อปอัป "จองสถานที่ได้ที่นี่" ของเมนูระบบครู (หากเว้นว่างจะใช้ลิงก์เริ่มต้น)
+                  </div>
+                </div>
+                <button class="btn btn-primary" onclick="saveSchoolSettings()">💾 บันทึกการตั้งค่า</button>
               </div>
             </div>
           </div>
@@ -2476,27 +2483,30 @@
       });
     }
 
-    // ─── SCHOOL SETTINGS (ปีการศึกษา / ภาคเรียน) ─────────────
+    // ─── SCHOOL SETTINGS (ปีการศึกษา / ภาคเรียน / ลิงก์จองสถานที่) ─────────────
     function loadSchoolSettings() {
       const settings = LocalDB.get('school_settings') || {};
       const semEl = document.getElementById('setting-semester');
       const yearEl = document.getElementById('setting-academic-year');
+      const bookingUrlEl = document.getElementById('setting-booking-url');
       if (semEl) semEl.value = settings.semester || '1';
       if (yearEl) yearEl.value = settings.academicYear || (typeof APP_CONFIG !== 'undefined' ? APP_CONFIG.academicYear : '2569') || '2569';
+      if (bookingUrlEl) bookingUrlEl.value = settings.bookingUrl || 'https://sites.google.com/pcshspt.ac.th/ga-pcshspt/home/service';
     }
 
     function saveSchoolSettings() {
       const semester = document.getElementById('setting-semester').value;
       const academicYear = document.getElementById('setting-academic-year').value.trim();
+      const bookingUrl = (document.getElementById('setting-booking-url')?.value || '').trim() || 'https://sites.google.com/pcshspt.ac.th/ga-pcshspt/home/service';
       if (!academicYear || isNaN(Number(academicYear))) {
         showToast('กรุณากรอกปีการศึกษา', 'กรุณาระบุปีการศึกษา (พ.ศ.) ให้ถูกต้อง เช่น 2569', 'warning');
         return;
       }
-      LocalDB.set('school_settings', { semester, academicYear });
+      LocalDB.set('school_settings', { semester, academicYear, bookingUrl });
       if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
         SupabaseAPI.saveSettings(LocalDB.get('school_settings') || {});
       }
-      showToast('บันทึกสำเร็จ', `ตั้งค่าภาคเรียนที่ ${semester} ปีการศึกษา ${academicYear} เรียบร้อยแล้ว`, 'success');
+      showToast('บันทึกสำเร็จ', `ตั้งค่าภาคเรียนที่ ${semester} ปีการศึกษา ${academicYear} และลิงก์จองสถานที่เรียบร้อยแล้ว`, 'success');
     }
     function loadSupabaseSettings() {
       if (typeof SupabaseAPI === 'undefined') return;

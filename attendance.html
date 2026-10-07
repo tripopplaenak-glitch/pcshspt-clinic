@@ -379,46 +379,58 @@
       content.innerHTML = html;
     }
 
-    const TABLE_COLGROUP = `
-  <colgroup>
-    <col style="width: 5%;">
-    <col style="width: 22%;">
-    <col style="width: 8%;">
-    <col style="width: 8%;">
-    <col style="width: 8%;">
-    <col style="width: 17%;">
-    <col style="width: 18%;">
-    <col style="width: 14%;">
-  </colgroup>
-`;
-
     function renderFlatTable(rows, teacherMap) {
       const showDate = !document.getElementById('filter-date')?.value;
+      const sameSubject = rows.length && rows.every(r => r.subject === rows[0].subject) ? rows[0].subject : null;
+      const sameTeacherId = rows.length && rows.every(r => r.teacherId === rows[0].teacherId) ? rows[0].teacherId : null;
+      const sameTeacherName = sameTeacherId && teacherMap[sameTeacherId] ? teacherMap[sameTeacherId].name : null;
+
+      const hideSubject = !!sameSubject;
+      const hideTeacher = !!sameTeacherId;
+
+      const extraBadges = [];
+      if (sameSubject) extraBadges.push(`<span class="badge badge-purple" style="font-size:0.85rem;">${getSubjectIcon(sameSubject)} วิชา: ${sameSubject}</span>`);
+      if (sameTeacherName) extraBadges.push(`<span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;font-size:0.85rem;">👩‍🏫 ครูผู้สอน: ${sameTeacherName}</span>`);
+
+      const colDefs = [
+        { key: 'no', label: '#', thStyle: 'width:6%;text-align:center;' },
+        { key: 'name', label: 'ชื่อ-สกุล', thStyle: 'text-align:left;' },
+        { key: 'grade', label: 'ชั้น', thStyle: 'width:8%;text-align:center;' },
+        { key: 'room', label: 'ห้อง', thStyle: 'width:8%;text-align:center;' },
+        { key: 'num', label: 'เลขที่', thStyle: 'width:8%;text-align:center;' },
+        { key: 'dorm', label: 'หอพัก', thStyle: 'width:16%;text-align:center;' },
+        !hideSubject && { key: 'subject', label: 'วิชาที่เรียน', thStyle: 'width:18%;text-align:left;' },
+        !hideTeacher && { key: 'teacher', label: 'ครูผู้สอน', thStyle: 'width:18%;text-align:left;' }
+      ].filter(Boolean);
+
       return `
-    <table class="table-fixed">
-      ${TABLE_COLGROUP}
-      <thead>
-        <tr>
-          <th>#</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>ห้อง</th><th>เลขที่</th>
-          <th>หอพัก</th><th>วิชาที่เรียน</th><th>ครูผู้สอน</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows.map((r, i) => {
-        const t = teacherMap[r.teacherId] || {};
-        return `<tr>
-            <td>${i + 1}</td>
-            <td><strong>${r.studentName || '–'}</strong></td>
-            <td><span class="badge badge-blue">ม.${r.grade}</span></td>
-            <td>${r.room || '–'}</td>
-            <td>${r.number || '–'}</td>
-            <td>${formatDormBadge(r.dormitory)}</td>
-            <td>${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>
-            <td>${t.name || '–'}</td>
-          </tr>`;
-      }).join('')}
-      </tbody>
-    </table>`;
+      ${extraBadges.length ? `
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:8px 14px;margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <span style="font-size:0.85rem;color:#64748b;font-weight:600;">สรุปข้อมูลในวันที่เลือก:</span>
+        ${extraBadges.join('')}
+      </div>` : ''}
+      <table class="table-fixed" style="width:100%;margin:0;">
+        <thead>
+          <tr>
+            ${colDefs.map(c => `<th style="${c.thStyle}">${c.label}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((r, i) => {
+            const t = teacherMap[r.teacherId] || {};
+            return `<tr>
+              <td style="text-align:center;">${i + 1}</td>
+              <td><strong>${r.studentName || '–'}</strong></td>
+              <td style="text-align:center;"><span class="badge badge-blue">ม.${r.grade}</span></td>
+              <td style="text-align:center;">${r.room || '–'}</td>
+              <td style="text-align:center;">${r.number || '–'}</td>
+              <td style="text-align:center;">${formatDormBadge(r.dormitory)}</td>
+              ${!hideSubject ? `<td>${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>` : ''}
+              ${!hideTeacher ? `<td>${t.name || '–'}</td>` : ''}
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
     }
 
     function renderGroupedTable(rows, teacherMap, groupKey, keyFn, labelFn, order) {
@@ -449,34 +461,72 @@
       keys.forEach((k) => {
         const groupRows = groups[k];
         const groupIcon = groupKey === 'grade' ? '🎓' : groupKey === 'dormitory' ? '🏠' : '📚';
+
+        // Check if all rows share the same values in this group
+        const sameDorm = groupRows.every(r => r.dormitory === groupRows[0].dormitory) ? groupRows[0].dormitory : null;
+        const sameGrade = groupRows.every(r => String(r.grade) === String(groupRows[0].grade)) ? groupRows[0].grade : null;
+        const sameSubject = groupRows.every(r => r.subject === groupRows[0].subject) ? groupRows[0].subject : null;
+        const sameTeacherId = groupRows.every(r => r.teacherId === groupRows[0].teacherId) ? groupRows[0].teacherId : null;
+        const sameTeacherName = sameTeacherId && teacherMap[sameTeacherId] ? teacherMap[sameTeacherId].name : null;
+
+        // Smart column hiding:
+        // When grouped by dorm -> hide dorm column
+        // When grouped by grade -> hide grade column
+        // When grouped by subject -> hide subject column
+        // If all students share teacher -> show in header and hide column
+        // If all students share subject -> show in header and hide column
+        // If all students share grade -> show in header and hide column
+        const hideDorm = (groupKey === 'dormitory') || !!sameDorm;
+        const hideGrade = (groupKey === 'grade') || !!sameGrade;
+        const hideSubject = (groupKey === 'subject') || !!sameSubject;
+        const hideTeacher = !!sameTeacherId;
+
+        // Group header badges
+        const extraBadges = [];
+        if (sameGrade && groupKey !== 'grade') extraBadges.push(`<span class="badge badge-blue">🎓 ม.${sameGrade}</span>`);
+        if (sameDorm && groupKey !== 'dormitory') extraBadges.push(`<span class="badge badge-blue">${formatDormTitle(sameDorm)}</span>`);
+        if (sameSubject && groupKey !== 'subject') extraBadges.push(`<span class="badge badge-purple">${getSubjectIcon(sameSubject)} ${sameSubject}</span>`);
+        if (sameTeacherName) extraBadges.push(`<span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;">👩‍🏫 ครู${sameTeacherName}</span>`);
+
+        const colDefs = [
+          { key: 'no', label: '#', thStyle: 'width:6%;text-align:center;' },
+          { key: 'name', label: 'ชื่อ-สกุล', thStyle: 'text-align:left;' },
+          !hideGrade && { key: 'grade', label: 'ชั้น', thStyle: 'width:9%;text-align:center;' },
+          { key: 'room', label: 'ห้อง', thStyle: 'width:8%;text-align:center;' },
+          { key: 'num', label: 'เลขที่', thStyle: 'width:8%;text-align:center;' },
+          !hideDorm && { key: 'dorm', label: 'หอพัก', thStyle: 'width:16%;text-align:center;' },
+          !hideSubject && { key: 'subject', label: 'วิชาที่เรียน', thStyle: 'width:18%;text-align:left;' },
+          !hideTeacher && { key: 'teacher', label: 'ครูผู้สอน', thStyle: 'width:18%;text-align:left;' }
+        ].filter(Boolean);
+
         html += `
       <div style="margin-bottom:24px;border:1px solid var(--gray-200);border-radius:var(--radius-md);overflow:hidden;background:var(--white);">
-        <div style="background:var(--blue-pale);border-left:5px solid var(--blue-main);padding:10px 16px;font-family:'Kanit',sans-serif;font-weight:700;color:var(--blue-deep);display:flex;align-items:center;gap:8px;">
+        <div style="background:var(--blue-pale);border-left:5px solid var(--blue-main);padding:10px 16px;font-family:'Kanit',sans-serif;font-weight:700;color:var(--blue-deep);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:1.15rem;">${groupIcon}</span>
-          <span>${labelFn(groupRows)}</span>
+          <span style="font-size:1rem;">${labelFn(groupRows)}</span>
+          ${extraBadges.length ? `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">${extraBadges.join('')}</div>` : ''}
           <span class="badge badge-blue" style="margin-left:auto;">${groupRows.length} คน</span>
         </div>
-        <table class="table-fixed">
-          ${TABLE_COLGROUP}
+        <table class="table-fixed" style="width:100%;margin:0;">
           <thead>
             <tr>
-              <th>#</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>ห้อง</th><th>เลขที่</th><th>หอพัก</th><th>วิชาที่เรียน</th><th>ครูผู้สอน</th>
+              ${colDefs.map(c => `<th style="${c.thStyle}">${c.label}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
             ${groupRows.map((r, i) => {
-          const t = teacherMap[r.teacherId] || {};
-          return `<tr>
-                <td>${i + 1}</td>
+              const t = teacherMap[r.teacherId] || {};
+              return `<tr>
+                <td style="text-align:center;">${i + 1}</td>
                 <td><strong>${r.studentName || '–'}</strong></td>
-                <td><span class="badge badge-blue">ม.${r.grade}</span></td>
-                <td>${r.room || '–'}</td>
-                <td>${r.number || '–'}</td>
-                <td>${formatDormBadge(r.dormitory)}</td>
-                <td>${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>
-                <td>${t.name || '–'}</td>
+                ${!hideGrade ? `<td style="text-align:center;"><span class="badge badge-blue">ม.${r.grade}</span></td>` : ''}
+                <td style="text-align:center;">${r.room || '–'}</td>
+                <td style="text-align:center;">${r.number || '–'}</td>
+                ${!hideDorm ? `<td style="text-align:center;">${formatDormBadge(r.dormitory)}</td>` : ''}
+                ${!hideSubject ? `<td>${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>` : ''}
+                ${!hideTeacher ? `<td>${t.name || '–'}</td>` : ''}
               </tr>`;
-        }).join('')}
+            }).join('')}
           </tbody>
         </table>
       </div>`;
@@ -518,25 +568,28 @@
       const originalText = btn ? btn.innerHTML : '';
       if (btn) { btn.disabled = true; btn.innerHTML = '⏳ กำลังสร้าง PDF...'; }
 
-      // Create printable report container in DOM
+      // Create printable report container in DOM with strict centering and A4 fit
       const reportDiv = document.createElement('div');
       reportDiv.id = 'attendance-pdf-render-area';
-      reportDiv.style.width = '794px';
+      reportDiv.style.width = '730px';
+      reportDiv.style.maxWidth = '730px';
+      reportDiv.style.margin = '0 auto';
       reportDiv.style.background = '#ffffff';
       reportDiv.style.color = '#0f172a';
       reportDiv.style.fontFamily = "'Sarabun', 'TH Sarabun New', sans-serif";
-      reportDiv.style.padding = '18px 24px';
+      reportDiv.style.padding = '12px 14px';
       reportDiv.style.boxSizing = 'border-box';
+      reportDiv.style.overflow = 'hidden';
 
       reportDiv.innerHTML = `
         <div style="text-align:center;border-bottom:2.5px solid #0284c7;padding-bottom:12px;margin-bottom:14px;">
-          <div style="font-size:16pt;font-weight:700;color:#0f172a;font-family:'Kanit',sans-serif;">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
-          <div style="font-size:13pt;font-weight:600;color:#0284c7;margin-top:2px;">รายงานสรุปการเข้าเรียนคลินิกวิชาการ</div>
+          <div style="font-size:15pt;font-weight:700;color:#0f172a;font-family:'Kanit',sans-serif;">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
+          <div style="font-size:12.5pt;font-weight:600;color:#0284c7;margin-top:2px;">รายงานสรุปการเข้าเรียนคลินิกวิชาการ</div>
           <div style="font-size:10pt;color:#334155;margin-top:4px;">
             <span>📅 วันที่: <strong>${escapeHtml(dateText)}</strong></span> &bull; 
             <span>ภาคเรียนที่ <strong>${escapeHtml(sem)}</strong> ปีการศึกษา <strong>${escapeHtml(year)}</strong></span>
           </div>
-          <div style="display:flex;justify-content:center;gap:14px;margin-top:8px;font-size:9.5pt;background:#f8fafc;padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;">
+          <div style="display:flex;justify-content:center;gap:12px;margin-top:8px;font-size:9.5pt;background:#f8fafc;padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;">
             <span>👥 นักเรียนทั้งหมด: <strong>${count}</strong> คน</span> &bull;
             <span>📚 วิชาที่เปิดสอน: <strong>${subjects}</strong> วิชา</span> &bull;
             <span>🏠 หอพัก: <strong>${dorms}</strong> หอ</span> &bull;
@@ -556,23 +609,30 @@
 
       reportDiv.querySelectorAll('table').forEach(tbl => {
         tbl.style.width = '100%';
+        tbl.style.maxWidth = '100%';
+        tbl.style.tableLayout = 'fixed';
         tbl.style.borderCollapse = 'collapse';
         tbl.style.marginBottom = '12px';
+        tbl.style.boxSizing = 'border-box';
       });
       reportDiv.querySelectorAll('th').forEach(th => {
         th.style.background = '#f1f5f9';
         th.style.color = '#1e293b';
         th.style.border = '1px solid #cbd5e1';
-        th.style.padding = '6px 6px';
+        th.style.padding = '5px 6px';
         th.style.fontSize = '8pt';
         th.style.fontWeight = '600';
-        th.style.textAlign = 'center';
+        th.style.whiteSpace = 'normal';
+        th.style.boxSizing = 'border-box';
       });
       reportDiv.querySelectorAll('td').forEach(td => {
         td.style.border = '1px solid #e2e8f0';
-        td.style.padding = '5px 6px';
+        td.style.padding = '4px 6px';
         td.style.fontSize = '8pt';
         td.style.color = '#0f172a';
+        td.style.whiteSpace = 'normal';
+        td.style.wordBreak = 'break-word';
+        td.style.boxSizing = 'border-box';
       });
       reportDiv.querySelectorAll('tr').forEach(tr => {
         tr.style.pageBreakInside = 'avoid';
@@ -582,10 +642,10 @@
       document.body.appendChild(reportDiv);
 
       const opt = {
-        margin: [6, 6, 6, 6],
+        margin: [8, 8, 8, 8],
         filename: `สรุปการเข้าเรียนคลินิกวิชาการ_${dateVal || 'ทุกวัน'}.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 1.5, useCORS: true, logging: false },
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 

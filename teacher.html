@@ -9,6 +9,158 @@
   <title>ระบบครูผู้สอน — คลินิกวิชาการ PCCPT</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ─── FLOATING BOOKING WIDGET ─── */
+    .booking-widget-wrapper {
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 1000;
+      font-family: 'Kanit', sans-serif;
+    }
+    .booking-widget-card {
+      width: 285px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 12px 36px rgba(13, 59, 110, 0.22), 0 2px 8px rgba(0,0,0,0.06);
+      border: 1.5px solid #bfdbfe;
+      overflow: hidden;
+      transition: all .3s cubic-bezier(0.16, 1, 0.3, 1);
+      animation: slideInRight .5s ease-out;
+    }
+    .booking-widget-card.collapsed {
+      display: none;
+    }
+    .booking-card-header {
+      background: linear-gradient(135deg, #0284c7, #1d4ed8);
+      color: #ffffff;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .booking-card-header-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .booking-btn-close {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: #ffffff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .2s;
+    }
+    .booking-btn-close:hover {
+      background: rgba(255,255,255,0.4);
+    }
+    .booking-card-body {
+      padding: 12px;
+      text-align: center;
+      background: #ffffff;
+    }
+    .booking-img-box {
+      width: 100%;
+      height: 140px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 10px;
+      background: #f1f5f9;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      position: relative;
+    }
+    .booking-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform .4s ease;
+    }
+    .booking-widget-card:hover .booking-img-box img {
+      transform: scale(1.04);
+    }
+    .booking-subtext {
+      font-size: 0.85rem;
+      color: #475569;
+      margin-bottom: 12px;
+      line-height: 1.4;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .booking-btn-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 14px;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #ffffff;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+      transition: all .2s ease;
+    }
+    .booking-btn-link:hover {
+      background: linear-gradient(135deg, #0369a1, #075985);
+      box-shadow: 0 6px 16px rgba(2, 132, 199, 0.5);
+      transform: translateY(-1px);
+      color: #ffffff;
+    }
+    .booking-widget-pill {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #0284c7, #1d4ed8);
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 30px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
+      border: 2px solid #ffffff;
+      cursor: pointer;
+      transition: all .25s ease;
+      animation: pulseGlow 2s infinite;
+    }
+    .booking-widget-pill:hover {
+      transform: scale(1.05);
+      box-shadow: 0 8px 25px rgba(2, 132, 199, 0.6);
+    }
+    .booking-widget-pill.active {
+      display: flex;
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(110%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); }
+      50% { box-shadow: 0 6px 25px rgba(2, 132, 199, 0.7); }
+    }
+    @media (max-width: 640px) {
+      .booking-widget-wrapper {
+        right: 12px;
+        bottom: 12px;
+      }
+      .booking-widget-card {
+        width: 250px;
+      }
+      .booking-img-box {
+        height: 110px;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -167,6 +319,36 @@
   </div>
 </div>
 
+<!-- ═══ FLOATING POP UP: จองสถานที่ได้ที่นี่ ══════════════ -->
+<div class="booking-widget-wrapper" id="booking-widget-wrapper">
+  <!-- Expanded Pop up Card -->
+  <div class="booking-widget-card" id="booking-widget-card">
+    <div class="booking-card-header">
+      <div class="booking-card-header-title">
+        <span>🏢</span> จองสถานที่ได้ที่นี่
+      </div>
+      <button class="booking-btn-close" onclick="collapseBookingWidget()" title="ย่อขนาด">✕</button>
+    </div>
+    <div class="booking-card-body">
+      <div class="booking-img-box">
+        <img src="assets/booking_room.jpg" alt="จองห้องเรียนคลินิกวิชาการ">
+      </div>
+      <div class="booking-subtext">
+        บริการจองห้องเรียนและสถานที่ สำหรับจัดกิจกรรมคลินิกวิชาการ
+      </div>
+      <a href="https://sites.google.com/pcshspt.ac.th/ga-pcshspt/home/service" target="_blank" rel="noopener noreferrer" class="booking-btn-link" id="teacher-booking-link-btn">
+        <span>จองสถานที่คลิกที่นี่</span> <span>↗</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Minimized Floating Pill -->
+  <button class="booking-widget-pill" id="booking-widget-pill" onclick="expandBookingWidget()">
+    <span style="font-size:1.15rem;">🏢</span>
+    <span>จองสถานที่ได้ที่นี่</span>
+  </button>
+</div>
+
 <footer>
   โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี
 </footer>
@@ -177,10 +359,39 @@
 <script src="js/db.js?v=2569_10"></script>
 <script src="js/auth.js?v=2569_10"></script>
 <script>
+// ─── BOOKING WIDGET HELPER ───────────────────────────────
+function updateTeacherBookingUrl() {
+  const s = LocalDB.get('school_settings') || {};
+  const url = s.bookingUrl || 'https://sites.google.com/pcshspt.ac.th/ga-pcshspt/home/service';
+  const btn = document.getElementById('teacher-booking-link-btn');
+  if (btn) btn.href = url;
+}
+
+function collapseBookingWidget() {
+  document.getElementById('booking-widget-card')?.classList.add('collapsed');
+  document.getElementById('booking-widget-pill')?.classList.add('active');
+  try { sessionStorage.setItem('pccpt_booking_collapsed', 'true'); } catch(e){}
+}
+
+function expandBookingWidget() {
+  document.getElementById('booking-widget-card')?.classList.remove('collapsed');
+  document.getElementById('booking-widget-pill')?.classList.remove('active');
+  try { sessionStorage.removeItem('pccpt_booking_collapsed'); } catch(e){}
+}
+
 // ─── AUTH GUARD ───────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   const session = AuthService.requireAuth(['teacher','admin']);
   if (!session) return;
+
+  updateTeacherBookingUrl();
+  if (sessionStorage.getItem('pccpt_booking_collapsed') === 'true') {
+    collapseBookingWidget();
+  }
+  window.addEventListener('storage', e => {
+    if (!e.key || e.key === 'school_settings') updateTeacherBookingUrl();
+  });
+  window.addEventListener('focus', updateTeacherBookingUrl);
 
   seedDemoData();
   const ui = document.getElementById('nav-user-info');
