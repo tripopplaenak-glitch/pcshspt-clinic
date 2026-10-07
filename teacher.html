@@ -269,6 +269,10 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="edit-clinic-id">
+      <div class="form-group">
+        <label class="form-label">📖 ชื่อวิชา</label>
+        <input type="text" class="form-control" id="edit-subject" placeholder="เช่น คณิตศาสตร์พื้นฐาน, ฟิสิกส์ 1">
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">เวลาสอน (เริ่ม)</label>
@@ -613,6 +617,7 @@ async function openEditClinic(clinicId) {
   const ts = parts[0]?.trim() || '18:30';
   const te = parts[1]?.trim() || '20:30';
   document.getElementById('edit-clinic-id').value = String(c.id);
+  document.getElementById('edit-subject').value   = c.subject || c.subjectName || '';
   document.getElementById('edit-time-start').value = ts;
   document.getElementById('edit-time-end').value   = te;
   document.getElementById('edit-room').value   = c.room || '';
@@ -622,12 +627,18 @@ async function openEditClinic(clinicId) {
 }
 
 async function saveClinicEdit() {
-  const id    = document.getElementById('edit-clinic-id').value;
-  const ts    = document.getElementById('edit-time-start').value;
-  const te    = document.getElementById('edit-time-end').value;
-  const room  = document.getElementById('edit-room').value.trim();
-  const topic = (document.getElementById('edit-topic')?.value || '').trim();
-  const status= document.getElementById('edit-status').value;
+  const id      = document.getElementById('edit-clinic-id').value;
+  const subject = (document.getElementById('edit-subject')?.value || '').trim();
+  const ts      = document.getElementById('edit-time-start').value;
+  const te      = document.getElementById('edit-time-end').value;
+  const room    = document.getElementById('edit-room').value.trim();
+  const topic   = (document.getElementById('edit-topic')?.value || '').trim();
+  const status  = document.getElementById('edit-status').value;
+
+  if (!subject) {
+    showToast('กรุณาระบุชื่อวิชา', '', 'warning');
+    return;
+  }
 
   const clinics = await DataService.getClinics();
   const c = clinics.find(x => String(x.id) === String(id));
@@ -635,12 +646,34 @@ async function saveClinicEdit() {
     showToast('เกิดข้อผิดพลาด', 'ไม่พบข้อมูลวิชาที่ต้องการแก้ไข', 'error');
     return;
   }
+  const oldSubject = c.subject || c.subjectName || '';
+  c.subject = subject;
+  c.subjectName = subject;
+  c.subject_name = subject;
   c.time = `${ts}–${te}`;
   c.room = room;
   c.topic = topic;
   c.status = status;
   c.notes = c.notes || '';
+  if (Array.isArray(c.studentList)) {
+    c.studentList.forEach(s => { s.subject = subject; });
+  }
   await DataService.saveClinic(c);
+
+  // Sync attendance records if subject changed
+  if (oldSubject && oldSubject !== subject) {
+    try {
+      const allAtt = await DataService.getAttendance();
+      const relatedAtt = allAtt.filter(a => String(a.clinicId) === String(id));
+      if (relatedAtt.length > 0) {
+        relatedAtt.forEach(a => { a.subject = subject; });
+        await DataService.setAttendanceForClinic(id, relatedAtt);
+      }
+    } catch (attErr) {
+      console.warn('Attendance subject sync warning:', attErr);
+    }
+  }
+
   closeModal('modal-edit-clinic');
   showToast('บันทึกสำเร็จ', 'อัปเดตข้อมูลการสอนเรียบร้อยแล้ว', 'success');
   await loadTeacherClinics();

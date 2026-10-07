@@ -85,6 +85,12 @@ const SupabaseAPI = {
         LocalDB.setList('clinics', clinics.filter(c => String(c.id) !== String(oldRecord.id)));
       } else {
         const mapped = this.mapClinicFromDb(newRecord);
+        const customData = LocalDB.get('clinic_custom_data') || {};
+        const custom = customData[String(mapped.id)] || {};
+        if (custom.time) mapped.time = custom.time;
+        if (custom.notes !== undefined && (!mapped.notes || custom.notes)) mapped.notes = custom.notes;
+        if (custom.topic !== undefined) mapped.topic = custom.topic;
+        if (custom.subject) { mapped.subject = custom.subject; mapped.subjectName = custom.subject; }
         const idx = clinics.findIndex(c => String(c.id) === String(mapped.id));
         if (idx >= 0) clinics[idx] = mapped;
         else clinics.push(mapped);
@@ -155,6 +161,7 @@ const SupabaseAPI = {
             if (custom.time) c.time = custom.time;
             if (custom.notes !== undefined && (!c.notes || custom.notes)) c.notes = custom.notes;
             if (custom.topic !== undefined) c.topic = custom.topic;
+            if (custom.subject) { c.subject = custom.subject; c.subjectName = custom.subject; }
             return c;
           });
           LocalDB.setList('clinics', clinics);
@@ -236,6 +243,7 @@ const SupabaseAPI = {
           if (custom.time) item.time = custom.time;
           if (custom.notes !== undefined && (!item.notes || custom.notes)) item.notes = custom.notes;
           if (custom.topic !== undefined) item.topic = custom.topic;
+          if (custom.subject) { item.subject = custom.subject; item.subjectName = custom.subject; }
           return item;
         });
         LocalDB.setList('clinics', clinics);
@@ -312,12 +320,13 @@ const SupabaseAPI = {
   async saveClinic(c) {
     if (!this.client) return;
     try {
-      // 1. Sync custom time, notes & topic to Supabase settings table (works 100% across all devices)
+      // 1. Sync custom time, notes, topic & subject to Supabase settings table (works 100% across all devices)
       const customData = LocalDB.get('clinic_custom_data') || {};
       customData[String(c.id)] = {
         time: c.time || '18:30–20:30',
         notes: c.notes || '',
-        topic: c.topic || ''
+        topic: c.topic || '',
+        subject: c.subject || c.subjectName || ''
       };
       LocalDB.set('clinic_custom_data', customData);
       await this.client.from('settings').upsert({
