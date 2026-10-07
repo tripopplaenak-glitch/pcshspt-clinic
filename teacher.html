@@ -159,10 +159,6 @@
           <option value="pending">⏳ รอยืนยัน</option>
         </select>
       </div>
-      <div class="form-group">
-        <label class="form-label">หมายเหตุ</label>
-        <textarea class="form-control" id="edit-notes" rows="2" placeholder="หมายเหตุเพิ่มเติม..."></textarea>
-      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-edit-clinic')">ยกเลิก</button>
@@ -359,7 +355,6 @@ async function openEditClinic(clinicId) {
   document.getElementById('edit-time-end').value   = te;
   document.getElementById('edit-room').value   = c.room || '';
   document.getElementById('edit-status').value = c.status || 'active';
-  document.getElementById('edit-notes').value  = c.notes || '';
   openModal('modal-edit-clinic');
 }
 
@@ -369,7 +364,6 @@ async function saveClinicEdit() {
   const te    = document.getElementById('edit-time-end').value;
   const room  = document.getElementById('edit-room').value.trim();
   const status= document.getElementById('edit-status').value;
-  const notes = document.getElementById('edit-notes').value.trim();
 
   const clinics = await DataService.getClinics();
   const c = clinics.find(x => String(x.id) === String(id));
@@ -380,7 +374,7 @@ async function saveClinicEdit() {
   c.time = `${ts}–${te}`;
   c.room = room;
   c.status = status;
-  c.notes = notes;
+  c.notes = c.notes || '';
   await DataService.saveClinic(c);
   closeModal('modal-edit-clinic');
   showToast('บันทึกสำเร็จ', 'อัปเดตข้อมูลการสอนเรียบร้อยแล้ว', 'success');

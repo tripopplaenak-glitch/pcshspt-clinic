@@ -21,7 +21,7 @@
         <img src="assets/logo.png" alt="โลโก้" class="navbar-logo">
         <div class="navbar-title">
           <h1>โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</h1>
-          <p>ระบบคลินิกวิชาการ | ภาคเรียนที่ 1 ปีการศึกษา 2570</p>
+          <p>ระบบคลินิกวิชาการ | ภาคเรียนที่ <span id="nav-semester">1</span> ปีการศึกษา <span id="nav-academic-year">2569</span></p>
         </div>
       </div>
       <nav class="navbar-nav">
@@ -45,7 +45,7 @@
       <div class="hero-text">
         <h1>สรุปการเข้าเรียนคลินิกวิชาการ</h1>
         <p>ดูรายชื่อนักเรียนที่เข้าเรียน แยกตามวัน ชั้นเรียน หอพัก หรือวิชา</p>
-        <span class="hero-sub">ภาคเรียนที่ 1 ปีการศึกษา 2570</span>
+        <span class="hero-sub">ภาคเรียนที่ <span id="hero-semester">1</span> ปีการศึกษา <span id="hero-academic-year">2569</span></span>
       </div>
     </div>
   </div>
@@ -65,11 +65,12 @@
       <button class="filter-chip" id="chip-dorm" onclick="setGroupBy('dorm')">แยกหอพัก</button>
       <button class="filter-chip" id="chip-subject" onclick="setGroupBy('subject')">แยกวิชา</button>
 
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <span class="filter-label">ค้นหา:</span>
         <input type="text" class="filter-input" id="search-input" placeholder="ชื่อ / ชั้น / ห้อง"
           oninput="renderTable()" style="width:200px;">
         <button class="btn btn-outline btn-sm" onclick="printPage()">🖨️ พิมพ์</button>
+        <button class="btn btn-primary btn-sm" onclick="downloadAttendancePDF()" id="btn-download-pdf">📥 ดาวน์โหลด PDF</button>
       </div>
     </div>
 
@@ -129,6 +130,7 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="js/firebase-config.js?v=2569_10"></script>
   <script src="js/supabase-api.js?v=2569_10"></script>
   <script src="js/db.js?v=2569_10"></script>
@@ -153,6 +155,14 @@
       return `<span class="badge badge-blue">หอพัก ${name}</span>`;
     }
 
+    function loadSchoolInfo() {
+      const s = LocalDB.get('school_settings') || {};
+      const sem  = s.semester    || (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.semester) || '1';
+      const year = s.academicYear || (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.academicYear) || '2569';
+      ['nav-semester','hero-semester'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = sem; });
+      ['nav-academic-year','hero-academic-year'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = year; });
+    }
+
     // ─── STATE
     let groupBy = 'all';
     let allAttendance = [];
@@ -164,10 +174,12 @@
       seedDemoData();
       updateNavbarAuth();
       updateNavbarLinks();
+      loadSchoolInfo();
 
       // Connect Supabase Realtime
       if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
         SupabaseAPI.init(async () => {
+          loadSchoolInfo();
           allTeachers = await DataService.getTeachers();
           allClinics = await DataService.getClinics();
           allStudents = await DataService.getStudents();
@@ -444,6 +456,113 @@
     function printPage() {
       window.print();
     }
+
+    async function downloadAttendancePDF() {
+      const dateVal = document.getElementById('filter-date').value;
+      const dateText = dateVal ? formatDateThai(dateVal) : 'ข้อมูลทั้งหมดทุกวัน';
+      const s = LocalDB.get('school_settings') || {};
+      const sem  = s.semester    || (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.semester) || '1';
+      const year = s.academicYear || (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.academicYear) || '2569';
+      
+      const count = document.getElementById('att-count')?.textContent || '0';
+      const subjects = document.getElementById('att-subjects')?.textContent || '0';
+      const dorms = document.getElementById('att-dorms')?.textContent || '0';
+      const grades = document.getElementById('att-grades')?.textContent || '0';
+
+      const tableEl = document.getElementById('attendance-table');
+      if (!tableEl || !tableEl.innerHTML.trim() || count === '0') {
+        showToast('แจ้งเตือน', 'ไม่มีข้อมูลนักเรียนสำหรับดาวน์โหลด', 'warning');
+        return;
+      }
+
+      const btn = document.getElementById('btn-download-pdf');
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = '⏳ กำลังสร้าง PDF...'; }
+
+      try {
+        const reportDiv = document.createElement('div');
+        reportDiv.style.fontFamily = "'Sarabun', 'TH Sarabun New', sans-serif";
+        reportDiv.style.padding = '14px 18px';
+        reportDiv.style.color = '#0f172a';
+        reportDiv.style.background = '#ffffff';
+
+        reportDiv.innerHTML = `
+          <div style="text-align:center;border-bottom:2.5px solid #0284c7;padding-bottom:12px;margin-bottom:14px;">
+            <div style="font-size:16pt;font-weight:700;color:#0f172a;font-family:'Kanit',sans-serif;">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
+            <div style="font-size:13pt;font-weight:600;color:#0284c7;margin-top:2px;">รายงานสรุปการเข้าเรียนคลินิกวิชาการ</div>
+            <div style="font-size:10.5pt;color:#334155;margin-top:4px;">
+              <span>📅 วันที่: <strong>${escapeHtml(dateText)}</strong></span> &bull; 
+              <span>ภาคเรียนที่ <strong>${escapeHtml(sem)}</strong> ปีการศึกษา <strong>${escapeHtml(year)}</strong></span>
+            </div>
+            <div style="display:flex;justify-content:center;gap:16px;margin-top:8px;font-size:9.5pt;background:#f8fafc;padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;">
+              <span>👥 นักเรียนทั้งหมด: <strong>${count}</strong> คน</span> &bull;
+              <span>📚 วิชาที่เปิดสอน: <strong>${subjects}</strong> วิชา</span> &bull;
+              <span>🏠 หอพัก: <strong>${dorms}</strong> หอ</span> &bull;
+              <span>🎓 ระดับชั้น: <strong>${grades}</strong> ชั้น</span>
+            </div>
+          </div>
+          <div id="pdf-report-content" style="font-size:9pt;">
+            ${tableEl.innerHTML}
+          </div>
+          <div style="margin-top:16px;padding-top:8px;border-top:1px dashed #cbd5e1;display:flex;justify-content:space-between;font-size:8pt;color:#64748b;">
+            <span>ระบบบริหารจัดการคลินิกวิชาการ PCCPT</span>
+            <span>สร้างรายงานเมื่อ: ${new Date().toLocaleString('th-TH')}</span>
+          </div>
+        `;
+
+        reportDiv.querySelectorAll('button, input, select, .filter-chip').forEach(el => el.remove());
+
+        reportDiv.querySelectorAll('table').forEach(tbl => {
+          tbl.style.width = '100%';
+          tbl.style.borderCollapse = 'collapse';
+          tbl.style.marginBottom = '12px';
+        });
+        reportDiv.querySelectorAll('th').forEach(th => {
+          th.style.background = '#f1f5f9';
+          th.style.color = '#1e293b';
+          th.style.border = '1px solid #cbd5e1';
+          th.style.padding = '6px 8px';
+          th.style.fontSize = '8.5pt';
+          th.style.textAlign = 'center';
+        });
+        reportDiv.querySelectorAll('td').forEach(td => {
+          td.style.border = '1px solid #e2e8f0';
+          td.style.padding = '5px 8px';
+          td.style.fontSize = '8.5pt';
+        });
+
+        const opt = {
+          margin: [8, 8, 8, 8],
+          filename: `สรุปการเข้าเรียนคลินิกวิชาการ_${dateVal || 'ทุกวัน'}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        if (typeof html2pdf !== 'undefined') {
+          await html2pdf().set(opt).from(reportDiv).save();
+          showToast('สำเร็จ', 'ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว', 'success');
+        } else {
+          window.print();
+        }
+      } catch (err) {
+        console.error('PDF generation error:', err);
+        showToast('ผิดพลาด', 'กำลังเปิดหน้าต่างพิมพ์เอกสารแทน...', 'error');
+        window.print();
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+      }
+    }
+
+    // Realtime storage sync across browser tabs
+    window.addEventListener('storage', e => {
+      if (!e.key || e.key === 'school_settings') {
+        loadSchoolInfo();
+      }
+    });
+    window.addEventListener('focus', () => {
+      loadSchoolInfo();
+    });
   </script>
 </body>
 

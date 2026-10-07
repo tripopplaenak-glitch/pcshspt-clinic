@@ -167,7 +167,7 @@
             <div class="section-title">
               <div class="section-title-icon">📝</div>ตารางคลินิก
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2" style="flex-wrap:wrap;align-items:center;">
               <select class="filter-select" id="clinic-week-filter" onchange="loadAdminClinics()">
                 <option value="">ทุกสัปดาห์</option>
               </select>
@@ -182,6 +182,7 @@
               </select>
               <button class="btn btn-outline" onclick="openAddClinicBatch()">📆 เพิ่มทั้งสัปดาห์ (4 วัน)</button>
               <button class="btn btn-primary" onclick="openAddClinic()">➕ เพิ่มรายเดี่ยว</button>
+              <button class="btn btn-danger btn-sm hidden" id="btn-delete-selected-clinics" onclick="deleteSelectedClinics()">🗑️ ลบที่เลือก (<span id="selected-clinics-count">0</span>)</button>
             </div>
           </div>
           <div id="clinics-table" class="card">
@@ -495,22 +496,37 @@
                 🚀 <strong>ความเร็วแบบ Realtime:</strong> ข้อมูลจะอัปเดตข้ามทุกอุปกรณ์ (คอม/มือถือ) ทันทีในเวลา <strong>&lt; 0.1 วินาที</strong> ผ่าน WebSockets ไม่ต้องรอรอบโหลด
               </div>
 
-              <div class="form-group mb-3">
-                <label class="form-label font-bold">Supabase Project URL</label>
-                <input type="url" class="form-control" id="setting-supabase-url" value="https://tzxhffzlblkehyzmggdu.supabase.co">
+              <!-- Locked State (Default) -->
+              <div id="supabase-locked-box" style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:22px;text-align:center;">
+                <div style="font-size:2rem;margin-bottom:6px;">🔒</div>
+                <div style="font-weight:700;color:#334155;margin-bottom:4px;font-size:1rem;">ลิงก์เชื่อมต่อและคีย์ API ถูกซ่อนไว้เพื่อความปลอดภัย</div>
+                <p style="font-size:0.85rem;color:#64748b;margin-bottom:14px;">โปรดกรอกรหัสผ่านเพื่อแสดงหรือแก้ไขข้อมูลการเชื่อมต่อฐานข้อมูล Supabase</p>
+                <button class="btn btn-primary btn-sm" onclick="promptUnlockSupabase()">🔑 กดแสดงข้อมูล (ใส่รหัสผ่าน)</button>
               </div>
 
-              <div class="form-group mb-3">
-                <label class="form-label font-bold">Supabase Publishable Key</label>
-                <input type="text" class="form-control" id="setting-supabase-key" value="sb_publishable_UnAxE0Dr5Z6fGf1zo-nd2g_QKqXOIc9">
-              </div>
+              <!-- Unlocked Container (Hidden by default) -->
+              <div id="supabase-unlocked-container" style="display:none;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;background:#f0fdf4;padding:8px 12px;border-radius:8px;border:1px solid #bbf7d0;">
+                  <span style="font-size:0.85rem;color:#166534;font-weight:600;">🔓 ปลดล็อกการแสดงข้อมูลแล้ว</span>
+                  <button class="btn btn-outline btn-sm" onclick="lockSupabaseFields()" style="font-size:0.75rem;padding:3px 10px;">🔒 ซ่อนข้อมูลอีกครั้ง</button>
+                </div>
+                <div class="form-group mb-3">
+                  <label class="form-label font-bold">Supabase Project URL</label>
+                  <input type="url" class="form-control" id="setting-supabase-url" value="https://tzxhffzlblkehyzmggdu.supabase.co">
+                </div>
 
-              <div class="flex gap-2 mt-3" style="flex-wrap:wrap;">
-                <button class="btn btn-primary btn-sm" onclick="saveSupabaseSettings()">💾 บันทึกการตั้งค่า Supabase</button>
-                <button class="btn btn-outline btn-sm" onclick="syncDataToSupabase()" id="btn-sync-to-supabase">🚀 ส่งข้อมูลทั้งหมดขึ้น Supabase</button>
-                <button class="btn btn-outline btn-sm" onclick="syncDataFromSupabase()" id="btn-sync-from-supabase">🔄 ดึงข้อมูลสดจาก Supabase</button>
+                <div class="form-group mb-3">
+                  <label class="form-label font-bold">Supabase Publishable Key</label>
+                  <input type="text" class="form-control" id="setting-supabase-key" value="sb_publishable_UnAxE0Dr5Z6fGf1zo-nd2g_QKqXOIc9">
+                </div>
+
+                <div class="flex gap-2 mt-3" style="flex-wrap:wrap;">
+                  <button class="btn btn-primary btn-sm" onclick="saveSupabaseSettings()">💾 บันทึกการตั้งค่า Supabase</button>
+                  <button class="btn btn-outline btn-sm" onclick="syncDataToSupabase()" id="btn-sync-to-supabase">🚀 ส่งข้อมูลทั้งหมดขึ้น Supabase</button>
+                  <button class="btn btn-outline btn-sm" onclick="syncDataFromSupabase()" id="btn-sync-from-supabase">🔄 ดึงข้อมูลสดจาก Supabase</button>
+                </div>
+                <div id="supabase-status-msg" class="text-xs mt-2" style="font-weight:600;color:#059669;"></div>
               </div>
-              <div id="supabase-status-msg" class="text-xs mt-2" style="font-weight:600;color:#059669;"></div>
             </div>
           </div>
 
@@ -1173,6 +1189,11 @@
       const dayNames = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'];
       const container = document.getElementById('clinics-table');
 
+      const delBtn = document.getElementById('btn-delete-selected-clinics');
+      if (delBtn) delBtn.classList.add('hidden');
+      const countEl = document.getElementById('selected-clinics-count');
+      if (countEl) countEl.textContent = '0';
+
       if (!clinics.length) {
         container.innerHTML = '<div class="card-body empty-state"><div class="empty-icon">📝</div><div class="empty-title">ไม่พบตารางคลินิก</div><div class="empty-sub">กดปุ่มเพิ่มรายการเพื่อเริ่มต้น</div></div>';
         return;
@@ -1181,7 +1202,24 @@
       container.innerHTML = `
     <div class="table-wrapper">
       <table>
-        <thead><tr><th>#</th><th>สัปดาห์</th><th>ชั้น</th><th>วัน/วันที่</th><th>วิชา</th><th>ครูผู้สอน</th><th>เวลา</th><th>ห้อง</th><th>สถานะ</th><th>นร.</th><th>จัดการ</th></tr></thead>
+        <thead>
+          <tr>
+            <th style="width:36px;text-align:center;">
+              <input type="checkbox" id="check-all-clinics" onchange="toggleSelectAllClinics(this.checked)" title="เลือกทั้งหมด" style="cursor:pointer;width:16px;height:16px;">
+            </th>
+            <th>#</th>
+            <th>สัปดาห์</th>
+            <th>ชั้น</th>
+            <th>วัน/วันที่</th>
+            <th>วิชา</th>
+            <th>ครูผู้สอน</th>
+            <th>เวลา</th>
+            <th>ห้อง</th>
+            <th>สถานะ</th>
+            <th>นร.</th>
+            <th>จัดการ</th>
+          </tr>
+        </thead>
         <tbody>
           ${clinics.map((c, i) => {
         let w = (c.weekId ? weekMap[c.weekId] : null) || (c.date ? weekMap[String(c.date).slice(0, 10)] : null);
@@ -1198,6 +1236,9 @@
         const st = getStatusLabel(c.status);
         return `
               <tr>
+                <td style="text-align:center;">
+                  <input type="checkbox" class="clinic-row-cb" value="${c.id}" onchange="onClinicCheckboxChange()" style="cursor:pointer;width:16px;height:16px;">
+                </td>
                 <td>${i + 1}</td>
                 <td><span class="badge badge-gray text-xs">${w.weekNum ? 'สัปดาห์ที่ ' + w.weekNum : '–'}</span></td>
                 <td><span class="badge badge-blue">ม.${c.grade}</span></td>
@@ -2520,6 +2561,71 @@
       } finally {
         if (btn) btn.disabled = false;
       }
+    }
+
+    // ─── SUPABASE PASSWORD UNLOCK (Password: 0708) ────────────
+    function promptUnlockSupabase() {
+      const pwd = prompt('กรุณากรอกรหัสผ่านเพื่อแสดงข้อมูล Supabase:');
+      if (pwd === null) return;
+      if (pwd.trim() === '0708') {
+        const lockedBox = document.getElementById('supabase-locked-box');
+        const unlocked = document.getElementById('supabase-unlocked-container');
+        if (lockedBox) lockedBox.style.display = 'none';
+        if (unlocked) unlocked.style.display = 'block';
+        showToast('สำเร็จ', 'ปลดล็อกข้อมูล Supabase เรียบร้อยแล้ว', 'success');
+      } else {
+        showToast('รหัสผ่านไม่ถูกต้อง', 'กรุณาลองใหม่อีกครั้ง', 'error');
+      }
+    }
+
+    function lockSupabaseFields() {
+      const lockedBox = document.getElementById('supabase-locked-box');
+      const unlocked = document.getElementById('supabase-unlocked-container');
+      if (lockedBox) lockedBox.style.display = 'block';
+      if (unlocked) unlocked.style.display = 'none';
+      showToast('ซ่อนข้อมูล', 'ซ่อนข้อมูลการเชื่อมต่อ Supabase เรียบร้อยแล้ว', 'info');
+    }
+
+    // ─── CLINIC MULTI-SELECT & BATCH DELETE ──────────────────
+    function onClinicCheckboxChange() {
+      const cbs = Array.from(document.querySelectorAll('.clinic-row-cb'));
+      const checked = cbs.filter(cb => cb.checked);
+      const countEl = document.getElementById('selected-clinics-count');
+      const delBtn = document.getElementById('btn-delete-selected-clinics');
+      const checkAll = document.getElementById('check-all-clinics');
+      
+      if (countEl) countEl.textContent = checked.length;
+      if (delBtn) {
+        if (checked.length > 0) delBtn.classList.remove('hidden');
+        else delBtn.classList.add('hidden');
+      }
+      if (checkAll && cbs.length > 0) {
+        checkAll.checked = checked.length === cbs.length;
+        checkAll.indeterminate = checked.length > 0 && checked.length < cbs.length;
+      }
+    }
+
+    function toggleSelectAllClinics(checked) {
+      const cbs = document.querySelectorAll('.clinic-row-cb');
+      cbs.forEach(cb => { cb.checked = checked; });
+      onClinicCheckboxChange();
+    }
+
+    async function deleteSelectedClinics() {
+      const checked = Array.from(document.querySelectorAll('.clinic-row-cb:checked'));
+      const ids = checked.map(cb => cb.value);
+      if (!ids.length) return;
+
+      if (!confirm(`ยืนยันการลบตารางคลินิกที่เลือกจำนวน ${ids.length} รายการใช่หรือไม่?\n(การกระทำนี้ไม่สามารถย้อนกลับได้)`)) {
+        return;
+      }
+
+      showToast('กำลังลบข้อมูล...', `กำลังลบตารางคลินิก ${ids.length} รายการ`, 'info');
+      for (const id of ids) {
+        await DataService.deleteClinic(id);
+      }
+      showToast('ลบสำเร็จ', `ลบตารางคลินิกจำนวน ${ids.length} รายการเรียบร้อยแล้ว`, 'success');
+      await loadAdminClinics();
     }
   </script>
 </body>
