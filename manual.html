@@ -429,9 +429,9 @@
       <div class="guide-card">
         <div class="guide-step-header">
           <span class="step-badge">ขั้นตอนที่ 3</span>
-          <h3 class="step-title">การอ่านข้อมูลการ์ดคลินิกประจำวัน (วันจันทร์ – วันศุกร์)</h3>
+          <h3 class="step-title">การอ่านข้อมูลการ์ดคลินิกประจำวัน (วันจันทร์ – วันพฤหัสบดี)</h3>
         </div>
-        <p>ระบบจะแสดงการ์ดตารางคลินิกวิชาการแยกตามวันในสัปดาห์ ให้นักเรียนสังเกตจุดสำคัญในการ์ดดังนี้:</p>
+        <p>ระบบจะแสดงการ์ดตารางคลินิกวิชาการแยกตามวันในสัปดาห์ (วันจันทร์ – วันพฤหัสบดี โดยไม่มีวันศุกร์) ให้นักเรียนสังเกตจุดสำคัญในการ์ดดังนี้:</p>
 
         <div class="mockup-box">
           <div class="mockup-label">📋 ตัวอย่างการ์ดคลินิกวิชาการ</div>
@@ -504,20 +504,6 @@
         </ul>
       </div>
 
-      <!-- STEP 6 -->
-      <div class="guide-card">
-        <div class="guide-step-header">
-          <span class="step-badge">ขั้นตอนที่ 6</span>
-          <h3 class="step-title">การตรวจสอบประวัติการเข้าเรียนย้อนหลัง</h3>
-        </div>
-        <p>นักเรียนสามารถตรวจสอบบันทึกการเช็คชื่อเข้าเรียนของตนเองได้ที่เมนู <strong>"📋 สรุปการเข้าเรียน"</strong>:</p>
-        <ul>
-          <li>คลิกเมนู <strong>"📋 สรุปการเข้าเรียน"</strong> ที่แถบด้านบน</li>
-          <li>พิมพ์ชื่อหรือเลขประจำตัวของตนเองในช่องค้นหา</li>
-          <li>ระบบจะแสดงประวัติว่าวิชาใดได้รับการเช็คชื่อ <strong>"มาเรียน"</strong> แล้ว เพื่อความถูกต้องและโปร่งใส</li>
-        </ul>
-      </div>
-
     </div>
 
     <!-- ═════════════════════════════════════════════════════════ -->
@@ -531,7 +517,7 @@
         </h3>
         <p style="margin:0;font-size:0.95rem;color:#334155;line-height:1.6;">
           คุณครูสามารถเข้าสู่ระบบเพื่อตรวจสอบรอบสอนที่รับผิดชอบ ปรับปรุงเวลาและห้องเรียน แจ้งสถานะเปิดสอนหรืองดสอน 
-          ตลอดจน<strong>ลงทะเบียนคัดเลือกนักเรียนแบบเลือกได้หลายห้องพร้อมกัน (Multi-Room)</strong> และเช็คชื่อเข้าเรียนแบบ Real-time ซิงก์สู่ฐานข้อมูลคลาวด์ทันที
+          ตลอดจน<strong>ลงทะเบียนคัดเลือกนักเรียนแบบเลือกได้หลายห้องพร้อมกัน (Multi-Room)</strong> ได้อย่างสะดวกรวดเร็ว
         </p>
       </div>
 
@@ -556,11 +542,6 @@
           <div class="flow-item-num" style="background:#16a34a;">4</div>
           <div class="flow-item-title">เลือกเด็กหลายห้อง</div>
           <div class="flow-item-desc">Multi-Room Selector</div>
-        </div>
-        <div class="flow-item">
-          <div class="flow-item-num" style="background:#16a34a;">5</div>
-          <div class="flow-item-title">เช็คชื่อ & บันทึก</div>
-          <div class="flow-item-desc">ซิงก์ Cloud สด &lt;0.1s</div>
         </div>
       </div>
 
@@ -667,41 +648,6 @@
             <td style="padding:8px 12px;">นักเรียนที่ติ๊กเลือกไว้แล้ว จะไม่สูญหายแม้คุณครูจะสลับไปคลิกดูห้องอื่น</td>
           </tr>
         </table>
-      </div>
-
-      <!-- STEP 5 -->
-      <div class="guide-card">
-        <div class="guide-step-header">
-          <span class="step-badge step-badge-green">ขั้นตอนที่ 5</span>
-          <h3 class="step-title">การเช็คชื่อเข้าเรียนและบันทึกสู่คลาวด์ Real-time</h3>
-        </div>
-        <p>ในระหว่างการจัดกิจกรรมคลินิกวิชาการ:</p>
-        <ol style="line-height:1.7;">
-          <li>ตรวจเช็คนักเรียนที่เข้าเรียนจริงในห้องเรียน</li>
-          <li>ปรับสถานะของนักเรียนแต่ละคน: 
-            <span class="tag-chip tag-chip-green">มาเรียน</span> (มาเรียนจริง), 
-            <span class="tag-chip tag-chip-red">ขาดเรียน</span> (มีชื่อแต่ไม่ปรากฏตัว), หรือ 
-            <span class="tag-chip tag-chip-yellow">ลา</span> (แจ้งลาป่วย/ลากิจ)
-          </li>
-          <li>กดปุ่ม <strong>"💾 บันทึกข้อมูล"</strong></li>
-          <li>ระบบจะส่งข้อมูลบันทึกลงฐานข้อมูล <strong>Supabase Realtime Cloud</strong> ในเวลาไม่ถึง 0.1 วินาที</li>
-          <li>จำนวนยอดนักเรียนจะปรากฏบนการ์ดในหน้าตารางสอนของนักเรียนทันที</li>
-        </ol>
-        <div class="alert-box-ui alert-success-ui">
-          ✅ <strong>ระบบสำรองข้อมูล:</strong> ข้อมูลจะถูกบันทึกไว้อย่างปลอดภัย ไม่สูญหายแม้ปิดหน้าต่างเว็บ
-        </div>
-      </div>
-
-      <!-- STEP 6 -->
-      <div class="guide-card">
-        <div class="guide-step-header">
-          <span class="step-badge step-badge-green">ขั้นตอนที่ 6</span>
-          <h3 class="step-title">การซิงก์รอบสอนลง Google Calendar และการออกจากระบบ</h3>
-        </div>
-        <ul>
-          <li><strong>+ Google Calendar:</strong> คลิกปุ่มบนการ์ดรอบสอน เพื่อเพิ่มตารางสอนลง Google Calendar ส่วนตัวของครู</li>
-          <li><strong>การออกจากระบบ:</strong> เมื่อเสร็จสิ้นการใช้งาน ให้คลิกปุ่ม <strong>"ออกจากระบบ"</strong> ที่มุมขวาบน</li>
-        </ul>
       </div>
 
     </div>
