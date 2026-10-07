@@ -147,6 +147,18 @@ const SupabaseAPI = {
       if (newRecord && newRecord.key) {
         if (newRecord.key === 'school_settings') LocalDB.set('school_settings', newRecord.value);
         if (newRecord.key === 'announcements_config') LocalDB.saveAnnouncementsConfig(newRecord.value);
+        if (newRecord.key === 'clinic_custom_data') {
+          LocalDB.set('clinic_custom_data', newRecord.value || {});
+          const customData = newRecord.value || {};
+          const clinics = LocalDB.getClinics().map(c => {
+            const custom = customData[String(c.id)] || {};
+            if (custom.time) c.time = custom.time;
+            if (custom.notes !== undefined && (!c.notes || custom.notes)) c.notes = custom.notes;
+            if (custom.topic !== undefined) c.topic = custom.topic;
+            return c;
+          });
+          LocalDB.setList('clinics', clinics);
+        }
       }
     } else if (table === 'attendance') {
       const att = LocalDB.getAttendance();

@@ -544,7 +544,9 @@ const DataService = {
   },
   async saveClinic(c)       {
     const res = LocalDB.saveClinic(c);
-    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.saveClinic(res);
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+      await SupabaseAPI.saveClinic(res);
+    }
     return res;
   },
   async deleteClinic(id)    {
