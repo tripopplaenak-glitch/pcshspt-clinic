@@ -183,7 +183,7 @@
   <!-- FILTER -->
   <div class="filter-bar" style="margin-bottom:20px;">
     <span class="filter-label">สัปดาห์:</span>
-    <select class="filter-select" id="week-select" onchange="loadTeacherClinics()"></select>
+    <select class="filter-select" id="week-select" onchange="onTeacherWeekChange(this.value)"></select>
 
     <span class="filter-label">ระดับชั้น:</span>
     <select class="filter-select" id="grade-select" onchange="loadTeacherClinics()">
@@ -434,19 +434,46 @@ let distinctRooms = [];
 let selectedRooms = new Set();
 let selectedStudentIds = new Set();
 
+function onTeacherWeekChange(val) {
+  if (val) {
+    sessionStorage.setItem('teacher_selected_week', val);
+  }
+  loadTeacherClinics();
+}
+
 async function loadWeeks() {
   allWeeks = await DataService.getWeeks();
   const sel = document.getElementById('week-select');
+  if (!sel) return;
+
+  // จำสัปดาห์ที่ผู้ใช้กำลังเลือกอยู่ (จาก dropdown หรือ sessionStorage)
+  const prevSelected = sel.value || sessionStorage.getItem('teacher_selected_week') || '';
+
   sel.innerHTML = '';
   allWeeks.forEach(w => {
     const opt = document.createElement('option');
     opt.value = w.weekId;
-    opt.textContent = w.label;
+    opt.textContent = w.label + (w.noClasses ? ' (งดสอน)' : '');
     sel.appendChild(opt);
   });
-  // Select current week
-  const cur = await DataService.getCurrentWeek();
-  if (cur) sel.value = cur.weekId;
+
+  // ล็อคสัปดาห์ที่เลือกไว้เสมอ — ไม่เด้งไปสัปดาห์อื่นระหว่างที่ผู้ใช้อยู่ในหน้านี้หรือเมื่อมี Realtime sync
+  if (prevSelected && allWeeks.some(w => w.weekId === prevSelected)) {
+    sel.value = prevSelected;
+  } else {
+    // เข้าใช้งานครั้งแรก: ตั้งค่าเริ่มต้นตามสัปดาห์ปัจจุบันของวันที่จริง หากไม่มีวันที่จริงให้เริ่มที่สัปดาห์ที่ 1
+    const cur = await DataService.getCurrentWeek();
+    if (cur && allWeeks.some(w => w.weekId === cur.weekId)) {
+      sel.value = cur.weekId;
+    } else if (allWeeks.length) {
+      const w1 = allWeeks.find(w => Number(w.weekNum) === 1);
+      sel.value = (w1 || allWeeks[0]).weekId;
+    }
+  }
+
+  if (sel.value) {
+    sessionStorage.setItem('teacher_selected_week', sel.value);
+  }
 }
 
 async function loadTeacherClinics() {

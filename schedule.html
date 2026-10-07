@@ -505,7 +505,7 @@ async function loadWeeks() {
     });
     currentWeekIdx = weekWithClinicsIdx >= 0 ? weekWithClinicsIdx : idx;
   } else {
-    currentWeekIdx = allWeeks.length - 1;
+    currentWeekIdx = 0;
   }
   updateWeekLabel();
 

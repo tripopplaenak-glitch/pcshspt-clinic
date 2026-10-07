@@ -1082,7 +1082,11 @@
         if (cur && weeks.some(w => w.weekId === cur)) {
           sel.value = cur;
         } else if (selId !== 'clinic-week-filter' && weeks.length && !sel.value) {
-          sel.value = weeks[weeks.length - 1].weekId;
+          const curW = weeks.find(w => {
+            const today = (typeof toYMD === 'function' ? toYMD(new Date()) : '');
+            return today && w.startDate && w.endDate && today >= w.startDate && today <= w.endDate;
+          }) || weeks.find(w => Number(w.weekNum) === 1) || weeks[0];
+          sel.value = curW ? curW.weekId : '';
         }
       });
       return weeks;
@@ -1302,7 +1306,8 @@
       if (curFilterWeek && sel) {
         sel.value = curFilterWeek;
       } else if (weeks.length && sel && !sel.value) {
-        sel.value = weeks[weeks.length - 1].weekId;
+        const curW = await DataService.getCurrentWeek();
+        sel.value = curW ? curW.weekId : (weeks[0] ? weeks[0].weekId : '');
       }
 
       // Populate teacher dropdowns for all 4 days

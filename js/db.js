@@ -619,10 +619,22 @@ const DataService = {
     LocalDB.deleteWeek(id);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.deleteWeek(id);
   },
-  async getCurrentWeek()    {
-    const today = new Date().toISOString().split('T')[0];
-    const weeks = LocalDB.getWeeks().sort((a, b) => a.startDate > b.startDate ? 1 : -1);
-    return weeks.find(w => w.startDate <= today && w.endDate >= today) || weeks[weeks.length - 1] || null;
+  async getCurrentWeek() {
+    const today = (typeof toYMD === 'function' ? toYMD(new Date()) : new Date().toISOString().split('T')[0]);
+    const weeks = LocalDB.getWeeks().sort((a, b) => (toYMD(a.startDate) || '') > (toYMD(b.startDate) || '') ? 1 : -1);
+    if (!weeks || !weeks.length) return null;
+
+    // 1. ค้นหาสัปดาห์ปัจจุบันตามวันที่จริง (startDate <= today <= endDate)
+    const match = weeks.find(w => {
+      const s = toYMD(w.startDate);
+      const e = toYMD(w.endDate);
+      return s && e && today >= s && today <= e;
+    });
+    if (match) return match;
+
+    // 2. ถ้ายังไม่มีสัปดาห์ที่ตรงกับวันที่จริง ให้ตั้งค่าเริ่มต้นเป็นสัปดาห์ที่ 1 เสมอ
+    const week1 = weeks.find(w => Number(w.weekNum) === 1 || String(w.weekId).includes('_1') || (w.label && w.label.includes('สัปดาห์ที่ 1')));
+    return week1 || weeks[0] || null;
   },
 
   // --- Attendance ---
