@@ -89,6 +89,74 @@
         margin-bottom: 4px !important;
       }
     }
+
+    /* Mobile-optimized Attendance Table */
+    .table-attendance-responsive {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: auto;
+    }
+    .table-attendance-responsive th,
+    .table-attendance-responsive td {
+      padding: 8px 10px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .table-attendance-responsive .col-compact {
+      text-align: center;
+      white-space: nowrap;
+      width: 1%;
+    }
+    .table-attendance-responsive .col-name {
+      text-align: left;
+    }
+    .table-attendance-responsive .col-info {
+      text-align: left;
+    }
+
+    @media (max-width: 768px) {
+      .table-wrapper {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-x pan-y !important;
+      }
+      .table-attendance-responsive {
+        font-size: 0.82rem !important;
+        min-width: 320px;
+      }
+      .table-attendance-responsive th,
+      .table-attendance-responsive td {
+        padding: 6px 3px !important;
+      }
+      .table-attendance-responsive .col-compact {
+        width: 1% !important;
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+        font-size: 0.78rem !important;
+      }
+      .table-attendance-responsive .col-name {
+        min-width: 110px !important;
+        padding-left: 5px !important;
+        padding-right: 4px !important;
+        word-break: break-word !important;
+      }
+      .table-attendance-responsive .col-info {
+        min-width: 85px !important;
+        font-size: 0.76rem !important;
+        padding-left: 4px !important;
+      }
+      .card-header {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .filter-bar {
+        padding: 10px !important;
+        gap: 6px !important;
+      }
+      .filter-input {
+        width: 100% !important;
+      }
+    }
   </style>
 </head>
 
@@ -561,14 +629,14 @@
       if (sameTeacherName) extraBadges.push(`<span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;font-size:0.85rem;">👩‍🏫 ครูผู้สอน: ${sameTeacherName}</span>`);
 
       const colDefs = [
-        { key: 'no', label: '#', thStyle: 'width:6%;text-align:center;' },
-        { key: 'name', label: 'ชื่อ-สกุล', thStyle: 'text-align:left;' },
-        { key: 'grade', label: 'ชั้น', thStyle: 'width:8%;text-align:center;' },
-        { key: 'room', label: 'ห้อง', thStyle: 'width:8%;text-align:center;' },
-        { key: 'num', label: 'เลขที่', thStyle: 'width:8%;text-align:center;' },
-        { key: 'dorm', label: 'หอพัก', thStyle: 'width:16%;text-align:center;' },
-        !hideSubject && { key: 'subject', label: 'วิชาที่เรียน', thStyle: 'width:18%;text-align:left;' },
-        !hideTeacher && { key: 'teacher', label: 'ครูผู้สอน', thStyle: 'width:18%;text-align:left;' }
+        { key: 'no', label: '#', thClass: 'col-compact' },
+        { key: 'name', label: 'ชื่อ-สกุล', thClass: 'col-name' },
+        { key: 'grade', label: 'ชั้น', thClass: 'col-compact' },
+        { key: 'room', label: 'ห้อง', thClass: 'col-compact' },
+        { key: 'num', label: 'เลขที่', thClass: 'col-compact' },
+        { key: 'dorm', label: 'หอพัก', thClass: 'col-compact' },
+        !hideSubject && { key: 'subject', label: 'วิชาที่เรียน', thClass: 'col-info' },
+        !hideTeacher && { key: 'teacher', label: 'ครูผู้สอน', thClass: 'col-info' }
       ].filter(Boolean);
 
       return `
@@ -577,24 +645,24 @@
         <span style="font-size:0.85rem;color:#64748b;font-weight:600;">สรุปข้อมูลในวันที่เลือก:</span>
         ${extraBadges.join('')}
       </div>` : ''}
-      <table class="table-fixed" style="width:100%;margin:0;">
+      <table class="table-attendance-responsive" style="width:100%;margin:0;">
         <thead>
           <tr>
-            ${colDefs.map(c => `<th style="${c.thStyle}">${c.label}</th>`).join('')}
+            ${colDefs.map(c => `<th class="${c.thClass}">${c.label}</th>`).join('')}
           </tr>
         </thead>
         <tbody>
           ${rows.map((r, i) => {
             const t = teacherMap[r.teacherId] || {};
             return `<tr>
-              <td style="text-align:center;">${i + 1}</td>
-              <td><strong>${r.studentName || '–'}</strong></td>
-              <td style="text-align:center;"><span class="badge badge-blue">ม.${r.grade}</span></td>
-              <td style="text-align:center;">${r.room || '–'}</td>
-              <td style="text-align:center;">${r.number || '–'}</td>
-              <td style="text-align:center;">${formatDormBadge(r.dormitory)}</td>
-              ${!hideSubject ? `<td>${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>` : ''}
-              ${!hideTeacher ? `<td>${t.name || '–'}</td>` : ''}
+              <td class="col-compact">${i + 1}</td>
+              <td class="col-name"><strong>${r.studentName || '–'}</strong></td>
+              <td class="col-compact"><span class="badge badge-blue" style="font-size:0.75rem;padding:2px 5px;">ม.${r.grade}</span></td>
+              <td class="col-compact">${r.room || '–'}</td>
+              <td class="col-compact">${r.number || '–'}</td>
+              <td class="col-compact">${formatDormBadge(r.dormitory)}</td>
+              ${!hideSubject ? `<td class="col-info">${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>` : ''}
+              ${!hideTeacher ? `<td class="col-info">${t.name || '–'}</td>` : ''}
             </tr>`;
           }).join('')}
         </tbody>
@@ -637,13 +705,7 @@
         const sameTeacherId = groupRows.every(r => r.teacherId === groupRows[0].teacherId) ? groupRows[0].teacherId : null;
         const sameTeacherName = sameTeacherId && teacherMap[sameTeacherId] ? teacherMap[sameTeacherId].name : null;
 
-        // Smart column hiding:
-        // When grouped by dorm -> hide dorm column
-        // When grouped by grade -> hide grade column
-        // When grouped by subject -> hide subject column
-        // If all students share teacher -> show in header and hide column
-        // If all students share subject -> show in header and hide column
-        // If all students share grade -> show in header and hide column
+        // Smart column hiding
         const hideDorm = (groupKey === 'dormitory') || !!sameDorm;
         const hideGrade = (groupKey === 'grade') || !!sameGrade;
         const hideSubject = (groupKey === 'subject') || !!sameSubject;
@@ -657,14 +719,14 @@
         if (sameTeacherName) extraBadges.push(`<span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;">👩‍🏫 ครู${sameTeacherName}</span>`);
 
         const colDefs = [
-          { key: 'no', label: '#', thStyle: 'width:6%;text-align:center;' },
-          { key: 'name', label: 'ชื่อ-สกุล', thStyle: 'text-align:left;' },
-          !hideGrade && { key: 'grade', label: 'ชั้น', thStyle: 'width:9%;text-align:center;' },
-          { key: 'room', label: 'ห้อง', thStyle: 'width:8%;text-align:center;' },
-          { key: 'num', label: 'เลขที่', thStyle: 'width:8%;text-align:center;' },
-          !hideDorm && { key: 'dorm', label: 'หอพัก', thStyle: 'width:16%;text-align:center;' },
-          !hideSubject && { key: 'subject', label: 'วิชาที่เรียน', thStyle: 'width:18%;text-align:left;' },
-          !hideTeacher && { key: 'teacher', label: 'ครูผู้สอน', thStyle: 'width:18%;text-align:left;' }
+          { key: 'no', label: '#', thClass: 'col-compact' },
+          { key: 'name', label: 'ชื่อ-สกุล', thClass: 'col-name' },
+          !hideGrade && { key: 'grade', label: 'ชั้น', thClass: 'col-compact' },
+          { key: 'room', label: 'ห้อง', thClass: 'col-compact' },
+          { key: 'num', label: 'เลขที่', thClass: 'col-compact' },
+          !hideDorm && { key: 'dorm', label: 'หอพัก', thClass: 'col-compact' },
+          !hideSubject && { key: 'subject', label: 'วิชาที่เรียน', thClass: 'col-info' },
+          !hideTeacher && { key: 'teacher', label: 'ครูผู้สอน', thClass: 'col-info' }
         ].filter(Boolean);
 
         html += `
@@ -675,24 +737,24 @@
           ${extraBadges.length ? `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">${extraBadges.join('')}</div>` : ''}
           <span class="badge badge-blue" style="margin-left:auto;">${groupRows.length} คน</span>
         </div>
-        <table class="table-fixed" style="width:100%;margin:0;">
+        <table class="table-attendance-responsive" style="width:100%;margin:0;">
           <thead>
             <tr>
-              ${colDefs.map(c => `<th style="${c.thStyle}">${c.label}</th>`).join('')}
+              ${colDefs.map(c => `<th class="${c.thClass}">${c.label}</th>`).join('')}
             </tr>
           </thead>
           <tbody>
             ${groupRows.map((r, i) => {
               const t = teacherMap[r.teacherId] || {};
               return `<tr>
-                <td style="text-align:center;">${i + 1}</td>
-                <td><strong>${r.studentName || '–'}</strong></td>
-                ${!hideGrade ? `<td style="text-align:center;"><span class="badge badge-blue">ม.${r.grade}</span></td>` : ''}
-                <td style="text-align:center;">${r.room || '–'}</td>
-                <td style="text-align:center;">${r.number || '–'}</td>
-                ${!hideDorm ? `<td style="text-align:center;">${formatDormBadge(r.dormitory)}</td>` : ''}
-                ${!hideSubject ? `<td>${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>` : ''}
-                ${!hideTeacher ? `<td>${t.name || '–'}</td>` : ''}
+                <td class="col-compact">${i + 1}</td>
+                <td class="col-name"><strong>${r.studentName || '–'}</strong></td>
+                ${!hideGrade ? `<td class="col-compact"><span class="badge badge-blue" style="font-size:0.75rem;padding:2px 5px;">ม.${r.grade}</span></td>` : ''}
+                <td class="col-compact">${r.room || '–'}</td>
+                <td class="col-compact">${r.number || '–'}</td>
+                ${!hideDorm ? `<td class="col-compact">${formatDormBadge(r.dormitory)}</td>` : ''}
+                ${!hideSubject ? `<td class="col-info">${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>` : ''}
+                ${!hideTeacher ? `<td class="col-info">${t.name || '–'}</td>` : ''}
               </tr>`;
             }).join('')}
           </tbody>

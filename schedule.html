@@ -162,6 +162,108 @@
         padding: 8px 10px !important;
       }
     }
+
+    /* Student Self-Registration Selection List */
+    .student-select-list {
+      max-height: 210px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      background: #ffffff;
+      padding: 6px;
+    }
+    .student-pick-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1.5px solid #e2e8f0;
+      background: #ffffff;
+      margin-bottom: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 0.9rem;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .student-pick-item:last-child {
+      margin-bottom: 0;
+    }
+    .student-pick-item:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+    .student-pick-item.selected {
+      background: #f0fdf4 !important;
+      border-color: #16a34a !important;
+      box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.25);
+    }
+    .student-pick-item.already-registered {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+      opacity: 0.85;
+    }
+    .student-pick-item.already-registered:hover {
+      background: #fee2e2;
+    }
+
+    /* Clinic Modal Card Layout & Mobile Wrap */
+    .clinic-modal-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 12px;
+      margin-top: 6px;
+      font-size: 0.84rem;
+      color: #334155;
+    }
+    .clinic-info-item {
+      line-height: 1.45;
+      word-break: break-word;
+    }
+    .clinic-modal-quota-box {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px dashed #86efac;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #166534;
+    }
+    .clinic-quota-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 480px) {
+      .clinic-modal-info-grid {
+        grid-template-columns: 1fr !important;
+        gap: 4px !important;
+        font-size: 0.82rem !important;
+      }
+      .clinic-info-item {
+        font-size: 0.82rem !important;
+        line-height: 1.35 !important;
+      }
+      .clinic-modal-quota-box {
+        font-size: 0.78rem !important;
+      }
+      .clinic-quota-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 3px !important;
+      }
+      .student-pick-item {
+        padding: 8px 10px !important;
+        font-size: 0.84rem !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -354,10 +456,10 @@
           <span id="reg-student-found-count" class="text-xs text-muted"></span>
         </label>
         <input type="text" class="form-control" id="reg-student-search-input" placeholder="🔍 พิมพ์ชื่อ-สกุล, ห้อง หรือเลขที่เพื่อค้นหา..." oninput="filterRegistrationStudentOptions(this.value)" autocomplete="off" style="font-size:0.92rem;padding:8px 12px;margin-bottom:8px;">
-        
-        <select class="form-control" id="reg-student-select-box" size="6" onchange="onRegistrationStudentPick()" style="font-size:0.88rem;border-radius:8px;padding:6px;width:100%;height:160px;line-height:1.4;">
-          <!-- Filled by JS -->
-        </select>
+        <input type="hidden" id="reg-student-selected-id" value="">
+        <div id="reg-student-select-list" class="student-select-list">
+          <!-- Filled by JS as touch-friendly cards -->
+        </div>
       </div>
 
       <!-- Selected Student Preview & Validation Alert -->
@@ -1244,25 +1346,27 @@ async function openStudentRegistrationModal(clinicId) {
   if (cardEl) {
     cardEl.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
-        <div style="font-weight:700;font-size:1.1rem;color:#166534;font-family:'Kanit',sans-serif;">
+        <div style="font-weight:700;font-size:1.08rem;color:#166534;font-family:'Kanit',sans-serif;">
           ${getSubjectIcon(c.subject)} ${escapeHtml(c.subject || c.subjectName)}
         </div>
         <span class="badge badge-blue">ระดับชั้น ม.${c.grade}</span>
       </div>
       ${c.topic ? `
-        <div style="font-size:0.83rem;color:#15803d;background:#ffffff;border:1px solid #bbf7d0;border-radius:6px;padding:4px 8px;margin-bottom:6px;">
+        <div style="font-size:0.82rem;color:#15803d;background:#ffffff;border:1px solid #bbf7d0;border-radius:6px;padding:4px 8px;margin-bottom:6px;word-break:break-word;">
           🎯 ${escapeHtml(c.topic)}
         </div>
       ` : ''}
-      <div style="font-size:0.85rem;color:#334155;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:6px;">
-        <div>👩‍🏫 ครูผู้สอน: <strong>${escapeHtml(teacherName)}</strong></div>
-        <div>📅 วันที่: <strong>${formatDateThai(c.date)}</strong></div>
-        <div>🕐 เวลา: <strong>${formatClinicTime(c.time)}</strong></div>
-        <div>📍 สถานที่: <strong>${escapeHtml(c.room || '–')}</strong></div>
+      <div class="clinic-modal-info-grid">
+        <div class="clinic-info-item">👩‍🏫 ครูผู้สอน: <strong>${escapeHtml(teacherName)}</strong></div>
+        <div class="clinic-info-item">📅 วันที่: <strong>${formatDateThai(c.date)}</strong></div>
+        <div class="clinic-info-item">🕐 เวลา: <strong>${formatClinicTime(c.time)}</strong></div>
+        <div class="clinic-info-item">📍 สถานที่: <strong>${escapeHtml(c.room || '–')}</strong></div>
       </div>
-      <div style="margin-top:8px;padding-top:6px;border-top:1px dashed #86efac;display:flex;justify-content:space-between;font-size:0.82rem;font-weight:600;color:#166534;">
-        <span>โควตาที่เปิดรับ: ${maxLimit ? `${maxLimit} คน` : 'ไม่จำกัด'}</span>
-        <span>ลงทะเบียนแล้ว: ${currentCount} คน ${maxLimit ? `(เหลืออีก ${maxLimit - currentCount} ที่นั่ง)` : ''}</span>
+      <div class="clinic-modal-quota-box">
+        <div class="clinic-quota-row">
+          <span>โควตาที่เปิดรับ: <strong>${maxLimit ? `${maxLimit} คน` : 'ไม่จำกัด'}</strong></span>
+          <span>ลงทะเบียนแล้ว: <strong>${currentCount} คน</strong> ${maxLimit ? `<span class="badge" style="background:#dcfce7;color:#166534;border:1px solid #86efac;font-size:0.75rem;padding:2px 6px;margin-left:4px;">เหลืออีก ${maxLimit - currentCount} ที่นั่ง</span>` : ''}</span>
+        </div>
       </div>
     `;
   }
@@ -1280,6 +1384,10 @@ async function openStudentRegistrationModal(clinicId) {
   const searchInput = document.getElementById('reg-student-search-input');
   if (searchInput) searchInput.value = '';
 
+  const selectedInput = document.getElementById('reg-student-selected-id');
+  if (selectedInput) selectedInput.value = '';
+  selectedStudentRegistrationId = '';
+
   const validationBox = document.getElementById('student-reg-validation-box');
   if (validationBox) validationBox.innerHTML = '';
 
@@ -1290,10 +1398,12 @@ async function openStudentRegistrationModal(clinicId) {
   openModal('modal-student-registration');
 }
 
+let selectedStudentRegistrationId = '';
+
 function filterRegistrationStudentOptions(keyword) {
   const q = (keyword || '').trim().toLowerCase();
-  const selectBox = document.getElementById('reg-student-select-box');
-  if (!selectBox) return;
+  const listEl = document.getElementById('reg-student-select-list');
+  if (!listEl) return;
 
   const filtered = q
     ? regGradeStudentsCache.filter(s =>
@@ -1308,7 +1418,7 @@ function filterRegistrationStudentOptions(keyword) {
   if (countEl) countEl.textContent = `(พบ ${filtered.length} คน จากทั้งหมด ${regGradeStudentsCache.length} คน)`;
 
   if (!filtered.length) {
-    selectBox.innerHTML = '<option value="" disabled style="padding:10px;color:#94a3b8;text-align:center;">-- ไม่พบรายชื่อนักเรียนที่ตรงกับคำค้นหา --</option>';
+    listEl.innerHTML = '<div style="padding:14px;color:#94a3b8;text-align:center;font-size:0.88rem;">-- ไม่พบรายชื่อนักเรียนที่ตรงกับคำค้นหา --</div>';
     return;
   }
 
@@ -1318,18 +1428,51 @@ function filterRegistrationStudentOptions(keyword) {
     : [];
   const existingIds = new Set(existingAtt.map(a => String(a.studentId || a.id || '')));
 
-  selectBox.innerHTML = filtered.map(s => {
+  listEl.innerHTML = filtered.map(s => {
     const isReg = existingIds.has(String(s.id));
-    const prefix = isReg ? '⚠️ [ลงทะเบียนแล้ว] ' : '';
-    return `<option value="${s.id}" style="${isReg ? 'color:#dc2626;background:#fef2f2;' : 'color:#1e293b;'} padding:6px 10px;font-size:0.92rem;">
-      ${prefix}ม.${s.grade}/${s.room} เลขที่ ${s.number} | ${escapeHtml(s.name)}
-    </option>`;
+    const isSelected = String(s.id) === String(selectedStudentRegistrationId);
+    return `
+      <div class="student-pick-item ${isReg ? 'already-registered' : ''} ${isSelected ? 'selected' : ''}" 
+           onclick="onRegistrationStudentItemClick('${s.id}')"
+           data-student-id="${s.id}">
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+          <span class="badge badge-blue" style="font-size:0.75rem;padding:2px 6px;white-space:nowrap;">ม.${s.grade}/${s.room}</span>
+          <span style="font-weight:600;font-size:0.84rem;color:#475569;white-space:nowrap;">เลขที่ ${s.number}</span>
+          <span style="font-weight:600;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(s.name)}</span>
+        </div>
+        <div style="margin-left:6px;white-space:nowrap;">
+          ${isReg ? '<span class="tag tag-red" style="font-size:0.72rem;">⚠️ ลงทะเบียนแล้ว</span>' : (isSelected ? '<span class="tag tag-green" style="font-weight:700;">✓ เลือกแล้ว</span>' : '<span style="color:#94a3b8;font-size:0.8rem;">แตะเพื่อเลือก</span>')}
+        </div>
+      </div>
+    `;
   }).join('');
 }
 
+async function onRegistrationStudentItemClick(studentId) {
+  selectedStudentRegistrationId = String(studentId);
+  const selectedInput = document.getElementById('reg-student-selected-id');
+  if (selectedInput) selectedInput.value = selectedStudentRegistrationId;
+
+  // Highlight selected element in list
+  const listEl = document.getElementById('reg-student-select-list');
+  if (listEl) {
+    const items = listEl.querySelectorAll('.student-pick-item');
+    items.forEach(el => {
+      const id = el.getAttribute('data-student-id');
+      const isSelected = (id === selectedStudentRegistrationId);
+      el.classList.toggle('selected', isSelected);
+      const tagEl = el.querySelector('div:last-child');
+      if (tagEl && !el.classList.contains('already-registered')) {
+        tagEl.innerHTML = isSelected ? '<span class="tag tag-green" style="font-weight:700;">✓ เลือกแล้ว</span>' : '<span style="color:#94a3b8;font-size:0.8rem;">แตะเพื่อเลือก</span>';
+      }
+    });
+  }
+
+  await onRegistrationStudentPick();
+}
+
 async function onRegistrationStudentPick() {
-  const selectBox = document.getElementById('reg-student-select-box');
-  const studentId = selectBox ? selectBox.value : '';
+  const studentId = selectedStudentRegistrationId || document.getElementById('reg-student-selected-id')?.value;
   const validationBox = document.getElementById('student-reg-validation-box');
   const confirmBtn = document.getElementById('btn-confirm-student-reg');
   if (!studentId || !regTargetClinic) return;
@@ -1378,8 +1521,7 @@ async function onRegistrationStudentPick() {
 }
 
 async function submitStudentRegistration() {
-  const selectBox = document.getElementById('reg-student-select-box');
-  const studentId = selectBox ? selectBox.value : '';
+  const studentId = selectedStudentRegistrationId || document.getElementById('reg-student-selected-id')?.value;
   const confirmBtn = document.getElementById('btn-confirm-student-reg');
   if (!studentId || !regTargetClinic) {
     showToast('แจ้งเตือน', 'กรุณาเลือกรายชื่อนักเรียนก่อนยืนยัน', 'warning');

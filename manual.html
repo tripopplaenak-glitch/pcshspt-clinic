@@ -8,13 +8,15 @@
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="css/style.css">
   <style>
-    .manual-nav-tabs {
+    .manual-nav-tabs,
+    .role-tabs {
       display: flex;
       gap: 12px;
       margin-bottom: 24px;
       flex-wrap: wrap;
     }
-    .manual-tab-btn {
+    .manual-tab-btn,
+    .role-tab {
       flex: 1;
       min-width: 220px;
       padding: 14px 20px;
@@ -31,18 +33,40 @@
       justify-content: center;
       gap: 10px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      font-family: 'Kanit', sans-serif;
     }
-    .manual-tab-btn:hover {
+    .manual-tab-btn:hover,
+    .role-tab:hover {
       background: #f8fafc;
       border-color: #0284c7;
       color: #0284c7;
       transform: translateY(-1px);
     }
-    .manual-tab-btn.active {
+    .manual-tab-btn.active,
+    .role-tab.active {
       background: linear-gradient(135deg, #0284c7, #0369a1);
       color: #ffffff;
       border-color: #0284c7;
       box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+    .manual-tab-btn#tab-btn-teacher.active,
+    .role-tab#tab-btn-teacher.active {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      border-color: #16a34a;
+      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+    }
+    @media (max-width: 600px) {
+      .manual-nav-tabs,
+      .role-tabs {
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .manual-tab-btn,
+      .role-tab {
+        min-width: 100%;
+        padding: 12px 14px;
+        font-size: 0.95rem;
+      }
     }
 
     .pdf-download-bar {
@@ -389,12 +413,12 @@
     </div>
 
     <!-- ROLE SELECTOR TABS -->
-    <div class="role-tabs">
-      <button class="role-tab active" id="tab-btn-student" onclick="switchRoleTab('student')">
+    <div class="role-tabs manual-nav-tabs">
+      <button class="role-tab manual-tab-btn active" id="tab-btn-student" onclick="switchRoleTab('student')">
         <span>👨‍🎓</span>
         <span>1. ส่วนของนักเรียน (ม.1 – ม.6)</span>
       </button>
-      <button class="role-tab" id="tab-btn-teacher" onclick="switchRoleTab('teacher')">
+      <button class="role-tab manual-tab-btn" id="tab-btn-teacher" onclick="switchRoleTab('teacher')">
         <span>👩‍🏫</span>
         <span>2. ส่วนของครูผู้สอนรายวิชา</span>
       </button>
