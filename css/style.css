@@ -1039,17 +1039,133 @@ footer strong { color: var(--white); }
   font-size: .95rem;
 }
 
-/* ─── RESPONSIVE ─────────────────────────────────── */
+/* ─── RESPONSIVE & MOBILE NAVBAR OPTIMIZATIONS ─── */
 @media (max-width: 768px) {
-  .navbar-inner { flex-wrap: wrap; min-height: auto; padding: 12px 16px; gap: 10px; }
-  .navbar-nav { flex-wrap: wrap; gap: 4px; }
-  .main-content { padding: 16px; }
+  .navbar-inner {
+    flex-wrap: wrap;
+    min-height: auto;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .navbar-logo {
+    width: 36px;
+    height: 36px;
+  }
+  .navbar-title h1 {
+    font-size: 0.92rem;
+    white-space: nowrap;
+  }
+  .navbar-title p {
+    display: none; /* Hide lengthy school subtitle on mobile to prevent tall bloated navbar */
+  }
+  .navbar-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 4px;
+    padding-bottom: 2px;
+    width: 100%;
+  }
+  .navbar-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .nav-link {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border-radius: 6px;
+  }
+  .nav-btn {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border-radius: 6px;
+  }
+  .main-content { padding: 14px 12px; }
   .card-body { padding: 16px; }
-  .modal-overlay { padding: 12px; }
-  .modal { max-width: 100%; border-radius: var(--radius-lg); max-height: calc(100dvh - 24px); }
-  .modal-header { padding: 14px 16px; }
-  .modal-body { padding: 14px 16px; }
-  .modal-footer { padding: 12px 16px; }
-  .login-box { padding: 28px 20px; }
+  .modal-overlay { padding: 10px; }
+  .modal { max-width: 100%; border-radius: var(--radius-lg); max-height: calc(100dvh - 20px); }
+  .modal-header { padding: 12px 14px; }
+  .modal-body { padding: 12px 14px; }
+  .modal-footer { padding: 10px 14px; }
+  .login-box { padding: 24px 16px; }
+}
+
+/* ─── ULTRA-COMPACT MOBILE LANDSCAPE NAVBAR ───
+   Targets phones & small tablets rotated horizontally (height <= 520px) */
+@media (max-height: 520px) and (orientation: landscape), (max-width: 950px) and (max-height: 500px) {
+  .navbar {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+  .navbar-inner {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 0 12px !important;
+    gap: 8px !important;
+  }
+  .navbar-brand {
+    gap: 8px !important;
+    flex: 0 0 auto !important;
+  }
+  .navbar-logo {
+    width: 26px !important;
+    height: 26px !important;
+    border-radius: 4px !important;
+  }
+  .navbar-title h1 {
+    font-size: 0.82rem !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+  }
+  .navbar-title p {
+    display: none !important;
+  }
+  .navbar-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    gap: 4px !important;
+    align-items: center !important;
+    flex: 1 1 auto !important;
+    justify-content: flex-end !important;
+    width: auto !important;
+    max-width: calc(100% - 150px) !important;
+    padding: 0 !important;
+  }
+  .navbar-nav::-webkit-scrollbar {
+    display: none !important;
+  }
+  .nav-link {
+    padding: 3px 8px !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
+    flex-shrink: 0 !important;
+    border-radius: 4px !important;
+  }
+  .nav-btn {
+    padding: 3px 10px !important;
+    font-size: 0.75rem !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
+    flex-shrink: 0 !important;
+    border-radius: 4px !important;
+  }
+  .main-content {
+    padding: 10px 12px !important;
+  }
 }
 

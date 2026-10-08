@@ -91,8 +91,144 @@
         gap: 4px;
       }
 
-      .sidebar-section {
+    /* ─── WEEK MANAGEMENT (MOBILE RESPONSIVE & CARDS) ─── */
+    .weeks-container-desktop {
+      display: block;
+    }
+    .weeks-container-mobile {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      padding: 12px;
+    }
+    .week-card-mobile {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all .2s ease;
+    }
+    .week-card-mobile:hover {
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.12);
+      border-color: #93c5fd;
+    }
+    .week-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .week-card-badge {
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 8px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .week-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .week-card-actions .btn {
+      padding: 5px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: 6px;
+    }
+    .week-card-dates {
+      font-size: 0.88rem;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #f1f5f9;
+      font-weight: 600;
+    }
+    .week-card-status {
+      display: flex;
+      align-items: center;
+    }
+    .week-card-status .badge {
+      font-size: 0.82rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .week-card-label {
+      font-size: 0.82rem;
+      color: #64748b;
+      font-family: 'Sarabun', sans-serif;
+      background: #f8fafc;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border-left: 3px solid #cbd5e1;
+    }
+
+    @media (max-width: 640px) {
+      .weeks-container-desktop {
+        display: none !important;
+      }
+      .weeks-container-mobile {
+        display: flex !important;
+      }
+      #tab-weeks .section-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+      }
+      #tab-weeks .section-header .flex {
         width: 100%;
+        display: flex;
+        flex-direction: row;
+        gap: 8px;
+      }
+      #tab-weeks .section-header .flex button {
+        flex: 1;
+        white-space: nowrap;
+        font-size: 0.82rem;
+        padding: 8px 10px;
+        justify-content: center;
+      }
+      #tab-weeks .alert {
+        font-size: 0.84rem;
+        line-height: 1.45;
+        padding: 10px 12px;
+      }
+      /* Modal Add/Edit Week mobile polish */
+      #modal-add-week .modal {
+        max-width: 100%;
+        margin: 8px;
+      }
+      #modal-add-week .modal-header {
+        padding: 12px 14px;
+      }
+      #modal-add-week .modal-title {
+        font-size: 1.05rem;
+      }
+      #modal-add-week .modal-body {
+        padding: 14px 12px;
+      }
+      #modal-add-week .form-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      #modal-add-week .form-label {
+        font-size: 0.85rem;
+        margin-bottom: 4px;
       }
     }
   </style>
@@ -612,15 +748,18 @@
 
         <!-- NO CLASSES THIS WEEK TOGGLE -->
         <div class="form-group"
-          style="background:var(--red-pale);padding:12px 14px;border-radius:var(--radius-md);border:1px solid #fca5a5;">
+          style="background:#fef2f2;padding:12px 14px;border-radius:10px;border:1.5px solid #fca5a5;">
           <label
-            style="display:flex;align-items:center;gap:10px;font-weight:700;color:var(--red-main);cursor:pointer;margin-bottom:0;">
+            style="display:flex;align-items:flex-start;gap:10px;font-weight:700;color:#dc2626;cursor:pointer;margin-bottom:0;">
             <input type="checkbox" id="week-no-classes"
-              style="width:18px;height:18px;accent-color:var(--red-main);cursor:pointer;">
-            <span>ไม่มีการเรียนการสอนทั้งสัปดาห์ (เช่น สัปดาห์สอบ / กิจกรรมโรงเรียน / ปิดเรียน)</span>
+              style="width:20px;height:20px;accent-color:#dc2626;cursor:pointer;margin-top:2px;flex-shrink:0;">
+            <div>
+              <span style="font-size:0.92rem;display:block;">🚫 ไม่มีการเรียนการสอนทั้งสัปดาห์</span>
+              <span style="font-size:0.8rem;color:#b91c1c;font-weight:400;display:block;margin-top:2px;">(เช่น สัปดาห์สอบ, กิจกรรมโรงเรียน, ปิดเรียน)</span>
+            </div>
           </label>
-          <div class="text-xs text-muted mt-1" style="margin-left:28px;">
-            ระบบจะแสดงป้ายแจ้งเตือนในหน้าหลักว่าสัปดาห์นี้ไม่มีการจัดการเรียนการสอนคลินิกวิชาการ
+          <div class="text-xs text-muted mt-2" style="margin-left:30px;line-height:1.4;">
+            💡 ระบบจะแสดงป้ายแจ้งเตือนในหน้าหลักว่าสัปดาห์นี้ไม่มีการจัดการเรียนการสอนคลินิกวิชาการ
           </div>
         </div>
       </div>
@@ -1247,31 +1386,77 @@
         return;
       }
 
-      container.innerHTML = `
-    <div class="table-wrapper">
-      <table>
-        <thead><tr><th>#</th><th>สัปดาห์</th><th>วันเริ่ม</th><th>วันสิ้นสุด</th><th>สถานะการสอน</th><th>Label</th><th>จัดการ</th></tr></thead>
-        <tbody>
-          ${weeks.map((w, i) => `
+      // Desktop Table View (screens > 640px)
+      const desktopTableHtml = `
+    <div class="weeks-container-desktop">
+      <div class="table-wrapper">
+        <table>
+          <thead>
             <tr>
-              <td>${i + 1}</td>
-              <td><span class="badge badge-blue">สัปดาห์ที่ ${w.weekNum}</span></td>
-              <td>${formatDateThai(w.startDate)}</td>
-              <td>${formatDateThai(w.endDate)}</td>
-              <td>
-                ${w.noClasses
-          ? '<span class="badge badge-danger">🚫 ไม่มีการเรียนการสอนทั้งสัปดาห์</span>'
-          : '<span class="badge badge-green">✅ มีการเรียนการสอนปกติ</span>'}
-              </td>
-              <td>${w.label}</td>
-              <td>
-                <button class="btn btn-outline btn-sm" onclick="editWeek('${w.id}')">✏️</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteWeek('${w.id}')">🗑️</button>
-              </td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
+              <th>#</th>
+              <th>สัปดาห์</th>
+              <th>วันเริ่ม</th>
+              <th>วันสิ้นสุด</th>
+              <th>สถานะการสอน</th>
+              <th>Label</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${weeks.map((w, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td><span class="badge badge-blue">สัปดาห์ที่ ${w.weekNum}</span></td>
+                <td>${formatDateThai(w.startDate)}</td>
+                <td>${formatDateThai(w.endDate)}</td>
+                <td>
+                  ${w.noClasses
+            ? '<span class="badge badge-danger">🚫 ไม่มีการเรียนการสอนทั้งสัปดาห์</span>'
+            : '<span class="badge badge-green">✅ มีการเรียนการสอนปกติ</span>'}
+                </td>
+                <td>${escapeHtml(w.label)}</td>
+                <td>
+                  <button class="btn btn-outline btn-sm" onclick="editWeek('${w.id}')" title="แก้ไข">✏️</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteWeek('${w.id}')" title="ลบ">🗑️</button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
     </div>`;
+
+      // Mobile Card View (screens <= 640px): Easy to read, compact, zero truncated text
+      const mobileCardsHtml = `
+    <div class="weeks-container-mobile">
+      ${weeks.map((w, i) => `
+        <div class="week-card-mobile">
+          <div class="week-card-header">
+            <div class="week-card-badge">
+              <span>📅</span> สัปดาห์ที่ ${w.weekNum}
+            </div>
+            <div class="week-card-actions">
+              <button class="btn btn-outline btn-sm" onclick="editWeek('${w.id}')" title="แก้ไขสัปดาห์">✏️ แก้ไข</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteWeek('${w.id}')" title="ลบสัปดาห์">🗑️ ลบ</button>
+            </div>
+          </div>
+          <div class="week-card-dates">
+            <span>📆</span>
+            <span><strong>${formatDateThai(w.startDate)}</strong> – <strong>${formatDateThai(w.endDate)}</strong></span>
+          </div>
+          <div class="week-card-status">
+            ${w.noClasses
+              ? '<span class="badge badge-danger">🚫 ไม่มีการเรียนการสอนทั้งสัปดาห์</span>'
+              : '<span class="badge badge-green">✅ มีการเรียนการสอนปกติ</span>'}
+          </div>
+          ${w.label && w.label !== `สัปดาห์ที่ ${w.weekNum} (${formatDateThai(w.startDate)} – ${formatDateThai(w.endDate)})` ? `
+          <div class="week-card-label">
+            <span>💬 ${escapeHtml(w.label)}</span>
+          </div>` : ''}
+        </div>
+      `).join('')}
+    </div>`;
+
+      container.innerHTML = desktopTableHtml + mobileCardsHtml;
     }
 
     function openAddWeek() {
