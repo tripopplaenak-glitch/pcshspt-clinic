@@ -43,7 +43,7 @@
     <!-- Role Selection -->
     <div style="margin-bottom:18px;">
       <div class="form-label">เลือกประเภทผู้ใช้</div>
-      <div class="role-card selected" id="role-teacher" onclick="selectRole('teacher')">
+      <div class="role-card" id="role-teacher" onclick="selectRole('teacher')">
         <span class="role-icon">👩‍🏫</span>
         <div>
           <div class="role-title">ครูผู้สอน</div>
@@ -64,7 +64,7 @@
       <div class="form-group" id="username-group">
         <label class="form-label">ชื่อผู้ใช้ (Username)</label>
         <input type="text" class="form-control" id="username-input"
-          value="teacher" autocomplete="username" placeholder="กรอกชื่อผู้ใช้">
+          autocomplete="username" placeholder="กรอกชื่อผู้ใช้">
       </div>
       <div class="form-group">
         <label class="form-label">รหัสผ่าน</label>
@@ -98,16 +98,18 @@
 <script src="js/db.js?v=2569_15"></script>
 <script src="js/auth.js?v=2569_15"></script>
 <script>
-let selectedRole = 'teacher';
+let selectedRole = '';
 
 function selectRole(role) {
   selectedRole = role;
   document.getElementById('role-teacher').classList.toggle('selected', role === 'teacher');
   document.getElementById('role-admin').classList.toggle('selected', role === 'admin');
-  // Pre-fill username
-  document.getElementById('username-input').value = role;
-  document.getElementById('password-input').value = '';
-  document.getElementById('password-input').focus();
+  const uInp = document.getElementById('username-input');
+  if (!uInp.value) {
+    uInp.focus();
+  } else {
+    document.getElementById('password-input').focus();
+  }
 }
 
 function togglePw() {
@@ -124,6 +126,20 @@ function doLogin(e) {
   const errMsg   = document.getElementById('error-msg');
   errMsg.style.display = 'none';
 
+  if (!username) {
+    errMsg.textContent = '❌ กรุณากรอกชื่อผู้ใช้ (Username)';
+    errMsg.style.display = 'block';
+    document.getElementById('username-input').focus();
+    return;
+  }
+
+  if (!password) {
+    errMsg.textContent = '❌ กรุณากรอกรหัสผ่าน';
+    errMsg.style.display = 'block';
+    document.getElementById('password-input').focus();
+    return;
+  }
+
   const btn = document.getElementById('login-btn');
   btn.textContent = '⏳ กำลังเข้าสู่ระบบ...';
   btn.disabled = true;
@@ -131,6 +147,7 @@ function doLogin(e) {
   setTimeout(() => {
     const session = AuthService.login(username, password);
     if (!session) {
+      errMsg.textContent = '❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
       errMsg.style.display = 'block';
       btn.textContent = '🔑 เข้าสู่ระบบ';
       btn.disabled = false;
@@ -145,8 +162,26 @@ function doLogin(e) {
   }, 600);
 }
 
-// If already logged in, redirect
+// Auto highlight role card if user types admin or teacher
 document.addEventListener('DOMContentLoaded', () => {
+  const uInp = document.getElementById('username-input');
+  if (uInp) {
+    uInp.addEventListener('input', (e) => {
+      const v = e.target.value.trim().toLowerCase();
+      if (v === 'admin') {
+        document.getElementById('role-admin').classList.add('selected');
+        document.getElementById('role-teacher').classList.remove('selected');
+      } else if (v === 'teacher') {
+        document.getElementById('role-teacher').classList.add('selected');
+        document.getElementById('role-admin').classList.remove('selected');
+      } else {
+        document.getElementById('role-teacher').classList.remove('selected');
+        document.getElementById('role-admin').classList.remove('selected');
+      }
+    });
+  }
+
+  // If already logged in, redirect
   const s = AuthService.getSession();
   if (s) {
     window.location.href = s.role === 'admin' ? 'admin.html' : 'teacher.html';

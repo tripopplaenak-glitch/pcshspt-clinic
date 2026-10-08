@@ -740,11 +740,6 @@
           <div class="flow-item-title">เลือกเด็กหลายห้อง</div>
           <div class="flow-item-desc">Multi-Room Selector</div>
         </div>
-        <div class="flow-item">
-          <div class="flow-item-num" style="background:#16a34a;">6</div>
-          <div class="flow-item-title">เช็คชื่อเข้าเรียน</div>
-          <div class="flow-item-desc">บันทึกมา/ขาดเรียน</div>
-        </div>
       </div>
 
       <!-- STEP 1 -->
@@ -759,7 +754,7 @@
           <ol style="margin:4px 0;padding-left:20px;line-height:1.8;">
             <li>คลิกปุ่ม <strong>"🔑 เข้าสู่ระบบ"</strong> ที่มุมขวาบนของหน้าเว็บ (หรือไปที่หน้า <code>login.html</code>)</li>
             <li>คลิกเลือกบทบาท: <strong>"👩‍🏫 ครูผู้สอน" (Teacher)</strong></li>
-            <li>กรอกรหัสผ่าน: <strong>กรอกรหัสผ่านประจำตัวครู (รหัสเริ่มต้นคือ <code>98765432</code> หรือรหัสผ่านใหม่ที่คุณครูได้ตั้งไว้)</strong></li>
+            <li>กรอกข้อมูลเข้าสู่ระบบ: <strong>กรอกชื่อผู้ใช้ (Username) และรหัสผ่านประจำตัวครู (รหัสที่ได้รับจาก admin ระบบ)</strong></li>
             <li>คลิกปุ่ม <strong>"เข้าสู่ระบบ"</strong> ระบบจะนำท่านเข้าสู่หน้า <strong>"ระบบครูผู้สอน" (teacher.html)</strong> โดยอัตโนมัติ</li>
           </ol>
         </div>
@@ -776,10 +771,10 @@
         </div>
         <p>ในหน้าแดชบอร์ดครูผู้สอน ระบบจะแสดงการ์ดรอบการสอนเฉพาะวิชาและระดับชั้นที่ท่านรับผิดชอบ พร้อมปุ่มเครื่องมือครบครัน:</p>
         <ul>
-          <li><strong><code>✏️ แก้ไข</code> :</strong> ปรับเปลี่ยนเวลาสอน ห้องเรียน หัวข้อเรื่องที่ติว หรือแจ้งสถานะงดสอน</li>
-          <li><strong><code>📝 ลงทะเบียนนักเรียน</code> :</strong> เปิดรับลงทะเบียนออนไลน์ กำหนดโควตาที่นั่ง หรือคัดเลือกนักเรียนหลายห้อง</li>
-          <li><strong><code>👥 เช็คชื่อ</code> :</strong> บันทึกการเข้าเรียนของนักเรียน (มาเรียน / ขาดเรียน)</li>
-          <li><strong><code>📅 + Google Calendar</code> :</strong> เพิ่มรอบสอนเข้า Google Calendar ส่วนตัวของครู</li>
+          <li><strong><code>✏️ แก้ไขข้อมูล</code> :</strong> ปรับเปลี่ยนเวลาสอน ห้องเรียน หัวข้อเรื่องที่ติว (Topic) หรือแจ้งสถานะงดสอน</li>
+          <li><strong><code>📝 ลงทะเบียนนักเรียน</code> :</strong> เปิดรับลงทะเบียนออนไลน์ กำหนดโควตาที่นั่ง หรือจัดการรายชื่อผู้สมัคร</li>
+          <li><strong><code>📋 กรอกรายชื่อ</code> :</strong> คัดเลือกและบันทึกรายชื่อนักเรียนแบบเลือกได้หลายห้องพร้อมกัน (Multi-Room)</li>
+          <li><strong><code>📅 ลงปฏิทิน</code> :</strong> เพิ่มรอบสอนเข้า Google Calendar ส่วนตัวของครู</li>
         </ul>
       </div>
 
@@ -924,21 +919,6 @@
             <td style="padding:8px 12px;">นักเรียนที่ติ๊กเลือกไว้แล้ว จะไม่สูญหายแม้คุณครูจะสลับไปคลิกดูห้องอื่น</td>
           </tr>
         </table>
-      </div>
-
-      <!-- STEP 6 -->
-      <div class="guide-card">
-        <div class="guide-step-header">
-          <span class="step-badge step-badge-green">ขั้นตอนที่ 6</span>
-          <h3 class="step-title">การเช็คชื่อเข้าเรียน (Attendance Check) และรายงานผล</h3>
-        </div>
-        <p>เมื่อถึงเวลาเรียน คุณครูสามารถทำการเช็คชื่อนักเรียนได้สะดวกรวดเร็วบนสมาร์ทโฟนหรือแท็บเล็ต:</p>
-        <ol style="line-height:1.75;">
-          <li>คลิกปุ่ม <strong>"👥 เช็คชื่อ"</strong> บนการ์ดรอบการสอน</li>
-          <li>ระบบจะแสดงรายชื่อนักเรียนทั้งหมดที่มีสิทธิ์เข้าเรียนในคลินิกนั้น</li>
-          <li>คลิกเลือกสถานะของนักเรียนแต่ละคน: <strong>🟢 มาเรียน (Present)</strong> หรือ <strong>🔴 ขาดเรียน (Absent)</strong></li>
-          <li>คลิก <strong>"💾 บันทึกการเช็คชื่อ"</strong> ผลการเข้าเรียนจะถูกส่งต่อไปยังระบบสรุปการเข้าเรียนของโรงเรียนโดยอัตโนมัติ</li>
-        </ol>
       </div>
 
   </main>
