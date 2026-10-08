@@ -11,8 +11,22 @@
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="css/style.css">
   <style>
+    @media screen {
+      body:not(.generating-pdf) .print-only { display: none !important; }
+    }
+    #combined-pdf-render-area .screen-only {
+      display: none !important;
+    }
+    #combined-pdf-render-area .print-only {
+      display: block !important;
+    }
+    #combined-pdf-render-area span.print-only {
+      display: inline !important;
+    }
     @media print {
-      .navbar, .hero, .filter-bar, footer, #btn-download-pdf, #nav-logout-btn {
+      .screen-only { display: none !important; }
+      .print-only { display: block !important; }
+      .navbar, .hero, .filter-bar, .tabs-container, footer, #btn-download-pdf, #btn-download-sum-pdf, #nav-logout-btn, .stats-row {
         display: none !important;
       }
       body, .main-content {
@@ -38,6 +52,41 @@
       tr {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
+      }
+      /* Clean compact print styling for matrix table */
+      .matrix-week-block {
+        border: 1.5px solid #0f172a !important;
+        box-shadow: none !important;
+        border-radius: 4px !important;
+        margin-bottom: 16px !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      .matrix-week-header {
+        background: #f1f5f9 !important;
+        border-bottom: 1.5px solid #0f172a !important;
+        padding: 6px 10px !important;
+      }
+      .matrix-table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+      }
+      .matrix-table th, .matrix-table td {
+        border: 1px solid #475569 !important;
+        padding: 3px 5px !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .matrix-table th {
+        background: #f8fafc !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+      }
+      .print-cell-box {
+        font-size: 7.8pt !important;
+        line-height: 1.35 !important;
+        color: #000 !important;
+        margin-bottom: 4px !important;
       }
     }
   </style>
@@ -84,75 +133,176 @@
 
   <main class="main-content">
 
-    <!-- FILTER BAR -->
-    <div class="filter-bar" style="margin-bottom:16px;">
-      <span class="filter-label">📅 วันที่:</span>
-      <input type="date" class="filter-input" id="filter-date" onchange="loadAttendance()">
-      <button class="btn btn-outline btn-sm" onclick="setTodayDate()" title="เลือกวันที่วันนี้">วันนี้</button>
-      <button class="btn btn-outline btn-sm" onclick="showAllDates()" title="แสดงข้อมูลทุกวัน">ดูทุกวัน</button>
-
-      <span class="filter-label" style="margin-left:8px;">📌 กรองโดย:</span>
-      <button class="filter-chip active" id="chip-all" onclick="setGroupBy('all')">ทั้งหมด</button>
-      <button class="filter-chip" id="chip-grade" onclick="setGroupBy('grade')">แยกชั้นเรียน</button>
-      <button class="filter-chip" id="chip-dorm" onclick="setGroupBy('dorm')">แยกหอพัก</button>
-      <button class="filter-chip" id="chip-subject" onclick="setGroupBy('subject')">แยกวิชา</button>
-
-      <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <span class="filter-label">ค้นหา:</span>
-        <input type="text" class="filter-input" id="search-input" placeholder="ชื่อ / ชั้น / ห้อง"
-          oninput="renderTable()" style="width:200px;">
-        <button class="btn btn-outline btn-sm" onclick="printPage()">🖨️ พิมพ์</button>
-        <button class="btn btn-primary btn-sm" onclick="downloadAttendancePDF()" id="btn-download-pdf">📥 ดาวน์โหลด PDF</button>
-      </div>
+    <!-- ═══ PRIMARY TABS: 1. สรุปรายชื่อนักเรียน (เดิม) | 2. สรุปแยกรวมทุกระดับชั้น (ใหม่) ═══ -->
+    <div class="tabs-container" style="display:flex;gap:10px;margin-bottom:20px;border-bottom:2.5px solid var(--gray-200);padding-bottom:12px;overflow-x:auto;">
+      <button class="btn btn-primary" id="main-tab-students-btn" onclick="switchMainAttendanceTab('students')"
+        style="border-radius:10px;font-weight:600;display:flex;align-items:center;gap:8px;padding:10px 20px;font-size:.95rem;">
+        <span style="font-size:1.15rem;">📋</span> 1. สรุปรายชื่อนักเรียนรายบุคคล (แยกชั้น/หอ/วิชา)
+      </button>
+      <button class="btn btn-outline" id="main-tab-summary-btn" onclick="switchMainAttendanceTab('summary')"
+        style="border-radius:10px;font-weight:600;display:flex;align-items:center;gap:8px;padding:10px 20px;font-size:.95rem;">
+        <span style="font-size:1.15rem;">📊</span> 2. สรุปแยกรวมทุกระดับชั้น (ม.1–ม.6)
+      </button>
     </div>
 
-    <!-- STATS -->
-    <div class="stats-row" style="margin-bottom:20px;">
-      <div class="stat-card">
-        <div class="stat-icon green">👥</div>
-        <div>
-          <div class="stat-num" id="att-count">0</div>
-          <div class="stat-label">นักเรียนทั้งหมด</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon blue">📚</div>
-        <div>
-          <div class="stat-num" id="att-subjects">0</div>
-          <div class="stat-label">วิชาที่เปิดสอน</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon gold">🏠</div>
-        <div>
-          <div class="stat-num" id="att-dorms">0</div>
-          <div class="stat-label">หอพักที่มีนักเรียน</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon red">🎓</div>
-        <div>
-          <div class="stat-num" id="att-grades">0</div>
-          <div class="stat-label">ระดับชั้นที่เรียน</div>
-        </div>
-      </div>
-    </div>
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <!-- ═══ SECTION 1: สรุปรายชื่อนักเรียนรายบุคคล (เดิม) ═══════════ -->
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <div id="section-students-tab">
+      <!-- FILTER BAR -->
+      <div class="filter-bar" style="margin-bottom:16px;">
+        <span class="filter-label">📅 วันที่:</span>
+        <input type="date" class="filter-input" id="filter-date" onchange="loadAttendance()">
+        <button class="btn btn-outline btn-sm" onclick="setTodayDate()" title="เลือกวันที่วันนี้">วันนี้</button>
+        <button class="btn btn-outline btn-sm" onclick="showAllDates()" title="แสดงข้อมูลทุกวัน">ดูทุกวัน</button>
 
-    <!-- TABLE CONTENT -->
-    <div class="card">
-      <div class="card-header">
-        <span style="font-size:1.1rem;">📋</span>
-        <span class="section-title" style="font-size:1rem;" id="table-header-title">รายชื่อนักเรียนที่เข้าเรียน</span>
-        <span class="badge badge-blue ml-auto" id="row-count-badge">0 คน</span>
+        <span class="filter-label" style="margin-left:8px;">📌 กรองโดย:</span>
+        <button class="filter-chip active" id="chip-all" onclick="setGroupBy('all')">ทั้งหมด</button>
+        <button class="filter-chip" id="chip-grade" onclick="setGroupBy('grade')">แยกชั้นเรียน</button>
+        <button class="filter-chip" id="chip-dorm" onclick="setGroupBy('dorm')">แยกหอพัก</button>
+        <button class="filter-chip" id="chip-subject" onclick="setGroupBy('subject')">แยกวิชา</button>
+
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <span class="filter-label">ค้นหา:</span>
+          <input type="text" class="filter-input" id="search-input" placeholder="ชื่อ / ชั้น / ห้อง"
+            oninput="renderTable()" style="width:200px;">
+          <button class="btn btn-outline btn-sm" onclick="printPage()">🖨️ พิมพ์</button>
+          <button class="btn btn-primary btn-sm" onclick="downloadAttendancePDF()" id="btn-download-pdf">📥 ดาวน์โหลด PDF</button>
+        </div>
       </div>
-      <div class="card-body" style="padding:0;">
-        <div id="attendance-content" class="table-wrapper">
-          <div class="empty-state">
-            <div class="spinner"></div>
-            <div class="mt-3">กำลังโหลด...</div>
+
+      <!-- STATS -->
+      <div class="stats-row" style="margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-icon green">👥</div>
+          <div>
+            <div class="stat-num" id="att-count">0</div>
+            <div class="stat-label">นักเรียนทั้งหมด</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue">📚</div>
+          <div>
+            <div class="stat-num" id="att-subjects">0</div>
+            <div class="stat-label">วิชาที่เปิดสอน</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon gold">🏠</div>
+          <div>
+            <div class="stat-num" id="att-dorms">0</div>
+            <div class="stat-label">หอพักที่มีนักเรียน</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">🎓</div>
+          <div>
+            <div class="stat-num" id="att-grades">0</div>
+            <div class="stat-label">ระดับชั้นที่เรียน</div>
           </div>
         </div>
       </div>
+
+      <!-- TABLE CONTENT -->
+      <div class="card">
+        <div class="card-header">
+          <span style="font-size:1.1rem;">📋</span>
+          <span class="section-title" style="font-size:1rem;" id="table-header-title">รายชื่อนักเรียนที่เข้าเรียน</span>
+          <span class="badge badge-blue ml-auto" id="row-count-badge">0 คน</span>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div id="attendance-content" class="table-wrapper">
+            <div class="empty-state">
+              <div class="spinner"></div>
+              <div class="mt-3">กำลังโหลด...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <!-- ═══ SECTION 2: สรุปแยกรวมทุกระดับชั้น (ม.1–ม.6) ════════════ -->
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <div id="section-summary-tab" class="hidden">
+      
+      <!-- FILTER BAR FOR COMBINED SUMMARY -->
+      <div class="filter-bar" style="margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span class="filter-label">📅 จากสัปดาห์:</span>
+          <select class="filter-select" id="sum-start-week" onchange="onSummaryWeekRangeChange()" style="min-width:180px;"></select>
+          
+          <span class="filter-label" style="margin-left:4px;">ถึง:</span>
+          <select class="filter-select" id="sum-end-week" onchange="onSummaryWeekRangeChange()" style="min-width:180px;"></select>
+
+          <button class="btn btn-outline btn-sm" onclick="setSummaryCurrentWeek()" title="เลือกสัปดาห์ปัจจุบัน">สัปดาห์ปัจจุบัน</button>
+          <button class="btn btn-outline btn-sm" onclick="setSummaryAllWeeks()" title="แสดงทุกสัปดาห์">ทุกสัปดาห์</button>
+        </div>
+
+
+        <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="sum-pdf-orient" class="filter-select" style="font-size:0.82rem;padding:4px 8px;min-width:130px;" title="เลือกแนวของเอกสาร PDF">
+            <option value="landscape" selected>📄 แนวนอน (แนะนำ)</option>
+            <option value="portrait">📄 แนวตั้ง</option>
+          </select>
+          <button class="btn btn-outline btn-sm" onclick="printCombinedSummary()">🖨️ พิมพ์</button>
+          <button class="btn btn-primary btn-sm" onclick="downloadCombinedSummaryPDF()" id="btn-download-sum-pdf">📥 ดาวน์โหลด PDF</button>
+        </div>
+      </div>
+
+      <!-- STATS FOR COMBINED SUMMARY -->
+      <div class="stats-row" style="margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-icon blue">📅</div>
+          <div>
+            <div class="stat-num" id="sum-stat-weeks">0</div>
+            <div class="stat-label">สัปดาห์ที่เลือก</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon gold">📚</div>
+          <div>
+            <div class="stat-num" id="sum-stat-sessions">0</div>
+            <div class="stat-label">คาบคลินิกทั้งหมด</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red">👩‍🏫</div>
+          <div>
+            <div class="stat-num" id="sum-stat-teachers">0</div>
+            <div class="stat-label">ครูผู้สอนที่มีคาบ</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">👥</div>
+          <div>
+            <div class="stat-num" id="sum-stat-students">0</div>
+            <div class="stat-label">นักเรียนเข้าเรียนรวม (คน)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUMMARY CONTENT CARD -->
+      <div class="card">
+        <div class="card-header flex justify-between items-center" style="background:var(--blue-pale);border-bottom:1.5px solid var(--blue-light);">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:1.15rem;">📊</span>
+            <span class="section-title" style="font-size:1.02rem;color:var(--blue-deep);" id="sum-card-title">
+              สรุปการจัดคลินิกวิชาการและยอดนักเรียนรวมทุกระดับชั้น (ม.1 – ม.6)
+            </span>
+          </div>
+          <span class="badge badge-blue" id="sum-total-badge" style="font-size:.88rem;">รวม 0 คน</span>
+        </div>
+        <div class="card-body" style="padding:16px;">
+          <div id="combined-summary-content">
+            <div class="empty-state">
+              <div class="spinner"></div>
+              <div class="mt-3">กำลังโหลดข้อมูลสรุป...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
   </main>
@@ -196,6 +346,9 @@
     }
 
     // ─── STATE
+    let currentMainTab = 'students'; // 'students' or 'summary'
+    let summaryView = 'day'; // 'day' or 'matrix'
+    let allWeeks = [];
     let groupBy = 'all';
     let allAttendance = [];
     let allClinics = [];
@@ -215,7 +368,13 @@
           allTeachers = await DataService.getTeachers();
           allClinics = await DataService.getClinics();
           allStudents = await DataService.getStudents();
-          await loadAttendance();
+          allWeeks = await DataService.getWeeks();
+          populateSummaryWeekSelects();
+          if (currentMainTab === 'summary') {
+            await loadCombinedSummary();
+          } else {
+            await loadAttendance();
+          }
         });
       }
 
@@ -229,6 +388,8 @@
       allTeachers = await DataService.getTeachers();
       allClinics = await DataService.getClinics();
       allStudents = await DataService.getStudents();
+      allWeeks = await DataService.getWeeks();
+      populateSummaryWeekSelects();
 
       // Determine default date: if today has data, use today; otherwise default to latest date with data
       const allAtt = await DataService.getAttendance();
@@ -287,7 +448,13 @@
         allTeachers = await DataService.getTeachers();
         allClinics = await DataService.getClinics();
         allStudents = await DataService.getStudents();
-        await loadAttendance();
+        allWeeks = await DataService.getWeeks();
+        populateSummaryWeekSelects();
+        if (currentMainTab === 'summary') {
+          await loadCombinedSummary();
+        } else {
+          await loadAttendance();
+        }
       }
     }
 
@@ -646,7 +813,7 @@
         margin: [8, 8, 8, 8],
         filename: `สรุปการเข้าเรียนคลินิกวิชาการ_${dateVal || 'ทุกวัน'}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false, scrollX: 0, scrollY: 0 },
+        html2canvas: { scale: 2, useCORS: true, logging: false, scrollY: -window.scrollY },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
@@ -662,6 +829,551 @@
         showToast('ผิดพลาด', 'ไม่สามารถสร้าง PDF ได้ กำลังเปิดหน้าต่างพิมพ์เอกสารแทน', 'error');
         window.print();
       } finally {
+        reportDiv.remove();
+        if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // ─── TAB 2: สรุปแยกรวมทุกระดับชั้น (ม.1–ม.6) ──────────────
+    // ═══════════════════════════════════════════════════════════
+
+    function switchMainAttendanceTab(tab) {
+      currentMainTab = tab;
+      const btnStudents = document.getElementById('main-tab-students-btn');
+      const btnSummary = document.getElementById('main-tab-summary-btn');
+      const secStudents = document.getElementById('section-students-tab');
+      const secSummary = document.getElementById('section-summary-tab');
+
+      if (tab === 'students') {
+        if (btnStudents) btnStudents.className = 'btn btn-primary';
+        if (btnSummary) btnSummary.className = 'btn btn-outline';
+        if (secStudents) secStudents.classList.remove('hidden');
+        if (secSummary) secSummary.classList.add('hidden');
+        loadAttendance();
+      } else {
+        if (btnStudents) btnStudents.className = 'btn btn-outline';
+        if (btnSummary) btnSummary.className = 'btn btn-primary';
+        if (secStudents) secStudents.classList.add('hidden');
+        if (secSummary) secSummary.classList.remove('hidden');
+        loadCombinedSummary();
+      }
+    }
+
+    function populateSummaryWeekSelects() {
+      const selStart = document.getElementById('sum-start-week');
+      const selEnd = document.getElementById('sum-end-week');
+      if (!selStart || !selEnd) return;
+
+      const validWeeks = (allWeeks || []).filter(w => {
+        const idStr = String(w.weekId || w.id || '');
+        const s = toYMD(w.startDate || w.start_date);
+        const e = toYMD(w.endDate || w.end_date);
+        return idStr !== 'w1' && idStr !== '1' && idStr !== 'week_2026-05-18' && s && e;
+      }).sort((a, b) => (toYMD(a.startDate) || '') > (toYMD(b.startDate) || '') ? 1 : -1);
+
+      if (!validWeeks.length) {
+        selStart.innerHTML = '<option value="">ไม่มีข้อมูลสัปดาห์</option>';
+        selEnd.innerHTML = '<option value="">ไม่มีข้อมูลสัปดาห์</option>';
+        return;
+      }
+
+      const optionsHtml = validWeeks.map((w, idx) => {
+        const s = typeof formatDateThai === 'function' ? formatDateThai(w.startDate) : w.startDate;
+        const e = typeof formatDateThai === 'function' ? formatDateThai(w.endDate) : w.endDate;
+        const num = w.weekNum || (idx + 1);
+        return `<option value="${w.weekId || w.id}">สัปดาห์ที่ ${num} (${s} – ${e})</option>`;
+      }).join('');
+
+      const prevStart = selStart.value;
+      const prevEnd = selEnd.value;
+
+      selStart.innerHTML = optionsHtml;
+      selEnd.innerHTML = optionsHtml;
+
+      const today = todayStr();
+      let curW = validWeeks.find(w => {
+        const s = toYMD(w.startDate);
+        const e = toYMD(w.endDate);
+        return s && e && today >= s && today <= e;
+      });
+      if (!curW) curW = validWeeks[0];
+
+      // Preserve previously selected week if it still exists in the dropdown
+      if (prevStart && validWeeks.some(w => (w.weekId || String(w.id)) === prevStart)) {
+        selStart.value = prevStart;
+      } else if (curW) {
+        selStart.value = curW.weekId || curW.id;
+      }
+
+      if (prevEnd && validWeeks.some(w => (w.weekId || String(w.id)) === prevEnd)) {
+        selEnd.value = prevEnd;
+      } else if (curW) {
+        selEnd.value = curW.weekId || curW.id;
+      }
+    }
+
+    async function setSummaryCurrentWeek() {
+      const curW = await DataService.getCurrentWeek();
+      const validWeeks = (allWeeks || []).filter(w => {
+        const idStr = String(w.weekId || w.id || '');
+        const s = toYMD(w.startDate || w.start_date);
+        const e = toYMD(w.endDate || w.end_date);
+        return idStr !== 'w1' && idStr !== '1' && idStr !== 'week_2026-05-18' && s && e;
+      }).sort((a, b) => (toYMD(a.startDate) || '') > (toYMD(b.startDate) || '') ? 1 : -1);
+
+      const match = curW && validWeeks.find(w => (w.weekId || String(w.id)) === (curW.weekId || String(curW.id)));
+      const target = match || validWeeks[0];
+      if (target) {
+        const selStart = document.getElementById('sum-start-week');
+        const selEnd = document.getElementById('sum-end-week');
+        if (selStart) selStart.value = target.weekId || target.id;
+        if (selEnd) selEnd.value = target.weekId || target.id;
+        loadCombinedSummary();
+      }
+    }
+
+    function setSummaryAllWeeks() {
+      const validWeeks = (allWeeks || []).filter(w => {
+        const idStr = String(w.weekId || w.id || '');
+        const s = toYMD(w.startDate || w.start_date);
+        const e = toYMD(w.endDate || w.end_date);
+        return idStr !== 'w1' && idStr !== '1' && idStr !== 'week_2026-05-18' && s && e;
+      }).sort((a, b) => (toYMD(a.startDate) || '') > (toYMD(b.startDate) || '') ? 1 : -1);
+
+      if (validWeeks.length) {
+        const selStart = document.getElementById('sum-start-week');
+        const selEnd = document.getElementById('sum-end-week');
+        if (selStart) selStart.value = validWeeks[0].weekId || validWeeks[0].id;
+        if (selEnd) selEnd.value = validWeeks[validWeeks.length - 1].weekId || validWeeks[validWeeks.length - 1].id;
+        loadCombinedSummary();
+      }
+    }
+
+    function onSummaryWeekRangeChange() {
+      const selStart = document.getElementById('sum-start-week');
+      const selEnd = document.getElementById('sum-end-week');
+      if (!selStart || !selEnd) return;
+
+      const validWeeks = (allWeeks || []).filter(w => toYMD(w.startDate) && toYMD(w.endDate))
+        .sort((a, b) => (toYMD(a.startDate) || '') > (toYMD(b.startDate) || '') ? 1 : -1);
+      const startIdx = validWeeks.findIndex(w => (w.weekId || String(w.id)) === selStart.value);
+      const endIdx = validWeeks.findIndex(w => (w.weekId || String(w.id)) === selEnd.value);
+
+      if (startIdx !== -1 && endIdx !== -1 && startIdx > endIdx) {
+        selEnd.value = selStart.value;
+      }
+      loadCombinedSummary();
+    }
+
+    function getClinicStudentCount(clinic, attendanceList) {
+      if (!clinic) return 0;
+      const clinicIdStr = String(clinic.id);
+      const fromAtt = (attendanceList || []).filter(a => String(a.clinicId || a.clinic_id) === clinicIdStr);
+      if (fromAtt.length > 0) return fromAtt.length;
+      if (Array.isArray(clinic.studentList) && clinic.studentList.length > 0) return clinic.studentList.length;
+      if (Array.isArray(clinic.attendanceIds) && clinic.attendanceIds.length > 0) return clinic.attendanceIds.length;
+      return Number(clinic.studentCount) || 0;
+    }
+
+    async function loadCombinedSummary() {
+      allWeeks = await DataService.getWeeks();
+      allClinics = await DataService.getClinics();
+      allAttendance = await DataService.getAttendance();
+      allTeachers = await DataService.getTeachers();
+      renderCombinedSummary();
+    }
+
+    function renderCombinedSummary() {
+      const container = document.getElementById('combined-summary-content');
+      if (!container) return;
+
+      const selStart = document.getElementById('sum-start-week');
+      const selEnd = document.getElementById('sum-end-week');
+      const validWeeks = (allWeeks || []).filter(w => toYMD(w.startDate) && toYMD(w.endDate))
+        .sort((a, b) => (toYMD(a.startDate) || '') > (toYMD(b.startDate) || '') ? 1 : -1);
+
+      if (!validWeeks.length) {
+        container.innerHTML = `<div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">ไม่พบข้อมูลสัปดาห์ในระบบ</div>
+        </div>`;
+        return;
+      }
+
+      const startWeekId = selStart ? selStart.value : (validWeeks[0].weekId || validWeeks[0].id);
+      const endWeekId = selEnd ? selEnd.value : (validWeeks[validWeeks.length - 1].weekId || validWeeks[validWeeks.length - 1].id);
+
+      let startIdx = validWeeks.findIndex(w => (w.weekId || String(w.id)) === startWeekId);
+      let endIdx = validWeeks.findIndex(w => (w.weekId || String(w.id)) === endWeekId);
+      if (startIdx === -1) startIdx = 0;
+      if (endIdx === -1 || endIdx < startIdx) endIdx = startIdx;
+
+      const selectedWeeks = validWeeks.slice(startIdx, endIdx + 1);
+      const selectedWeekIds = new Set(selectedWeeks.map(w => w.weekId || String(w.id)));
+      const relevantClinics = allClinics.filter(c => selectedWeekIds.has(c.weekId || String(c.week_id)));
+
+      const activeClinics = relevantClinics.filter(c => c.status !== 'cancelled' && (c.subject || c.subjectName));
+      const teachersWithClasses = new Set(activeClinics.map(c => c.teacherId || c.teacherName).filter(Boolean));
+      let totalStudentsInRange = 0;
+      activeClinics.forEach(c => {
+        totalStudentsInRange += getClinicStudentCount(c, allAttendance);
+      });
+
+      document.getElementById('sum-stat-weeks').textContent = selectedWeeks.length;
+      document.getElementById('sum-stat-sessions').textContent = activeClinics.length;
+      document.getElementById('sum-stat-teachers').textContent = teachersWithClasses.size;
+      document.getElementById('sum-stat-students').textContent = totalStudentsInRange.toLocaleString();
+      document.getElementById('sum-total-badge').textContent = `รวม ${totalStudentsInRange.toLocaleString()} คน`;
+
+      const dayNames = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์'];
+      let html = '';
+
+      selectedWeeks.forEach(w => {
+        const wId = w.weekId || String(w.id);
+        const wClinics = allClinics.filter(c => c.weekId === wId || String(c.week_id) === wId);
+
+        let activeDays = [0, 1, 2, 3];
+        if (wClinics.some(c => Number(c.dayOfWeek) === 4)) {
+          activeDays.push(4);
+        }
+
+        const baseD = parseDateSafe(w.startDate) || new Date();
+        let weekTotalStudents = 0;
+        const colStudentTotals = {};
+        activeDays.forEach(d => { colStudentTotals[d] = 0; });
+
+        html += `
+          <div class="matrix-week-block" style="margin-bottom:28px;border:1.5px solid var(--gray-200);border-radius:14px;overflow:hidden;background:#fff;box-shadow:var(--shadow-sm);">
+            <div class="matrix-week-header" style="background:var(--blue-pale);border-bottom:2px solid var(--blue-light);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+              <div class="screen-only" style="font-weight:700;font-size:1.1rem;color:var(--blue-deep);display:flex;align-items:center;gap:8px;">
+                <span>📅</span> ${escapeHtml(w.label || ('สัปดาห์ที่ ' + w.weekNum))} — ตารางบอร์ดรวม ม.1 ถึง ม.6
+              </div>
+              <div class="print-only" style="font-weight:700;font-size:10pt;color:#000;">
+                ตารางสรุปคลินิกวิชาการ ม.1 – ม.6 สัปดาห์ที่ ${w.weekNum} (${formatDateThai(w.startDate)} – ${formatDateThai(w.endDate)})
+              </div>
+              <div style="font-size:.85rem;color:var(--gray-600);font-weight:600;">
+                <span>${formatDateThai(w.startDate)} – ${formatDateThai(w.endDate)}</span>
+              </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+              <table class="matrix-table combined-matrix-table" style="width:100%;border-collapse:collapse;min-width:750px;">
+                <thead>
+                  <tr style="background:#f1f5f9;border-bottom:2px solid #cbd5e1;">
+                    <th style="width:8%;text-align:center;padding:8px 6px;font-size:.88rem;">ระดับชั้น</th>
+                    ${activeDays.map(dayIdx => {
+                      const curD = new Date(baseD);
+                      curD.setDate(curD.getDate() + dayIdx);
+                      const dayLabel = dayNames[dayIdx];
+                      return `
+                        <th style="width:${Math.floor(92 / activeDays.length)}%;text-align:center;padding:8px 6px;font-size:.88rem;">
+                          <div style="font-weight:700;">วัน${dayLabel}</div>
+                          <div style="font-size:.75rem;font-weight:normal;color:#64748b;">${formatDateThai(toYMD(curD))}</div>
+                        </th>
+                      `;
+                    }).join('')}
+                  </tr>
+                </thead>
+                <tbody>
+        `;
+
+        for (let g = 1; g <= 6; g++) {
+          html += `
+            <tr style="border-bottom:1px solid #e2e8f0;">
+              <td style="text-align:center;padding:8px 6px;background:#f8fafc;font-weight:700;border-right:1px solid #e2e8f0;">
+                <span class="badge badge-blue screen-only">ม.${g}</span>
+                <span class="print-only" style="font-weight:700;font-size:8.5pt;color:#000;">ม.${g}</span>
+              </td>
+          `;
+
+          activeDays.forEach(dayIdx => {
+            const curD = new Date(baseD);
+            curD.setDate(curD.getDate() + dayIdx);
+            const dateStr = toYMD(curD);
+
+            // Deduplicate clinics for this cell strictly by date and slot
+            const cellClinicsRaw = wClinics.filter(c => {
+              if (Number(c.grade) !== g) return false;
+              const cDate = toYMD(c.date);
+              if (cDate && cDate === dateStr) return true;
+              if (!cDate && Number(c.dayOfWeek) === dayIdx) return true;
+              return false;
+            });
+
+            const seenIds = new Set();
+            const cellClinics = [];
+            for (const c of cellClinicsRaw) {
+              const cid = String(c.id || `${c.grade}_${c.dayOfWeek}_${c.date}_${c.subject}`);
+              if (!seenIds.has(cid)) {
+                seenIds.add(cid);
+                cellClinics.push(c);
+              }
+            }
+
+            html += `<td style="padding:6px 8px;vertical-align:top;border-right:1px solid #f1f5f9;background:#fff;">`;
+
+            if (!cellClinics.length) {
+              html += `
+                <div class="screen-only" style="color:#cbd5e1;text-align:center;font-size:.8rem;padding:6px 0;">–</div>
+                <div class="print-only" style="color:#94a3b8;text-align:center;font-size:8pt;padding:2px 0;">–</div>
+              `;
+            } else {
+              cellClinics.forEach((c, cIdx) => {
+                const sCount = getClinicStudentCount(c, allAttendance);
+                colStudentTotals[dayIdx] += sCount;
+                weekTotalStudents += sCount;
+                const isCancelled = c.status === 'cancelled';
+                const subj = escapeHtml(c.subject || c.subjectName || '–');
+                const teacher = escapeHtml(c.teacherName || '–');
+                const room = escapeHtml(c.room || '');
+
+                html += `
+                  <!-- Screen View -->
+                  <div class="screen-only">
+                    ${isCancelled ? `
+                      <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:6px;padding:6px 8px;margin-bottom:4px;font-size:.8rem;">
+                        <div style="font-weight:600;text-decoration:line-through;color:#9f1239;">${subj}</div>
+                        <span class="badge badge-red" style="font-size:.7rem;padding:2px 6px;">⛔ งดสอน</span>
+                      </div>
+                    ` : `
+                      <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:6px 8px;margin-bottom:4px;font-size:.82rem;">
+                        <div style="font-weight:700;color:#0369a1;margin-bottom:2px;display:flex;align-items:center;gap:4px;">
+                          <span>${getSubjectIcon(c.subject || c.subjectName)}</span>
+                          <span>${subj}</span>
+                        </div>
+                        <div style="color:#334155;font-size:.78rem;margin-bottom:2px;">👩‍🏫 ${teacher}</div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+                          <span style="font-size:.75rem;color:#64748b;">📍 ${room || '–'}</span>
+                          <span class="badge ${sCount > 0 ? 'badge-blue' : ''}" style="${sCount > 0 ? '' : 'background:#e2e8f0;color:#475569;'} font-size:.76rem;font-weight:700;padding:2px 6px;">
+                            👥 ${sCount} คน
+                          </span>
+                        </div>
+                      </div>
+                    `}
+                  </div>
+
+                  <!-- Print View: Clean text, stacked block lines, no emoji, no colors, no overlap -->
+                  <div class="print-only">
+                    ${isCancelled ? `
+                      <div class="print-cell-box" style="margin-bottom:4px;padding-bottom:${cIdx < cellClinics.length - 1 ? '4px' : '0'};border-bottom:${cIdx < cellClinics.length - 1 ? '1px dashed #cbd5e1' : 'none'};line-height:1.35;font-size:7.5pt;color:#333;">
+                        <div style="font-weight:700;text-decoration:line-through;color:#000;">${subj}</div>
+                        <div style="font-size:7pt;color:#444;">${teacher}</div>
+                        <div style="font-size:7pt;color:#b91c1c;font-weight:600;">(งดสอน)</div>
+                      </div>
+                    ` : `
+                      <div class="print-cell-box" style="margin-bottom:4px;padding-bottom:${cIdx < cellClinics.length - 1 ? '4px' : '0'};border-bottom:${cIdx < cellClinics.length - 1 ? '1px dashed #cbd5e1' : 'none'};line-height:1.35;font-size:7.5pt;color:#000;">
+                        <div style="font-weight:700;color:#000;margin-bottom:2px;font-size:7.8pt;">${subj}</div>
+                        <div style="font-size:7pt;color:#333;margin-bottom:1px;">${teacher}</div>
+                        ${room ? `<div style="font-size:6.8pt;color:#555;margin-bottom:1px;">${room.startsWith('ห้อง') ? room : 'ห้อง ' + room}</div>` : ''}
+                        <div style="font-size:7pt;font-weight:700;color:#000;">จำนวน ${sCount} คน</div>
+                      </div>
+                    `}
+                  </div>
+                `;
+              });
+            }
+
+            html += `</td>`;
+          });
+
+          html += `</tr>`;
+        }
+
+        html += `
+                </tbody>
+                <tfoot>
+                  <tr style="background:#f8fafc;font-weight:700;border-top:2px solid #cbd5e1;">
+                    <td style="text-align:center;padding:8px 6px;color:var(--gray-700);font-size:.85rem;">ยอดรวม</td>
+                    ${activeDays.map(dayIdx => `
+                      <td style="text-align:center;padding:8px 6px;font-size:.88rem;border-right:1px solid #e2e8f0;">
+                        <span class="screen-only" style="color:var(--blue-deep);font-weight:700;">👥 ${colStudentTotals[dayIdx]} คน</span>
+                        <span class="print-only" style="color:#000;font-weight:700;font-size:8pt;">${colStudentTotals[dayIdx]} คน</span>
+                      </td>
+                    `).join('')}
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <div class="screen-only" style="background:var(--blue-pale);padding:10px 16px;border-top:1.5px solid var(--blue-light);display:flex;justify-content:space-between;align-items:center;font-weight:700;">
+              <span style="color:var(--blue-deep);">รวมจำนวนนักเรียนทั้งสัปดาห์:</span>
+              <span class="badge badge-blue" style="font-size:1rem;padding:4px 12px;">${weekTotalStudents.toLocaleString()} คน</span>
+            </div>
+            <div class="print-only" style="background:#f8fafc;padding:6px 14px;border-top:1.5px solid #cbd5e1;font-weight:700;font-size:8.5pt;color:#000;text-align:right;">
+              รวมจำนวนนักเรียนทั้งสัปดาห์: <strong>${weekTotalStudents.toLocaleString()} คน</strong>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function printCombinedSummary() {
+      window.print();
+    }
+
+    async function downloadCombinedSummaryPDF() {
+      const contentEl = document.getElementById('combined-summary-content');
+      if (!contentEl || !contentEl.querySelector('table')) {
+        showToast('แจ้งเตือน', 'ไม่พบข้อมูลสรุปสำหรับดาวน์โหลด', 'warning');
+        return;
+      }
+
+      const selStart = document.getElementById('sum-start-week');
+      const selEnd = document.getElementById('sum-end-week');
+      const startText = selStart ? selStart.options[selStart.selectedIndex]?.text : '';
+      const endText = selEnd ? selEnd.options[selEnd.selectedIndex]?.text : '';
+      const s = LocalDB.get('school_settings') || {};
+      const sem = s.semester || '1';
+      const year = s.academicYear || '2569';
+
+      const totalStudents = document.getElementById('sum-stat-students')?.textContent || '0';
+      const totalSessions = document.getElementById('sum-stat-sessions')?.textContent || '0';
+
+      const orientSel = document.getElementById('sum-pdf-orient');
+      const isLandscape = orientSel ? orientSel.value === 'landscape' : true;
+      const targetWidth = isLandscape ? 1020 : 720;
+
+      const btn = document.getElementById('btn-download-sum-pdf');
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = '⏳ กำลังสร้าง PDF...'; }
+      document.body.classList.add('generating-pdf');
+
+      showToast('กำลังประมวลผล', 'กำลังจัดทำไฟล์ PDF กรุณารอสักครู่...', 'info');
+
+      // Create printable report container appended offscreen at bottom of DOM (prevents overlay artifacts)
+      const reportDiv = document.createElement('div');
+      reportDiv.id = 'combined-pdf-render-area';
+      reportDiv.style.width = targetWidth + 'px';
+      reportDiv.style.maxWidth = targetWidth + 'px';
+      reportDiv.style.margin = '0 auto';
+      reportDiv.style.padding = '8px 12px';
+      reportDiv.style.boxSizing = 'border-box';
+      reportDiv.style.background = '#ffffff';
+      reportDiv.style.color = '#000000';
+      reportDiv.style.fontFamily = "'Sarabun', 'TH Sarabun New', sans-serif";
+
+      reportDiv.innerHTML = `
+        <div style="text-align:center;border-bottom:2px solid #000000;padding-bottom:8px;margin-bottom:10px;">
+          <div style="font-size:${isLandscape ? '15pt' : '13pt'};font-weight:700;color:#000000;font-family:'Kanit',sans-serif;">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
+          <div style="font-size:${isLandscape ? '12pt' : '10.5pt'};font-weight:600;color:#000000;margin-top:2px;">รายงานสรุปการจัดคลินิกวิชาการและยอดผู้เข้าเรียนรวมทุกระดับชั้น (ม.1 – ม.6)</div>
+          <div style="font-size:8.5pt;color:#333333;margin-top:2px;">
+            <span>ช่วงเวลา: <strong>${escapeHtml(startText)} ${startText !== endText ? `ถึง ${escapeHtml(endText)}` : ''}</strong></span> &bull; 
+            <span>ภาคเรียนที่ <strong>${escapeHtml(sem)}</strong> ปีการศึกษา <strong>${escapeHtml(year)}</strong></span>
+          </div>
+          <div style="display:flex;justify-content:center;gap:20px;margin-top:5px;font-size:8.5pt;background:#f8fafc;padding:4px 10px;border:1px solid #cbd5e1;">
+            <span>คาบคลินิกทั้งหมด: <strong>${totalSessions}</strong> คาบ</span> &bull;
+            <span>นักเรียนเข้าเรียนรวม: <strong>${totalStudents}</strong> คน</span>
+          </div>
+        </div>
+        <div id="pdf-report-content" style="font-size:8pt;">
+          ${contentEl.innerHTML}
+        </div>
+        <div style="margin-top:10px;padding-top:4px;border-top:1px dashed #cbd5e1;display:flex;justify-content:space-between;font-size:7.5pt;color:#64748b;">
+          <span>ระบบคลินิกวิชาการ โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</span>
+          <span>สร้างรายงานเมื่อ: ${new Date().toLocaleString('th-TH')}</span>
+        </div>
+      `;
+
+      reportDiv.querySelectorAll('.screen-only').forEach(el => el.remove());
+      reportDiv.querySelectorAll('.print-only').forEach(el => {
+        if (el.tagName.toLowerCase() === 'span') {
+          el.style.setProperty('display', 'inline', 'important');
+        } else {
+          el.style.setProperty('display', 'block', 'important');
+        }
+      });
+
+      reportDiv.querySelectorAll('button, input, select, .empty-state, .spinner').forEach(el => el.remove());
+      reportDiv.querySelectorAll('div').forEach(d => {
+        d.style.overflow = 'visible';
+      });
+      reportDiv.querySelectorAll('.matrix-week-block').forEach(wb => {
+        wb.style.pageBreakInside = 'avoid';
+        wb.style.breakInside = 'avoid';
+        wb.style.boxShadow = 'none';
+        wb.style.marginBottom = '12px';
+        wb.style.border = '1px solid #cbd5e1';
+      });
+      reportDiv.querySelectorAll('table').forEach(tbl => {
+        tbl.style.width = '100%';
+        tbl.style.maxWidth = '100%';
+        tbl.style.minWidth = 'unset';
+        tbl.style.tableLayout = 'fixed';
+        tbl.style.borderCollapse = 'collapse';
+        tbl.style.marginBottom = '6px';
+        tbl.style.boxSizing = 'border-box';
+      });
+      reportDiv.querySelectorAll('.matrix-week-header').forEach(wh => {
+        wh.style.background = '#f1f5f9';
+        wh.style.color = '#0f172a';
+        wh.style.borderBottom = '1.5px solid #cbd5e1';
+        wh.style.padding = '8px 12px';
+        wh.style.fontSize = isLandscape ? '10pt' : '9pt';
+        wh.style.fontWeight = '700';
+      });
+      reportDiv.querySelectorAll('th').forEach(th => {
+        th.style.background = '#f1f5f9';
+        th.style.color = '#0f172a';
+        th.style.border = '1px solid #cbd5e1';
+        th.style.padding = isLandscape ? '6px 8px' : '4px 6px';
+        th.style.fontSize = isLandscape ? '8.5pt' : '7.5pt';
+        th.style.fontWeight = '700';
+        th.querySelectorAll('div').forEach(d => {
+          d.style.color = '#0f172a';
+        });
+      });
+      reportDiv.querySelectorAll('td').forEach(td => {
+        td.style.border = '1px solid #e2e8f0';
+        td.style.padding = isLandscape ? '6px 8px' : '4px 6px';
+        td.style.fontSize = isLandscape ? '8pt' : '7pt';
+        td.style.color = '#0f172a';
+        td.style.verticalAlign = 'top';
+        td.style.lineHeight = '1.35';
+        td.style.wordBreak = 'break-word';
+      });
+      reportDiv.querySelectorAll('.print-cell-box').forEach(box => {
+        box.style.lineHeight = '1.35';
+      });
+      reportDiv.querySelectorAll('tr').forEach(tr => {
+        tr.style.pageBreakInside = 'avoid';
+        tr.style.breakInside = 'avoid';
+      });
+
+      document.body.appendChild(reportDiv);
+
+      const opt = {
+        margin: [6, 6, 6, 6],
+        filename: `สรุปตารางคลินิกวิชาการ_ทุกระดับชั้น_${isLandscape ? 'แนวนอน_' : 'แนวตั้ง_'}${todayStr()}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 1.5,
+          useCORS: true,
+          logging: false,
+          scrollY: -window.scrollY
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: isLandscape ? 'landscape' : 'portrait'
+        }
+      };
+
+      try {
+        if (typeof html2pdf !== 'undefined') {
+          await html2pdf().set(opt).from(reportDiv).save();
+          showToast('สำเร็จ', 'ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว', 'success');
+        } else {
+          window.print();
+        }
+      } catch (err) {
+        console.error('PDF generation error:', err);
+        showToast('ผิดพลาด', 'ไม่สามารถสร้าง PDF ได้ กำลังเปิดหน้าต่างพิมพ์เอกสารแทน', 'warning');
+        window.print();
+      } finally {
+        document.body.classList.remove('generating-pdf');
         reportDiv.remove();
         if (btn) { btn.disabled = false; btn.innerHTML = originalText; }
       }

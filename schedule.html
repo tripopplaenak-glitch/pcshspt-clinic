@@ -325,6 +325,54 @@
   </div>
 </div>
 
+<!-- ═══ MODAL: ลงทะเบียนเรียน (สำหรับนักเรียน) ═══════════════ -->
+<div class="modal-overlay" id="modal-student-registration" onclick="if(event.target===this)closeModal('modal-student-registration')">
+  <div class="modal" style="max-width:560px;border-radius:16px;overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,0.18);">
+    <div class="modal-header" style="background:linear-gradient(135deg, #15803d, #059669);color:#fff;padding:16px 20px;">
+      <div class="modal-title" style="color:#fff;font-size:1.15rem;display:flex;align-items:center;gap:8px;">
+        <span>📝</span> <span>ลงทะเบียนเรียนคลินิกวิชาการ</span>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-student-registration')" style="background:rgba(255,255,255,0.2);color:#fff;border:none;">✕</button>
+    </div>
+    <div class="modal-body" style="padding:18px 20px;">
+      <input type="hidden" id="student-reg-clinic-id">
+      
+      <!-- Clinic Summary Card -->
+      <div id="student-reg-clinic-card" style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:12px;padding:14px;margin-bottom:14px;">
+        <!-- Filled by JS -->
+      </div>
+
+      <!-- Instructions -->
+      <div class="alert alert-info" style="font-size:0.84rem;margin-bottom:14px;padding:9px 14px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;border-radius:8px;line-height:1.5;">
+        💡 <strong>คำแนะนำ:</strong> ค้นหาและเลือกรายชื่อของตนเองเพื่อลงทะเบียน (กรอกได้ทีละ 1 คน) ระบบจะแจ้งเตือนทันทีหากเคยลงทะเบียนแล้ว
+      </div>
+
+      <!-- Student Selector -->
+      <div class="form-group" style="margin-bottom:12px;">
+        <label class="form-label" style="font-weight:700;display:flex;justify-content:space-between;align-items:center;font-size:0.88rem;">
+          <span>👤 เลือกรายชื่อนักเรียน (<span id="reg-student-grade-label"></span>):</span>
+          <span id="reg-student-found-count" class="text-xs text-muted"></span>
+        </label>
+        <input type="text" class="form-control" id="reg-student-search-input" placeholder="🔍 พิมพ์ชื่อ-สกุล, ห้อง หรือเลขที่เพื่อค้นหา..." oninput="filterRegistrationStudentOptions(this.value)" autocomplete="off" style="font-size:0.92rem;padding:8px 12px;margin-bottom:8px;">
+        
+        <select class="form-control" id="reg-student-select-box" size="6" onchange="onRegistrationStudentPick()" style="font-size:0.88rem;border-radius:8px;padding:6px;width:100%;height:160px;line-height:1.4;">
+          <!-- Filled by JS -->
+        </select>
+      </div>
+
+      <!-- Selected Student Preview & Validation Alert -->
+      <div id="student-reg-validation-box"></div>
+    </div>
+
+    <div class="modal-footer" style="padding:12px 20px;background:#f8fafc;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-outline" onclick="closeModal('modal-student-registration')">ยกเลิก</button>
+      <button class="btn btn-success" id="btn-confirm-student-reg" onclick="submitStudentRegistration()" disabled style="font-weight:700;padding:8px 20px;font-size:0.92rem;">
+        ✓ ยืนยันการลงทะเบียน (1 คน)
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Loading overlay -->
 <div class="loading-overlay" id="loading">
   <div class="spinner" style="width:40px;height:40px;border-width:4px;"></div>
@@ -865,8 +913,11 @@ function renderDayCard(day, clinics, teacherMap, dutyOfficer) {
         const t = teacherMap[c.teacherId] || {};
         const teacherDisplayName = t.name || c.teacherName || '–';
         const st = getStatusLabel(c.status);
-        const count = Number(c.studentCount || 0);
+        const count = Number(c.studentCount || (Array.isArray(c.studentList) ? c.studentList.length : 0));
         const gcalUrl = generateGoogleCalendarUrl(c, teacherDisplayName);
+        const isRegOpen = Boolean(c.allowRegistration);
+        const maxLimit = Number(c.maxStudents) || 0;
+        const isRegFull = isRegOpen && maxLimit > 0 && count >= maxLimit;
         return `
           <div class="clinic-slot">
             <div class="clinic-subject">${getSubjectIcon(c.subject)} ${c.subject}</div>
@@ -883,6 +934,22 @@ function renderDayCard(day, clinics, teacherMap, dutyOfficer) {
             <div class="clinic-slot-footer">
               <span class="status-badge ${st.cls}">${st.icon} ${st.text}</span>
               <div class="clinic-slot-actions">
+                ${isRegOpen ? (
+                  isRegFull ? `
+                    <button class="btn-clinic-students" disabled 
+                            style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;cursor:not-allowed;" 
+                            title="มีผู้ลงทะเบียนครบตามจำนวนแล้ว (${count}/${maxLimit} คน)">
+                      ⛔ เต็มแล้ว (${count}/${maxLimit})
+                    </button>
+                  ` : `
+                    <button class="btn-clinic-students" 
+                            onclick="event.stopPropagation(); openStudentRegistrationModal('${c.id}')" 
+                            style="background:#16a34a;color:#ffffff;border:1px solid #15803d;box-shadow:0 1px 3px rgba(22,163,74,0.3);" 
+                            title="คลิกเพื่อลงทะเบียนเรียนในรายวิชานี้">
+                      📝 ลงทะเบียน ${maxLimit ? `(${count}/${maxLimit})` : ''}
+                    </button>
+                  `
+                ) : ''}
                 <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" 
                    class="btn-clinic-gcal" 
                    title="บันทึกเข้า Google Calendar"
@@ -1003,17 +1070,28 @@ async function openClinicStudentsModal(clinicId) {
   const footerInfo = document.getElementById('cs-modal-footer-info');
 
   if (currentModalStudentList.length === 0) {
+    const isRegOpen = Boolean(c.allowRegistration);
+    const maxLimit = Number(c.maxStudents) || 0;
     // ─── Case 0: ครูผู้สอนยังไม่ได้กรอกรายชื่อนักเรียน ───
     bodyEl.innerHTML = `
-      <div style="text-align:center;padding:28px 16px;">
-        <div style="width:70px;height:70px;margin:0 auto 16px;border-radius:50%;background:#fff7ed;border:2px dashed #fb923c;display:flex;align-items:center;justify-content:center;font-size:2rem;">
+      <div style="text-align:center;padding:24px 16px;">
+        <div style="width:68px;height:68px;margin:0 auto 14px;border-radius:50%;background:${isRegOpen ? '#f0fdf4' : '#fff7ed'};border:2px dashed ${isRegOpen ? '#16a34a' : '#fb923c'};display:flex;align-items:center;justify-content:center;font-size:2rem;">
           📝
         </div>
-        <div style="font-size:1.15rem;font-weight:700;color:#9a3412;margin-bottom:8px;font-family:'Kanit',sans-serif;">
-          ครูผู้สอนยังไม่ได้ลงทะเบียนรายชื่อนักเรียน
+        <div style="font-size:1.15rem;font-weight:700;color:${isRegOpen ? '#166534' : '#9a3412'};margin-bottom:6px;font-family:'Kanit',sans-serif;">
+          ${isRegOpen ? 'วิชานี้เปิดรับลงทะเบียนเรียนออนไลน์' : 'ครูผู้สอนยังไม่ได้ลงทะเบียนรายชื่อนักเรียน'}
         </div>
-        <div style="font-size:0.95rem;color:#c2410c;background:#fffbeb;border:1.5px solid #fde68a;padding:12px 18px;border-radius:12px;margin:0 auto 20px;max-width:480px;line-height:1.65;box-shadow:0 1px 3px rgba(217,119,6,0.06);">
-          📢 โปรดติดต่อครูผู้สอน <strong>${escapeHtml(teacherName)}</strong> เพื่อลงทะเบียนรายชื่อเข้าเรียนคลินิกวิชาการ
+        <div style="font-size:0.92rem;color:${isRegOpen ? '#15803d' : '#c2410c'};background:${isRegOpen ? '#f0fdf4' : '#fffbeb'};border:1.5px solid ${isRegOpen ? '#86efac' : '#fde68a'};padding:12px 18px;border-radius:12px;margin:0 auto 16px;max-width:480px;line-height:1.6;box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+          ${isRegOpen ? `
+            <span>โควตาที่เปิดรับ: <strong>${maxLimit ? maxLimit + ' คน' : 'ไม่จำกัด'}</strong> (ยังไม่มีผู้ลงทะเบียน)</span>
+            <div style="margin-top:10px;">
+              <button class="btn btn-success" onclick="closeModal('modal-clinic-students'); openStudentRegistrationModal('${c.id}');" style="font-weight:700;padding:8px 22px;border-radius:20px;font-size:0.92rem;box-shadow:0 2px 6px rgba(22,163,74,0.3);">
+                📝 ลงทะเบียนเรียนคลิกที่นี่
+              </button>
+            </div>
+          ` : `
+            📢 โปรดติดต่อครูผู้สอน <strong>${escapeHtml(teacherName)}</strong> เพื่อลงทะเบียนรายชื่อเข้าเรียนคลินิกวิชาการ
+          `}
         </div>
         
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;max-width:480px;margin:0 auto;text-align:left;font-size:0.88rem;color:#475569;display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;">
@@ -1040,6 +1118,23 @@ function renderStudentListTable(list, clinic) {
   const bodyEl = document.getElementById('cs-modal-body');
   const count = list.length;
   bodyEl.innerHTML = `
+    ${clinic && clinic.allowRegistration ? `
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <div>
+          <div style="font-weight:700;color:#166534;font-size:0.92rem;">📝 เปิดรับลงทะเบียนเรียนออนไลน์</div>
+          <div style="font-size:0.82rem;color:#15803d;">
+            ลงทะเบียนแล้ว ${count} คน ${clinic.maxStudents ? `จากที่รับ ${clinic.maxStudents} คน (ว่างอีก ${Math.max(0, clinic.maxStudents - count)} ที่นั่ง)` : ''}
+          </div>
+        </div>
+        ${clinic.maxStudents && count >= clinic.maxStudents ? `
+          <span class="badge badge-red" style="padding:6px 12px;font-size:0.82rem;">⛔ เต็มแล้ว (ปิดรับลงทะเบียน)</span>
+        ` : `
+          <button class="btn btn-success btn-sm" onclick="closeModal('modal-clinic-students'); openStudentRegistrationModal('${clinic.id}');" style="font-weight:700;padding:6px 16px;border-radius:20px;box-shadow:0 2px 4px rgba(22,163,74,0.25);">
+            ➕ ลงทะเบียนเข้าเรียน
+          </button>
+        `}
+      </div>
+    ` : ''}
     ${clinic && clinic.topic ? `
     <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:8px 14px;margin-bottom:14px;font-size:0.9rem;color:#15803d;display:flex;align-items:center;gap:8px;">
       <span style="font-size:1.15rem;flex-shrink:0;">🎯</span>
@@ -1100,6 +1195,281 @@ function filterModalStudentList(keyword) {
   if (tbody) tbody.innerHTML = renderStudentRows(filtered);
   const countEl = document.getElementById('cs-visible-count');
   if (countEl) countEl.textContent = filtered.length;
+}
+
+// ─── STUDENT SELF-REGISTRATION SYSTEM ─────────────────────
+let regGradeStudentsCache = [];
+let regTargetClinic = null;
+
+async function openStudentRegistrationModal(clinicId) {
+  const allClinics = await DataService.getClinics();
+  const c = allClinics.find(x => String(x.id) === String(clinicId));
+  if (!c) {
+    showToast('ไม่พบข้อมูลวิชา', '', 'warning');
+    return;
+  }
+  regTargetClinic = c;
+
+  const teachers = await DataService.getTeachers();
+  const t = teachers.find(x => String(x.id) === String(c.teacherId)) || {};
+  const teacherName = t.name || c.teacherName || 'ไม่ระบุ';
+
+  // Get current attendance list for this clinic
+  let cAtt = [];
+  if (Array.isArray(c.studentList) && c.studentList.length > 0) {
+    cAtt = c.studentList;
+  } else {
+    const allAttendance = await DataService.getAttendance();
+    const cDate = toYMD(c.date);
+    cAtt = allAttendance.filter(a => {
+      if (!a.clinicId || String(a.clinicId) !== String(c.id)) return false;
+      if (cDate && a.date && toYMD(a.date) !== cDate) return false;
+      return true;
+    });
+  }
+
+  const currentCount = cAtt.length;
+  const maxLimit = Number(c.maxStudents) || 0;
+  const isFull = maxLimit > 0 && currentCount >= maxLimit;
+
+  if (isFull) {
+    showToast('ที่นั่งเต็มแล้ว', `วิชา ${c.subject} มีผู้ลงทะเบียนครบ ${maxLimit} คนแล้ว`, 'warning');
+    return;
+  }
+
+  document.getElementById('student-reg-clinic-id').value = String(c.id);
+
+  // Render clinic summary card in registration modal
+  const cardEl = document.getElementById('student-reg-clinic-card');
+  if (cardEl) {
+    cardEl.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+        <div style="font-weight:700;font-size:1.1rem;color:#166534;font-family:'Kanit',sans-serif;">
+          ${getSubjectIcon(c.subject)} ${escapeHtml(c.subject || c.subjectName)}
+        </div>
+        <span class="badge badge-blue">ระดับชั้น ม.${c.grade}</span>
+      </div>
+      ${c.topic ? `
+        <div style="font-size:0.83rem;color:#15803d;background:#ffffff;border:1px solid #bbf7d0;border-radius:6px;padding:4px 8px;margin-bottom:6px;">
+          🎯 ${escapeHtml(c.topic)}
+        </div>
+      ` : ''}
+      <div style="font-size:0.85rem;color:#334155;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;margin-top:6px;">
+        <div>👩‍🏫 ครูผู้สอน: <strong>${escapeHtml(teacherName)}</strong></div>
+        <div>📅 วันที่: <strong>${formatDateThai(c.date)}</strong></div>
+        <div>🕐 เวลา: <strong>${formatClinicTime(c.time)}</strong></div>
+        <div>📍 สถานที่: <strong>${escapeHtml(c.room || '–')}</strong></div>
+      </div>
+      <div style="margin-top:8px;padding-top:6px;border-top:1px dashed #86efac;display:flex;justify-content:space-between;font-size:0.82rem;font-weight:600;color:#166534;">
+        <span>โควตาที่เปิดรับ: ${maxLimit ? `${maxLimit} คน` : 'ไม่จำกัด'}</span>
+        <span>ลงทะเบียนแล้ว: ${currentCount} คน ${maxLimit ? `(เหลืออีก ${maxLimit - currentCount} ที่นั่ง)` : ''}</span>
+      </div>
+    `;
+  }
+
+  // Filter students strictly by grade of this clinic
+  const cleanGrade = Number(c.grade) || 1;
+  const gradeLabelEl = document.getElementById('reg-student-grade-label');
+  if (gradeLabelEl) gradeLabelEl.textContent = `ม.${cleanGrade}`;
+
+  const allStudents = await DataService.getStudents();
+  regGradeStudentsCache = allStudents.filter(s => Number(s.grade) === cleanGrade);
+  regGradeStudentsCache.sort((a, b) => (Number(a.room) - Number(b.room)) || (Number(a.number) - Number(b.number)));
+
+  // Reset inputs
+  const searchInput = document.getElementById('reg-student-search-input');
+  if (searchInput) searchInput.value = '';
+
+  const validationBox = document.getElementById('student-reg-validation-box');
+  if (validationBox) validationBox.innerHTML = '';
+
+  const confirmBtn = document.getElementById('btn-confirm-student-reg');
+  if (confirmBtn) confirmBtn.disabled = true;
+
+  filterRegistrationStudentOptions('');
+  openModal('modal-student-registration');
+}
+
+function filterRegistrationStudentOptions(keyword) {
+  const q = (keyword || '').trim().toLowerCase();
+  const selectBox = document.getElementById('reg-student-select-box');
+  if (!selectBox) return;
+
+  const filtered = q
+    ? regGradeStudentsCache.filter(s =>
+        (s.name || '').toLowerCase().includes(q) ||
+        String(s.studentCode || '').includes(q) ||
+        String(s.number || '').includes(q) ||
+        String(s.room || '').includes(q)
+      )
+    : regGradeStudentsCache;
+
+  const countEl = document.getElementById('reg-student-found-count');
+  if (countEl) countEl.textContent = `(พบ ${filtered.length} คน จากทั้งหมด ${regGradeStudentsCache.length} คน)`;
+
+  if (!filtered.length) {
+    selectBox.innerHTML = '<option value="" disabled style="padding:10px;color:#94a3b8;text-align:center;">-- ไม่พบรายชื่อนักเรียนที่ตรงกับคำค้นหา --</option>';
+    return;
+  }
+
+  // Pre-check registered student IDs in current clinic
+  const existingAtt = (regTargetClinic?.studentList && Array.isArray(regTargetClinic.studentList))
+    ? regTargetClinic.studentList
+    : [];
+  const existingIds = new Set(existingAtt.map(a => String(a.studentId || a.id || '')));
+
+  selectBox.innerHTML = filtered.map(s => {
+    const isReg = existingIds.has(String(s.id));
+    const prefix = isReg ? '⚠️ [ลงทะเบียนแล้ว] ' : '';
+    return `<option value="${s.id}" style="${isReg ? 'color:#dc2626;background:#fef2f2;' : 'color:#1e293b;'} padding:6px 10px;font-size:0.92rem;">
+      ${prefix}ม.${s.grade}/${s.room} เลขที่ ${s.number} | ${escapeHtml(s.name)}
+    </option>`;
+  }).join('');
+}
+
+async function onRegistrationStudentPick() {
+  const selectBox = document.getElementById('reg-student-select-box');
+  const studentId = selectBox ? selectBox.value : '';
+  const validationBox = document.getElementById('student-reg-validation-box');
+  const confirmBtn = document.getElementById('btn-confirm-student-reg');
+  if (!studentId || !regTargetClinic) return;
+
+  const student = regGradeStudentsCache.find(s => String(s.id) === String(studentId));
+  if (!student) return;
+
+  // Check if student is already registered in this clinic
+  const allAtt = await DataService.getAttendance();
+  const cDate = toYMD(regTargetClinic.date);
+  const clinicAtt = allAtt.filter(a => {
+    if (String(a.clinicId) !== String(regTargetClinic.id)) return false;
+    if (cDate && a.date && toYMD(a.date) !== cDate) return false;
+    return true;
+  });
+
+  const alreadyRegistered = clinicAtt.some(a => String(a.studentId) === String(student.id) || (a.studentName && a.studentName.trim() === student.name.trim()));
+
+  if (alreadyRegistered) {
+    validationBox.innerHTML = `
+      <div class="alert alert-danger" style="margin:0;padding:12px 14px;border-radius:10px;background:#fef2f2;border:1.5px solid #fca5a5;display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:1.3rem;line-height:1;">⚠️</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;color:#991b1b;font-size:0.92rem;">รายชื่อนี้ได้ลงทะเบียนเรียนไปแล้ว!</div>
+          <div style="font-size:0.85rem;color:#b91c1c;margin-top:2px;line-height:1.4;">
+            <strong>${escapeHtml(student.name)}</strong> (ม.${student.grade}/${student.room} เลขที่ ${student.number}) ได้ลงทะเบียนเรียนในรายวิชานี้เรียบร้อยแล้ว ไม่สามารถลงทะเบียนซ้ำได้
+          </div>
+        </div>
+      </div>
+    `;
+    if (confirmBtn) confirmBtn.disabled = true;
+  } else {
+    validationBox.innerHTML = `
+      <div class="alert alert-success" style="margin:0;padding:12px 14px;border-radius:10px;background:#f0fdf4;border:1.5px solid #86efac;display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:1.3rem;line-height:1;">✅</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;color:#166534;font-size:0.92rem;">พร้อมลงทะเบียน:</div>
+          <div style="font-size:0.9rem;color:#15803d;margin-top:2px;line-height:1.4;">
+            <strong>${escapeHtml(student.name)}</strong> &bull; ระดับชั้น <strong>ม.${student.grade}/${student.room}</strong> เลขที่ <strong>${student.number}</strong>
+          </div>
+        </div>
+      </div>
+    `;
+    if (confirmBtn) confirmBtn.disabled = false;
+  }
+}
+
+async function submitStudentRegistration() {
+  const selectBox = document.getElementById('reg-student-select-box');
+  const studentId = selectBox ? selectBox.value : '';
+  const confirmBtn = document.getElementById('btn-confirm-student-reg');
+  if (!studentId || !regTargetClinic) {
+    showToast('แจ้งเตือน', 'กรุณาเลือกรายชื่อนักเรียนก่อนยืนยัน', 'warning');
+    return;
+  }
+
+  const student = regGradeStudentsCache.find(s => String(s.id) === String(studentId));
+  if (!student) {
+    showToast('ข้อผิดพลาด', 'ไม่พบข้อมูลนักเรียนที่เลือก', 'error');
+    return;
+  }
+
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '⏳ กำลังบันทึกการลงทะเบียน...';
+  }
+
+  try {
+    // 1. Double check current attendance records
+    const allAtt = await DataService.getAttendance();
+    const cDate = toYMD(regTargetClinic.date);
+    const clinicAtt = allAtt.filter(a => {
+      if (String(a.clinicId) !== String(regTargetClinic.id)) return false;
+      if (cDate && a.date && toYMD(a.date) !== cDate) return false;
+      return true;
+    });
+
+    // Check duplicate
+    const alreadyRegistered = clinicAtt.some(a => String(a.studentId) === String(student.id) || (a.studentName && a.studentName.trim() === student.name.trim()));
+    if (alreadyRegistered) {
+      showToast('แจ้งเตือน', `รายชื่อ "${student.name}" ได้ลงทะเบียนเรียนในรายวิชานี้ไปแล้ว`, 'warning');
+      if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.innerHTML = '✓ ยืนยันการลงทะเบียน (1 คน)'; }
+      return;
+    }
+
+    // Check quota
+    const maxLimit = Number(regTargetClinic.maxStudents) || 0;
+    if (maxLimit > 0 && clinicAtt.length >= maxLimit) {
+      showToast('ขออภัย', 'จำนวนผู้ลงทะเบียนครบตามจำนวนที่กำหนดแล้ว (ที่นั่งเต็ม)', 'error');
+      closeModal('modal-student-registration');
+      await renderSchedule();
+      return;
+    }
+
+    // 2. Build attendance record
+    const newRecord = {
+      date: toYMD(regTargetClinic.date),
+      clinicId: regTargetClinic.id,
+      studentId: student.id,
+      studentName: student.name,
+      grade: student.grade,
+      room: student.room,
+      number: student.number,
+      dormitory: student.dormitory || 'D1',
+      subject: regTargetClinic.subject || regTargetClinic.subjectName || '',
+      teacherId: regTargetClinic.teacherId || '',
+      status: 'present'
+    };
+
+    clinicAtt.push(newRecord);
+    await DataService.setAttendanceForClinic(regTargetClinic.id, clinicAtt);
+
+    // 3. Update clinic studentCount and studentList
+    regTargetClinic.studentCount = clinicAtt.length;
+    regTargetClinic.studentList = clinicAtt;
+    regTargetClinic.attendanceIds = clinicAtt.map(x => x.id);
+    await DataService.saveClinic(regTargetClinic);
+
+    closeModal('modal-student-registration');
+    showToast('🎉 ลงทะเบียนสำเร็จ!', `นักเรียน "${student.name}" ได้ลงทะเบียนเรียนวิชา "${regTargetClinic.subject}" เรียบร้อยแล้ว`, 'success');
+    await renderSchedule();
+  } catch (err) {
+    console.error('Registration error:', err);
+    showToast('เกิดข้อผิดพลาด', 'ไม่สามารถลงทะเบียนได้: ' + (err.message || err), 'error');
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = '✓ ยืนยันการลงทะเบียน (1 คน)';
+    }
+  }
+}
+
+function formatDormMini(d) {
+  if (!d || d === 'none') return '';
+  if (typeof formatDormitory === 'function') {
+    const formatted = formatDormitory(d);
+    if (formatted && formatted !== '–') return `หอพัก ${formatted}`;
+  }
+  const dorm = APP_CONFIG.dormitories.find(x => x.id === d);
+  return dorm ? `หอพัก ${dorm.name}` : d;
 }
 
 // ─── Realtime sync listeners across browser tabs ──────────

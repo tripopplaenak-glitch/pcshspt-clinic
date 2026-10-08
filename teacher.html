@@ -325,10 +325,76 @@
           <option value="pending">⏳ รอยืนยัน</option>
         </select>
       </div>
+
+      <!-- Registration Settings inside Edit Modal -->
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px 14px;margin-top:10px;">
+        <div style="font-weight:700;font-size:0.88rem;color:#166534;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          <span>📝</span> <span>การรับลงทะเบียนนักเรียนออนไลน์</span>
+        </div>
+        <div style="margin-bottom:8px;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:0.85rem;color:#166534;">
+            <input type="checkbox" id="edit-allow-registration" style="width:18px;height:18px;accent-color:#16a34a;">
+            <span>เปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ผ่านหน้าแรก</span>
+          </label>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" style="font-size:0.8rem;color:#166534;">จำกัดจำนวนนักเรียนที่รับ (คน) <small style="color:#65a30d;">*ใส่ 0 หรือเว้นว่างหากไม่จำกัด</small></label>
+          <input type="number" min="0" class="form-control" id="edit-max-students" placeholder="เช่น 25" style="max-width:180px;">
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('modal-edit-clinic')">ยกเลิก</button>
       <button class="btn btn-primary" onclick="saveClinicEdit()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: ตั้งค่าการลงทะเบียนนักเรียน ═══════════════ -->
+<div class="modal-overlay" id="modal-registration-settings">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header" style="background:linear-gradient(135deg, #15803d, #059669);color:#fff;">
+      <div class="modal-title" style="color:#fff;display:flex;align-items:center;gap:8px;">
+        <span>📝</span> <span>ตั้งค่าการลงทะเบียนนักเรียน</span>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-registration-settings')" style="color:#fff;background:rgba(255,255,255,0.2);">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="reg-clinic-id">
+      
+      <div id="reg-clinic-info" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:16px;">
+        <!-- Filled by JS -->
+      </div>
+
+      <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:14px;margin-bottom:16px;">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:700;color:#166534;font-size:0.95rem;margin-bottom:6px;">
+          <input type="checkbox" id="reg-allow-toggle" style="width:20px;height:20px;accent-color:#16a34a;">
+          <span>เปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ผ่านหน้าแรก</span>
+        </label>
+        <div style="font-size:0.8rem;color:#15803d;margin-left:30px;">
+          เมื่อเปิดใช้งาน นักเรียนจะเห็นปุ่ม <strong>"ลงทะเบียนเรียน"</strong> บนหน้าตารางสอนและสามารถเลือกชื่อเพื่อลงทะเบียนได้
+        </div>
+      </div>
+
+      <div class="form-group" id="reg-limit-group">
+        <label class="form-label" style="font-weight:700;">จำกัดจำนวนนักเรียนที่รับ (คน)</label>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <input type="number" min="0" class="form-control" id="reg-max-students" placeholder="เช่น 20 หรือ 25" style="max-width:180px;">
+          <span style="font-size:0.82rem;color:var(--gray-600);">(ใส่ 0 หรือเว้นว่างหากไม่จำกัดจำนวน)</span>
+        </div>
+        <small class="text-muted" style="display:block;margin-top:4px;font-size:0.78rem;">
+          * เมื่อนักเรียนลงทะเบียนครบตามจำนวนที่กำหนด ระบบจะปิดรับการลงทะเบียนบนหน้าเว็บให้อัตโนมัติ
+        </small>
+      </div>
+
+      <!-- Current Status & Student list summary -->
+      <div id="reg-current-summary" style="margin-top:14px;">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-registration-settings')">ยกเลิก</button>
+      <button class="btn btn-success" onclick="saveRegistrationSettings()">💾 บันทึกการตั้งค่า</button>
     </div>
   </div>
 </div>
@@ -633,7 +699,18 @@ function renderClinicCard(c, teacherMap) {
           <span>👥 ${c.studentCount || 0} คน</span>
         </div>
         <div class="flex items-center justify-between" style="flex-wrap:wrap;gap:8px;">
-          <span class="status-badge ${st.cls}">${st.icon} ${st.text}</span>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            <span class="status-badge ${st.cls}">${st.icon} ${st.text}</span>
+            ${c.allowRegistration ? `
+              <span class="badge ${c.maxStudents && attCount >= c.maxStudents ? 'badge-red' : 'badge-green'}" style="font-size:0.75rem;padding:3px 8px;">
+                ${c.maxStudents && attCount >= c.maxStudents ? `⛔ ปิดรับ (เต็ม ${c.maxStudents} คน)` : `🟢 เปิดรับ (${attCount}${c.maxStudents ? '/' + c.maxStudents : ''} คน)`}
+              </span>
+            ` : `
+              <span class="badge" style="background:#f1f5f9;color:#64748b;font-size:0.75rem;padding:3px 8px;">
+                ⚪ ปิดรับลงทะเบียน
+              </span>
+            `}
+          </div>
           <a href="${gcalUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="font-size:0.75rem;padding:3px 9px;border-color:#bfdbfe;color:#1d4ed8;text-decoration:none;" title="บันทึกเข้า Google Calendar">
             📅 ลงปฏิทิน
           </a>
@@ -641,6 +718,9 @@ function renderClinicCard(c, teacherMap) {
         ${c.notes ? `<div class="text-xs text-muted mt-2">💬 ${c.notes}</div>` : ''}
         <div class="flex gap-2 mt-3" style="flex-wrap:wrap;">
           <button class="btn btn-outline btn-sm" onclick="openEditClinic('${c.id}')">✏️ แก้ไขข้อมูล</button>
+          <button class="btn ${c.allowRegistration ? 'btn-success' : 'btn-outline'} btn-sm" onclick="openRegistrationSettings('${c.id}')" title="ตั้งค่าการเปิดรับลงทะเบียนและจำกัดจำนวนนักเรียน">
+            📝 ลงทะเบียนนักเรียน ${c.allowRegistration ? `(${attCount}${c.maxStudents ? '/' + c.maxStudents : ''})` : ''}
+          </button>
           <button class="btn btn-primary btn-sm" onclick="openAttendance('${c.id}')">📋 กรอกรายชื่อ (${attCount} คน)</button>
         </div>
       </div>
@@ -852,6 +932,11 @@ async function openEditClinic(clinicId) {
   document.getElementById('edit-topic').value  = c.topic || '';
   document.getElementById('edit-status').value = c.status || 'active';
 
+  const allowRegEl = document.getElementById('edit-allow-registration');
+  if (allowRegEl) allowRegEl.checked = Boolean(c.allowRegistration);
+  const maxStuEl = document.getElementById('edit-max-students');
+  if (maxStuEl) maxStuEl.value = c.maxStudents || '';
+
   await populateTeacherEditSelect(c.teacherId || c.teacher_id || '', c.teacherName || c.teacher_name || '');
 
   openModal('modal-edit-clinic');
@@ -867,6 +952,8 @@ async function saveClinicEdit() {
   const room    = document.getElementById('edit-room').value.trim();
   const topic   = (document.getElementById('edit-topic')?.value || '').trim();
   const status  = document.getElementById('edit-status').value;
+  const allowRegistration = document.getElementById('edit-allow-registration')?.checked;
+  const maxStudents = Number(document.getElementById('edit-max-students')?.value) || 0;
 
   if (!subject) {
     showToast('กรุณาระบุชื่อวิชา', '', 'warning');
@@ -921,6 +1008,8 @@ async function saveClinicEdit() {
   c.room = room;
   c.topic = topic;
   c.status = status;
+  c.allowRegistration = Boolean(allowRegistration);
+  c.maxStudents = maxStudents;
   c.notes = c.notes || '';
   if (Array.isArray(c.studentList)) {
     c.studentList.forEach(s => { s.subject = subject; });
@@ -947,6 +1036,147 @@ async function saveClinicEdit() {
   closeModal('modal-edit-clinic');
   showToast('บันทึกสำเร็จ', 'อัปเดตข้อมูลการสอนและครูผู้สอนเรียบร้อยแล้ว', 'success');
   await loadTeacherClinics();
+}
+
+// ─── CLINIC REGISTRATION SETTINGS (FOR TEACHER) ───────────
+let currentRegClinic = null;
+
+async function openRegistrationSettings(clinicId) {
+  const clinics = await DataService.getClinics();
+  const c = clinics.find(x => String(x.id) === String(clinicId));
+  if (!c) {
+    showToast('แจ้งเตือน', 'ไม่พบข้อมูลวิชานี้', 'warning');
+    return;
+  }
+  currentRegClinic = c;
+  const teachers = await DataService.getTeachers();
+  const t = teachers.find(x => String(x.id) === String(c.teacherId)) || {};
+  const tName = t.name || c.teacherName || 'ไม่ระบุ';
+
+  document.getElementById('reg-clinic-id').value = String(c.id);
+  const infoEl = document.getElementById('reg-clinic-info');
+  if (infoEl) {
+    infoEl.innerHTML = `
+      <div style="font-weight:700;font-size:1.05rem;color:var(--blue-deep);margin-bottom:4px;">
+        ${getSubjectIcon(c.subject)} ${escapeHtml(c.subject || c.subjectName)} <span class="badge badge-blue">ม.${c.grade}</span>
+      </div>
+      <div style="font-size:0.85rem;color:#475569;display:flex;flex-wrap:wrap;gap:12px;margin-top:6px;">
+        <span>👩‍🏫 ครูผู้สอน: <strong>${escapeHtml(tName)}</strong></span>
+        <span>📅 ${formatDateThai(c.date)}</span>
+        <span>🕐 ${typeof formatClinicTime === 'function' ? formatClinicTime(c.time) : (c.time || '18:30–20:30 น.')}</span>
+        ${c.room ? `<span>📍 ${escapeHtml(c.room)}</span>` : ''}
+      </div>
+    `;
+  }
+
+  const toggle = document.getElementById('reg-allow-toggle');
+  if (toggle) toggle.checked = Boolean(c.allowRegistration);
+
+  const maxInput = document.getElementById('reg-max-students');
+  if (maxInput) maxInput.value = c.maxStudents || '';
+
+  // Get current students registered in this clinic
+  const allAtt = await DataService.getAttendance();
+  const cAtt = allAtt.filter(a => String(a.clinicId) === String(c.id));
+  const currentCount = cAtt.length > 0 ? cAtt.length : (Array.isArray(c.studentList) ? c.studentList.length : (c.studentCount || 0));
+
+  const isFull = c.maxStudents > 0 && currentCount >= c.maxStudents;
+  const summaryEl = document.getElementById('reg-current-summary');
+  if (summaryEl) {
+    let studentListHtml = '';
+    if (cAtt.length > 0) {
+      studentListHtml = `
+        <div style="margin-top:10px;max-height:180px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;background:#fff;">
+          <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+            <thead>
+              <tr style="background:#f1f5f9;border-bottom:1px solid #e2e8f0;text-align:left;">
+                <th style="padding:6px 10px;">ที่</th>
+                <th style="padding:6px 10px;">ชื่อ-นามสกุล</th>
+                <th style="padding:6px 10px;">ห้อง/เลขที่</th>
+                <th style="padding:6px 10px;text-align:center;">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${cAtt.map((a, idx) => `
+                <tr style="border-bottom:1px solid #f8fafc;">
+                  <td style="padding:6px 10px;color:#64748b;">${idx + 1}</td>
+                  <td style="padding:6px 10px;font-weight:600;">${escapeHtml(a.studentName || '–')}</td>
+                  <td style="padding:6px 10px;color:#475569;">ม.${a.grade}/${a.room || '–'} #${a.number || '–'}</td>
+                  <td style="padding:6px 10px;text-align:center;">
+                    <button class="btn btn-outline btn-sm" style="padding:1px 6px;font-size:0.72rem;color:#dc2626;border-color:#fca5a5;" onclick="removeStudentFromClinicRegistration('${c.id}', '${a.studentId}')" title="ยกเลิกการลงทะเบียนของนักเรียนคนนี้">✕ ยกเลิก</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    summaryEl.innerHTML = `
+      <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:700;font-size:0.88rem;color:#1e293b;">สถานะปัจจุบัน:</span>
+          <span class="badge ${isFull ? 'badge-red' : (c.allowRegistration ? 'badge-green' : '')}" style="${!c.allowRegistration ? 'background:#e2e8f0;color:#475569;' : ''}font-size:0.82rem;padding:3px 10px;">
+            ${!c.allowRegistration ? '⚪ ยังไม่เปิดรับ' : (isFull ? `⛔ ครบตามจำนวนแล้ว (${currentCount}/${c.maxStudents} คน)` : `🟢 เปิดรับลงทะเบียน (${currentCount}${c.maxStudents ? '/' + c.maxStudents : ''} คน)`)}
+          </span>
+        </div>
+        <div style="font-size:0.85rem;color:#475569;margin-top:6px;">
+          จำนวนนักเรียนที่ลงทะเบียนแล้ว: <strong>${currentCount} คน</strong>
+          ${c.maxStudents ? ` (จำกัด ${c.maxStudents} คน — ว่างอีก ${Math.max(0, c.maxStudents - currentCount)} ที่นั่ง)` : ' (ไม่จำกัดจำนวน)'}
+        </div>
+        ${studentListHtml}
+      </div>
+    `;
+  }
+
+  openModal('modal-registration-settings');
+}
+
+async function saveRegistrationSettings() {
+  const clinicId = document.getElementById('reg-clinic-id').value;
+  const allowRegistration = document.getElementById('reg-allow-toggle').checked;
+  const maxStudents = Number(document.getElementById('reg-max-students').value) || 0;
+
+  const clinics = await DataService.getClinics();
+  const c = clinics.find(x => String(x.id) === String(clinicId));
+  if (!c) {
+    showToast('แจ้งเตือน', 'ไม่พบข้อมูลวิชา', 'error');
+    return;
+  }
+
+  c.allowRegistration = allowRegistration;
+  c.maxStudents = maxStudents;
+  await DataService.saveClinic(c);
+
+  closeModal('modal-registration-settings');
+  showToast('บันทึกสำเร็จ', `อัปเดตการลงทะเบียนวิชา "${c.subject}" เรียบร้อยแล้ว`, 'success');
+  await loadTeacherClinics();
+}
+
+async function removeStudentFromClinicRegistration(clinicId, studentId) {
+  if (!confirm('ต้องการยกเลิกการลงทะเบียนของนักเรียนท่านนี้ใช่หรือไม่?')) return;
+  try {
+    const allAtt = await DataService.getAttendance();
+    const cAtt = allAtt.filter(a => String(a.clinicId) === String(clinicId));
+    const updated = cAtt.filter(a => String(a.studentId) !== String(studentId));
+    await DataService.setAttendanceForClinic(clinicId, updated);
+
+    const clinics = await DataService.getClinics();
+    const c = clinics.find(x => String(x.id) === String(clinicId));
+    if (c) {
+      c.studentCount = updated.length;
+      c.studentList = updated;
+      c.attendanceIds = updated.map(x => x.id);
+      await DataService.saveClinic(c);
+    }
+    showToast('สำเร็จ', 'ยกเลิกการลงทะเบียนเรียบร้อยแล้ว', 'success');
+    await openRegistrationSettings(clinicId);
+    await loadTeacherClinics();
+  } catch (err) {
+    console.error('Error removing student registration:', err);
+    showToast('เกิดข้อผิดพลาด', 'ไม่สามารถยกเลิกได้', 'error');
+  }
 }
 
 // ─── ATTENDANCE (MULTI-ROOM SUPPORT) ─────────────────────

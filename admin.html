@@ -184,6 +184,7 @@
                 <option value="5">ม.5</option>
                 <option value="6">ม.6</option>
               </select>
+              <button class="btn btn-outline" onclick="openClinicTemplateManager()" style="border-color:var(--blue-main);color:var(--blue-main);font-weight:600;">📑 จัดการ Template</button>
               <button class="btn btn-outline" onclick="openAddClinicBatch()">📆 เพิ่มทั้งสัปดาห์ (4 วัน)</button>
               <button class="btn btn-primary" onclick="openAddClinic()">➕ เพิ่มรายเดี่ยว</button>
               <button class="btn btn-danger btn-sm hidden" id="btn-delete-selected-clinics" onclick="deleteSelectedClinics()">🗑️ ลบที่เลือก (<span id="selected-clinics-count">0</span>)</button>
@@ -210,6 +211,13 @@
               <button class="btn btn-danger btn-sm" onclick="clearTeachersList()"
                 title="ลบรายชื่อครูทั้งหมดเพื่อกรอกใหม่">🗑️ ล้างรายชื่อครูทั้งหมด</button>
             </div>
+          </div>
+          <!-- TEACHER SEARCH BAR -->
+          <div class="filter-bar" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="position:relative;flex:1;min-width:260px;max-width:380px;">
+              <input type="text" id="teacher-search-input" class="form-control" placeholder="🔍 ค้นหาชื่อ-สกุลครูผู้สอน..." oninput="onTeacherSearchInput(this.value)" autocomplete="off" style="font-size:0.9rem;padding:7px 12px;">
+            </div>
+            <span id="teacher-count-badge" class="badge badge-blue" style="font-size:0.85rem;padding:6px 12px;">ครูทั้งหมด 0 ท่าน</span>
           </div>
           <div id="teachers-table" class="card">
             <div class="card-body">
@@ -262,6 +270,14 @@
               ไม่ต้องเสียเวลานำเข้าทีละห้องถึง 36 ครั้ง (แต่หากโรงเรียนมีไฟล์แยกเป็นรายห้องอยู่แล้ว
               ก็สามารถนำเข้าทีละห้องได้เช่นกัน ข้อมูลเดิมจะไม่หายครับ)
             </div>
+          </div>
+
+          <!-- STUDENT SEARCH BAR -->
+          <div class="filter-bar" style="margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div style="position:relative;flex:1;min-width:260px;max-width:400px;">
+              <input type="text" id="stu-search-input" class="form-control" placeholder="🔍 ค้นหาชื่อ-สกุล, เลขที่ หรือรหัสประจำตัว..." oninput="loadStudents()" autocomplete="off" style="font-size:0.9rem;padding:7px 12px;">
+            </div>
+            <span id="stu-count-badge" class="badge badge-blue" style="font-size:0.85rem;padding:6px 12px;">นักเรียนทั้งหมด 0 คน</span>
           </div>
 
           <div id="students-table" class="card">
@@ -861,9 +877,18 @@
         <button class="modal-close" onclick="closeModal('modal-clinic-batch')">&#x2715;</button>
       </div>
       <div class="modal-body">
+        <!-- TEMPLATE SELECTOR BAR -->
+        <div style="background:var(--blue-pale);border:1.5px solid var(--blue-light);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-weight:700;font-size:.85rem;color:var(--blue-deep);">📑 เลือก Template:</span>
+          <select class="form-control" id="batch-template-select" style="flex:1;min-width:180px;height:36px;font-size:.88rem;" onchange="onBatchTemplateSelectChange(this.value)">
+            <option value="">-- ไม่ใช้ Template (กรอกเอง) --</option>
+          </select>
+          <button type="button" id="btn-batch-save-as-template" class="btn btn-sm btn-outline" onclick="saveCurrentBatchAsTemplate()" title="บันทึกค่าที่กรอกอยู่เป็น Template">💾 บันทึกเป็น Template</button>
+          <button type="button" id="btn-batch-clone-from-week" class="btn btn-sm btn-outline" onclick="openCloneFromWeekModal()" title="คัดลอกจากสัปดาห์อื่น">📋 คัดลอกจากสัปดาห์อื่น</button>
+        </div>
+
         <div class="alert alert-info mb-3">
-          💡 กรอกรายวิชาและครูสำหรับแต่ละวัน ระบบจะเพิ่มรายการให้ครบทั้ง 4 วันพร้อมกัน (วันใดไม่กรอกวิชา-ครู
-          จะไม่เพิ่มวันนั้น)
+          💡 กรอกรายวิชาและครูสำหรับแต่ละวัน ระบบจะเพิ่มรายการให้ครบทั้ง 4 วันพร้อมกัน (วันใดไม่กรอกวิชา-ครู จะไม่เพิ่มวันนั้น)
         </div>
         <div class="form-row">
           <div class="form-group">
@@ -874,7 +899,7 @@
           </div>
           <div class="form-group">
             <label class="form-label">ระดับชั้น</label>
-            <select class="form-control" id="batch-grade">
+            <select class="form-control" id="batch-grade" onchange="onBatchGradeChange()">
               <option value="1">ม.1</option>
               <option value="2">ม.2</option>
               <option value="3">ม.3</option>
@@ -898,10 +923,131 @@
         <div id="batch-days-container">
           <!-- rendered by JS -->
         </div>
+
+
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal('modal-clinic-batch')">ยกเลิก</button>
         <button class="btn btn-primary" id="btn-save-batch" onclick="saveClinicBatch()">💾 บันทึกทั้งสัปดาห์</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ╔╗╔╗ MODAL: จัดการ Template ตารางคลินิก ╔╗╔╗ -->
+  <div class="modal-overlay" id="modal-clinic-templates">
+    <div class="modal" style="max-width:860px;width:95%;max-height:90vh;display:flex;flex-direction:column;">
+      <div class="modal-header">
+        <div class="modal-title">📑 จัดการ Template ตารางคลินิก (ประจำสัปดาห์ 4 วัน)</div>
+        <button class="modal-close" onclick="closeModal('modal-clinic-templates')">&#x2715;</button>
+      </div>
+      <div class="modal-body" style="overflow-y:auto;flex:1;padding:18px;">
+        
+        <!-- VIEW 1: รายการ Templates ทั้งหมด -->
+        <div id="tpl-view-list">
+          <div class="flex justify-between items-center mb-3" style="flex-wrap:wrap;gap:8px;">
+            <div style="font-size:.85rem;color:var(--gray-600);">
+              💡 สร้างและบันทึกแม่แบบวิชา+ครูผู้สอนไว้ล่วงหน้า เพื่อดึงมาสร้างตารางคลินิกแต่ละสัปดาห์ได้ทันที
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openCreateTemplateForm()">➕ สร้าง Template ใหม่</button>
+          </div>
+          <div id="tpl-list-container">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- VIEW 2: ฟอร์มสร้าง/แก้ไข Template -->
+        <div id="tpl-view-form" class="hidden">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-bottom:10px;border-bottom:1.5px solid var(--gray-200);">
+            <div style="font-weight:700;font-size:1.05rem;color:var(--blue-deep);" id="tpl-form-title">✏️ สร้าง Template ใหม่</div>
+            <button class="btn btn-outline btn-sm" onclick="cancelTemplateForm()">⬅️ กลับไปหน้ารายการ</button>
+          </div>
+          
+          <input type="hidden" id="tpl-form-id" value="">
+          
+          <div class="form-row">
+            <div class="form-group" style="flex:2;">
+              <label class="form-label">ชื่อ Template <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="tpl-form-name" placeholder="เช่น Template A, ตารางสายวิทย์ ม.ต้น, สัปดาห์คี่">
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label class="form-label">ประเภท / ระดับชั้นที่ใช้</label>
+              <select class="form-control" id="tpl-form-grade" onchange="onTemplateGradeChange()">
+                <option value="1">เฉพาะ ม.1</option>
+                <option value="2">เฉพาะ ม.2</option>
+                <option value="3">เฉพาะ ม.3</option>
+                <option value="4">เฉพาะ ม.4</option>
+                <option value="5">เฉพาะ ม.5</option>
+                <option value="6">เฉพาะ ม.6</option>
+                <option value="all">🌐 ชุดรวมทุกระดับชั้น (ม.1–ม.6)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">เวลาเริ่ม</label>
+              <input type="time" class="form-control" id="tpl-form-time-start" value="18:30">
+            </div>
+            <div class="form-group">
+              <label class="form-label">เวลาจบ</label>
+              <input type="time" class="form-control" id="tpl-form-time-end" value="20:30">
+            </div>
+          </div>
+
+          <!-- Grade Switcher Tabs when grade is 'all' -->
+          <div id="tpl-all-grades-switcher" class="hidden" style="margin-bottom:14px;background:var(--gray-100);padding:8px 12px;border-radius:var(--radius-md);">
+            <div style="margin-bottom:8px;">
+              <span style="font-size:.82rem;font-weight:700;color:var(--blue-deep);">เลือกแก้ไขตารางของระดับชั้น:</span>
+            </div>
+            <div id="tpl-grade-tabs-btns" style="display:flex;gap:6px;flex-wrap:wrap;">
+              <!-- Rendered by JS: M.1 to M.6 buttons -->
+            </div>
+          </div>
+
+          <!-- 4 Days Form (จันทร์ - พฤหัสบดี) -->
+          <div id="tpl-days-container">
+            <!-- Rendered by JS -->
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+            <button class="btn btn-outline" onclick="cancelTemplateForm()">ยกเลิก</button>
+            <button class="btn btn-primary" onclick="saveTemplateFromManager()">💾 บันทึก Template</button>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer" id="tpl-modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-clinic-templates')">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ╔╗╔╗ MODAL: คัดลอกตารางจากสัปดาห์อื่น ╔╗╔╗ -->
+  <div class="modal-overlay" id="modal-clone-week">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-header">
+        <div class="modal-title">📋 คัดลอกตารางจากสัปดาห์อื่น</div>
+        <button class="modal-close" onclick="closeModal('modal-clone-week')">&#x2715;</button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info mb-3">
+          💡 เลือกสัปดาห์ต้นทางที่ต้องการคัดลอกรายวิชาและครูผู้สอน เพื่อนำมาใส่ในฟอร์มของสัปดาห์นี้ทันที
+        </div>
+        <div class="form-group">
+          <label class="form-label">คัดลอกจากสัปดาห์</label>
+          <select class="form-control" id="clone-source-week-id"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ระดับชั้นที่ต้องการดึงมา</label>
+          <select class="form-control" id="clone-source-grade">
+            <option value="current">เฉพาะระดับชั้นที่เลือกอยู่ในฟอร์มปัจจุบัน</option>
+            <option value="all">ทุกระดับชั้น (ม.1 – ม.6)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-clone-week')">ยกเลิก</button>
+        <button class="btn btn-primary" onclick="applyCloneFromWeek()">📥 ดึงข้อมูลมาใส่ในฟอร์ม</button>
       </div>
     </div>
   </div>
@@ -1299,7 +1445,10 @@
       openModal('modal-clinic');
     }
 
-    async function openAddClinicBatch() {
+    let batchTeachersList = [];
+    let currentActiveBatchTemplate = null;
+
+    async function openAddClinicBatch(preselectedTplId = null) {
       const weeks = await populateWeekSelects();
       const curFilterWeek = document.getElementById('clinic-week-filter')?.value;
       const sel = document.getElementById('batch-week-id');
@@ -1342,16 +1491,277 @@
         <div class="form-group">
           <label class="form-label" style="font-size:.8rem;">สถานะ</label>
           <select class="form-control" id="batch-status-${i}">
+            <option value="pending" selected>⏳ รอยืนยัน</option>
             <option value="active">✅ มีสอน</option>
             <option value="cancelled">⛔ งดสอน</option>
-            <option value="pending">⏳ รอยืนยัน</option>
           </select>
         </div>
       </div>
     </div>
   `).join('');
 
+      // Reset checkbox
+      const applyAllCb = document.getElementById('batch-apply-all-grades');
+      if (applyAllCb) applyAllCb.checked = false;
+
+      // Initialize grade buffers
+      batchGradeBuffers = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+      const currentGrade = Number(document.getElementById('batch-grade')?.value) || 1;
+      batchLastGrade = currentGrade;
+
+      // Populate templates dropdown
+      populateBatchTemplateSelect(preselectedTplId);
+
       openModal('modal-clinic-batch');
+    }
+
+    let batchGradeBuffers = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+    let batchLastGrade = 1;
+
+    function saveCurrentBatchFormToGradeBuffer(gradeNum) {
+      const g = Number(gradeNum) || 1;
+      const days = [];
+      for (let i = 0; i < 4; i++) {
+        const subject = document.getElementById(`batch-subject-${i}`)?.value.trim() || '';
+        const teacherId = document.getElementById(`batch-teacher-${i}`)?.value || '';
+        const teacherObj = (batchTeachersList || []).find(t => String(t.id) === String(teacherId));
+        const teacherName = teacherObj ? teacherObj.name : '';
+        const room = document.getElementById(`batch-room-${i}`)?.value.trim() || '';
+        const status = document.getElementById(`batch-status-${i}`)?.value || 'pending';
+        days.push({ dayOfWeek: i, subject, teacherId, teacherName, room, status });
+      }
+      batchGradeBuffers[g] = days;
+    }
+
+    function loadGradeBufferToBatchForm(gradeNum) {
+      const g = Number(gradeNum) || 1;
+      let days = batchGradeBuffers[g] || [];
+
+      // If buffer is empty for this grade, but we have an active multi-grade template, pull from template
+      if (!days.some(d => d.subject) && currentActiveBatchTemplate?.gradesData?.[g]) {
+        days = currentActiveBatchTemplate.gradesData[g];
+        batchGradeBuffers[g] = JSON.parse(JSON.stringify(days));
+      }
+
+      for (let i = 0; i < 4; i++) {
+        const dayData = (days || []).find(d => Number(d.dayOfWeek) === i) || (days || [])[i] || {};
+        const subjEl = document.getElementById(`batch-subject-${i}`);
+        const roomEl = document.getElementById(`batch-room-${i}`);
+        const statusEl = document.getElementById(`batch-status-${i}`);
+        const teacherSel = document.getElementById(`batch-teacher-${i}`);
+        const searchEl = document.getElementById(`batch-teacher-search-${i}`);
+
+        if (subjEl) subjEl.value = dayData.subject || '';
+        if (roomEl) roomEl.value = dayData.room || '';
+        if (statusEl) statusEl.value = dayData.status || 'pending';
+        if (teacherSel) teacherSel.value = dayData.teacherId || '';
+        if (searchEl) searchEl.value = '';
+        filterBatchTeacher(i, '');
+      }
+    }
+
+    function populateBatchTemplateSelect(selectedId = null) {
+      const sel = document.getElementById('batch-template-select');
+      if (!sel) return;
+      const templates = LocalDB.getClinicTemplates() || [];
+      const currentGrade = Number(document.getElementById('batch-grade')?.value) || 1;
+
+      let html = '<option value="">-- ไม่ใช้ Template (กรอกเอง) --</option>';
+      if (templates.length > 0) {
+        templates.forEach(t => {
+          const isAll = t.type === 'all_grades' || t.grade === 'all';
+          const gradeLabel = isAll ? '🌐 ทุกระดับชั้น (ม.1–ม.6)' : `ม.${t.grade}`;
+          const isMatch = isAll || Number(t.grade) === currentGrade;
+          html += `<option value="${t.id}" ${isMatch ? 'style="font-weight:600;"' : ''}>[${gradeLabel}] ${t.name}</option>`;
+        });
+      }
+
+      sel.innerHTML = html;
+      if (selectedId) {
+        sel.value = selectedId;
+        onBatchTemplateSelectChange(selectedId);
+      } else {
+        currentActiveBatchTemplate = null;
+      }
+    }
+
+    function onBatchGradeChange() {
+      // 1. Save whatever was in the form for the previous grade
+      saveCurrentBatchFormToGradeBuffer(batchLastGrade);
+
+      // 2. Identify new grade
+      const newGrade = Number(document.getElementById('batch-grade')?.value) || 1;
+      batchLastGrade = newGrade;
+
+      // 3. Load buffer for new grade
+      loadGradeBufferToBatchForm(newGrade);
+    }
+
+    function onBatchTemplateSelectChange(tplId) {
+      if (!tplId) {
+        currentActiveBatchTemplate = null;
+        return;
+      }
+      const templates = LocalDB.getClinicTemplates() || [];
+      const tpl = templates.find(t => String(t.id) === String(tplId));
+      if (!tpl) {
+        currentActiveBatchTemplate = null;
+        return;
+      }
+
+      currentActiveBatchTemplate = tpl;
+      applyTemplateDataToBatchForm(tpl);
+      showToast('ใช้ Template', `โหลดข้อมูลจาก "${tpl.name}" เรียบร้อยแล้ว`, 'info');
+    }
+
+    function applyTemplateDataToBatchForm(tpl) {
+      if (!tpl) return;
+      if (tpl.timeStart) document.getElementById('batch-time-start').value = tpl.timeStart;
+      if (tpl.timeEnd) document.getElementById('batch-time-end').value = tpl.timeEnd;
+
+      const isAll = tpl.type === 'all_grades' || tpl.grade === 'all';
+      const gradeSel = document.getElementById('batch-grade');
+
+      const applyAllCb = document.getElementById('batch-apply-all-grades');
+      if (applyAllCb && isAll) {
+        applyAllCb.checked = true;
+      }
+
+      if (isAll && tpl.gradesData) {
+        batchGradeBuffers = JSON.parse(JSON.stringify(tpl.gradesData));
+      } else if (Array.isArray(tpl.days)) {
+        if (isAll) {
+          for (let g = 1; g <= 6; g++) {
+            batchGradeBuffers[g] = JSON.parse(JSON.stringify(tpl.days));
+          }
+        } else {
+          const tGrade = Number(tpl.grade) || Number(gradeSel?.value) || 1;
+          batchGradeBuffers[tGrade] = JSON.parse(JSON.stringify(tpl.days));
+          if (gradeSel) gradeSel.value = tGrade;
+          batchLastGrade = tGrade;
+        }
+      }
+
+      const currentGrade = Number(gradeSel?.value) || 1;
+      batchLastGrade = currentGrade;
+      loadGradeBufferToBatchForm(currentGrade);
+    }
+
+    async function saveCurrentBatchAsTemplate() {
+      const name = prompt('กรุณาตั้งชื่อ Template สำหรับสร้างตารางนี้:\n(เช่น Template A, ตารางสายวิทย์ ม.ต้น, สัปดาห์คี่)');
+      if (!name || !name.trim()) return;
+
+      const currentGrade = Number(document.getElementById('batch-grade')?.value) || 1;
+      saveCurrentBatchFormToGradeBuffer(currentGrade);
+
+      const ts = document.getElementById('batch-time-start')?.value || '18:30';
+      const te = document.getElementById('batch-time-end')?.value || '20:30';
+      const applyAll = document.getElementById('batch-apply-all-grades')?.checked;
+
+      let filledCount = 0;
+      for (let g = 1; g <= 6; g++) {
+        if ((batchGradeBuffers[g] || []).some(d => d.subject)) filledCount++;
+      }
+
+      if (filledCount === 0) {
+        showToast('แจ้งเตือน', 'กรุณากรอกวิชาอย่างน้อย 1 วันเพื่อบันทึกเป็น Template', 'warning');
+        return;
+      }
+
+      const tpl = {
+        id: 'tpl_' + Date.now(),
+        name: name.trim(),
+        type: applyAll ? 'all_grades' : 'single_grade',
+        grade: applyAll ? 'all' : currentGrade,
+        timeStart: ts,
+        timeEnd: te,
+        days: batchGradeBuffers[currentGrade] || []
+      };
+
+      if (applyAll) {
+        tpl.gradesData = {};
+        for (let g = 1; g <= 6; g++) {
+          const gDays = batchGradeBuffers[g] || [];
+          if (gDays.some(d => d.subject)) {
+            tpl.gradesData[g] = JSON.parse(JSON.stringify(gDays));
+          } else {
+            // fallback to current grade if this grade wasn't filled
+            tpl.gradesData[g] = JSON.parse(JSON.stringify(batchGradeBuffers[currentGrade] || []));
+          }
+        }
+      }
+
+      await DataService.saveClinicTemplate(tpl);
+      showToast('บันทึกสำเร็จ', `สร้าง Template "${tpl.name}" เรียบร้อยแล้ว`, 'success');
+      populateBatchTemplateSelect(tpl.id);
+    }
+
+    // ─── CLONE CLINIC FROM ANOTHER WEEK ───
+    async function openCloneFromWeekModal() {
+      const weeks = await DataService.getWeeks();
+      const currentBatchWeekId = document.getElementById('batch-week-id')?.value;
+      const sel = document.getElementById('clone-source-week-id');
+      if (!sel) return;
+
+      const otherWeeks = weeks.filter(w => (w.weekId || String(w.id)) !== currentBatchWeekId);
+      if (!otherWeeks.length) {
+        showToast('ไม่พบสัปดาห์อื่น', 'ยังไม่มีสัปดาห์อื่นให้คัดลอกข้อมูล กรุณาสร้างสัปดาห์ก่อน', 'warning');
+        return;
+      }
+
+      sel.innerHTML = otherWeeks.map(w => `<option value="${w.weekId || w.id}">${w.label || ('สัปดาห์ที่ ' + w.weekNum)}</option>`).join('');
+      openModal('modal-clone-week');
+    }
+
+    async function applyCloneFromWeek() {
+      const srcWeekId = document.getElementById('clone-source-week-id')?.value;
+      const cloneOption = document.getElementById('clone-source-grade')?.value;
+      if (!srcWeekId) return;
+
+      const allClinics = await DataService.getClinics();
+      const sourceClinics = allClinics.filter(c => c.weekId === srcWeekId || String(c.week_id) === String(srcWeekId));
+
+      if (!sourceClinics.length) {
+        showToast('ไม่พบข้อมูล', 'สัปดาห์ต้นทางไม่มีรายการตารางคลินิก', 'warning');
+        return;
+      }
+
+      const currentGrade = Number(document.getElementById('batch-grade')?.value) || 1;
+      const gradeClinics = sourceClinics.filter(c => Number(c.grade) === currentGrade);
+
+      if (!gradeClinics.length && cloneOption === 'current') {
+        showToast('ไม่พบข้อมูล', `สัปดาห์ต้นทางไม่มีตารางคลินิกของ ม.${currentGrade}`, 'warning');
+        return;
+      }
+
+      for (let i = 0; i < 4; i++) {
+        const c = gradeClinics.find(x => Number(x.dayOfWeek) === i);
+        const subjEl = document.getElementById(`batch-subject-${i}`);
+        const roomEl = document.getElementById(`batch-room-${i}`);
+        const statusEl = document.getElementById(`batch-status-${i}`);
+        const teacherSel = document.getElementById(`batch-teacher-${i}`);
+
+        if (c) {
+          if (subjEl) subjEl.value = c.subject || c.subjectName || '';
+          if (roomEl) roomEl.value = c.room || '';
+          if (statusEl) statusEl.value = c.status || 'active';
+          if (teacherSel) teacherSel.value = c.teacherId || c.teacher_id || '';
+          if (c.time && c.time.includes('–')) {
+            const parts = c.time.split('–');
+            if (parts[0]) document.getElementById('batch-time-start').value = parts[0].trim();
+            if (parts[1]) document.getElementById('batch-time-end').value = parts[1].trim();
+          }
+        }
+        filterBatchTeacher(i, '');
+      }
+
+      if (cloneOption === 'all') {
+        const applyAllCb = document.getElementById('batch-apply-all-grades');
+        if (applyAllCb) applyAllCb.checked = true;
+      }
+
+      closeModal('modal-clone-week');
+      showToast('คัดลอกสำเร็จ', 'ดึงข้อมูลตารางคลินิกจากสัปดาห์ต้นทางมาใส่ในฟอร์มเรียบร้อย', 'success');
     }
 
     function filterBatchTeacher(dayIndex, keyword) {
@@ -1394,9 +1804,10 @@
 
       try {
         const weekId = document.getElementById('batch-week-id')?.value;
-        const grade = Number(document.getElementById('batch-grade')?.value) || 1;
+        const currentGrade = Number(document.getElementById('batch-grade')?.value) || 1;
         const ts = document.getElementById('batch-time-start')?.value || '18:30';
         const te = document.getElementById('batch-time-end')?.value || '20:30';
+        const applyAll = document.getElementById('batch-apply-all-grades')?.checked;
 
         if (!weekId) {
           showToast('กรุณาเลือกสัปดาห์', 'ยังไม่มีสัปดาห์ที่เลือก กรุณาเลือกหรือเพิ่มสัปดาห์ก่อนบันทึก', 'warning');
@@ -1407,48 +1818,61 @@
         const currentWeek = weeks.find(w => w.weekId === weekId || String(w.id) === String(weekId));
         let startDateStr = currentWeek ? currentWeek.startDate : weekId.replace('week_', '');
 
+        saveCurrentBatchFormToGradeBuffer(currentGrade);
+        const targetGrades = applyAll ? [1, 2, 3, 4, 5, 6] : [currentGrade];
         let saved = 0;
-        for (let i = 0; i < 4; i++) {
-          const subject = document.getElementById(`batch-subject-${i}`)?.value.trim();
-          if (!subject) continue; // skip if no subject entered
+        const allExistingClinics = await DataService.getClinics();
 
-          const teacherId = document.getElementById(`batch-teacher-${i}`)?.value || '';
-          const teacherObj = (batchTeachersList || []).find(t => String(t.id) === String(teacherId));
-          const teacherName = teacherObj ? teacherObj.name : '';
+        for (const g of targetGrades) {
+          let daysToUse = batchGradeBuffers[g] || [];
+          if (!daysToUse.some(d => d.subject)) {
+            daysToUse = batchGradeBuffers[currentGrade] || [];
+          }
 
-          const room = document.getElementById(`batch-room-${i}`)?.value.trim() || '';
-          const status = document.getElementById(`batch-status-${i}`)?.value || 'active';
+          for (let i = 0; i < 4; i++) {
+            const dayItem = daysToUse.find(d => Number(d.dayOfWeek) === i) || daysToUse[i];
+            if (!dayItem || !dayItem.subject) continue; // skip if no subject
 
-          const baseD = parseDateSafe(startDateStr) || new Date();
-          const d = new Date(baseD);
-          d.setDate(d.getDate() + i);
-          const dateStr = toYMD(d);
+            const baseD = parseDateSafe(startDateStr) || new Date();
+            const d = new Date(baseD);
+            d.setDate(d.getDate() + i);
+            const dateStr = toYMD(d);
 
-          const obj = {
-            weekId,
-            grade,
-            dayOfWeek: i,
-            date: dateStr,
-            subject,
-            subjectName: subject,
-            teacherId,
-            teacherName,
-            time: `${ts}–${te}`,
-            room,
-            status,
-            notes: '',
-            topic: '',
-            studentCount: 0,
-            studentList: [],
-            attendanceIds: []
-          };
-          await DataService.saveClinic(obj);
-          saved++;
+            // Find existing clinic for this exact slot to update in-place instead of duplicating
+            const existing = allExistingClinics.find(c =>
+              (c.weekId === weekId || String(c.week_id) === weekId) &&
+              Number(c.grade) === g &&
+              (Number(c.dayOfWeek) === i || (c.date && toYMD(c.date) === dateStr))
+            );
+
+            const obj = {
+              id: existing ? existing.id : undefined,
+              weekId,
+              grade: g,
+              dayOfWeek: i,
+              date: dateStr,
+              subject: dayItem.subject,
+              subjectName: dayItem.subject,
+              teacherId: dayItem.teacherId || '',
+              teacherName: dayItem.teacherName || '',
+              time: `${ts}–${te}`,
+              room: dayItem.room || '',
+              status: dayItem.status || 'pending',
+              notes: existing ? (existing.notes || '') : '',
+              topic: existing ? (existing.topic || '') : '',
+              studentCount: existing ? (existing.studentCount || 0) : 0,
+              studentList: existing ? (existing.studentList || []) : [],
+              attendanceIds: existing ? (existing.attendanceIds || []) : []
+            };
+            await DataService.saveClinic(obj);
+            saved++;
+          }
         }
 
         if (saved > 0) {
           closeModal('modal-clinic-batch');
-          showToast('บันทึกสำเร็จ', `เพิ่ม ${saved} รายการ ในตารางคลินิกสำเร็จ`, 'success');
+          const gradeMsg = applyAll ? 'ทุกระดับชั้น (ม.1–ม.6)' : `ม.${currentGrade}`;
+          showToast('บันทึกสำเร็จ', `เพิ่ม ${saved} รายการ สำหรับ ${gradeMsg} สำเร็จ`, 'success');
           const filterSel = document.getElementById('clinic-week-filter');
           if (filterSel && filterSel.value && filterSel.value !== weekId) {
             filterSel.value = weekId;
@@ -1466,6 +1890,365 @@
           btn.innerHTML = '💾 บันทึกทั้งสัปดาห์';
         }
       }
+    }
+
+    // ─── CLINIC TEMPLATE MANAGER ───
+    let tplEditingGrade = 1;
+    let tplMultiGradeData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+
+    function openClinicTemplateManager() {
+      showTemplateView('list');
+      renderTemplateManagerList();
+      openModal('modal-clinic-templates');
+    }
+
+    function showTemplateView(viewName) {
+      const listEl = document.getElementById('tpl-view-list');
+      const formEl = document.getElementById('tpl-view-form');
+      if (viewName === 'form') {
+        listEl.classList.add('hidden');
+        formEl.classList.remove('hidden');
+      } else {
+        listEl.classList.remove('hidden');
+        formEl.classList.add('hidden');
+      }
+    }
+
+    function renderTemplateManagerList() {
+      const container = document.getElementById('tpl-list-container');
+      if (!container) return;
+      const templates = LocalDB.getClinicTemplates() || [];
+
+      if (!templates.length) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:40px 20px;background:var(--gray-50);border-radius:var(--radius-lg);border:2px dashed var(--gray-300);">
+            <div style="font-size:2.5rem;margin-bottom:10px;">📑</div>
+            <div style="font-weight:700;font-size:1.05rem;color:var(--text);margin-bottom:6px;">ยังไม่มี Template ตารางคลินิก</div>
+            <p style="color:var(--gray-500);font-size:.88rem;max-width:400px;margin:0 auto 16px;">
+              สร้าง Template เพื่อกำหนดแม่แบบรายวิชาและครูผู้สอนสำหรับใช้สร้างตารางทั้งสัปดาห์ได้อย่างรวดเร็ว
+            </p>
+            <button class="btn btn-primary" onclick="openCreateTemplateForm()">➕ สร้าง Template แรก</button>
+          </div>
+        `;
+        return;
+      }
+
+      const dayLabels = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี'];
+      container.innerHTML = `
+        <div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(360px, 1fr));gap:16px;">
+          ${templates.map(tpl => {
+            const isAll = tpl.type === 'all_grades' || tpl.grade === 'all';
+            const gradeBadge = isAll ? 
+              `<span class="badge" style="background:#e0e7ff;color:#3730a3;border:1px solid #c7d2fe;font-weight:600;">🌐 ทุกระดับชั้น (ม.1–ม.6)</span>` : 
+              `<span class="badge badge-blue">🎓 ม.${tpl.grade}</span>`;
+
+            // Display days preview from days or first available grade
+            const sampleDays = (isAll && tpl.gradesData && tpl.gradesData[1]) ? tpl.gradesData[1] : (tpl.days || []);
+            const daysPreview = dayLabels.map((dayName, idx) => {
+              const d = sampleDays.find(x => Number(x.dayOfWeek) === idx) || sampleDays[idx];
+              if (d && d.subject) {
+                return `<div style="font-size:.8rem;color:var(--gray-700);padding:3px 0;display:flex;justify-content:space-between;">
+                  <span><strong>วัน${dayName}:</strong> ${escapeHtml(d.subject)}</span>
+                  <span style="color:var(--gray-500);">${escapeHtml(d.teacherName || '')} ${d.room ? `(${escapeHtml(d.room)})` : ''}</span>
+                </div>`;
+              }
+              return `<div style="font-size:.8rem;color:var(--gray-400);padding:3px 0;"><strong>วัน${dayName}:</strong> – ว่าง –</div>`;
+            }).join('');
+
+            return `
+              <div class="card" style="border:1.5px solid var(--gray-200);box-shadow:var(--shadow-sm);border-radius:12px;overflow:hidden;">
+                <div class="card-header flex justify-between items-center" style="background:var(--gray-50);padding:12px 16px;">
+                  <div>
+                    <div style="font-weight:700;font-size:1.02rem;color:var(--blue-deep);display:flex;align-items:center;gap:8px;">
+                      <span>📑</span> ${escapeHtml(tpl.name)}
+                    </div>
+                    <div style="margin-top:4px;">${gradeBadge} <span style="font-size:.78rem;color:var(--gray-500);margin-left:6px;">⏰ ${tpl.timeStart || '18:30'}–${tpl.timeEnd || '20:30'}</span></div>
+                  </div>
+                  <div class="flex gap-1">
+                    <button class="btn btn-primary btn-sm" onclick="applyTemplateToBatchAndOpen('${tpl.id}')" title="นำ Template นี้ไปสร้างตารางคลินิก">⚡ ใช้สร้างตาราง</button>
+                  </div>
+                </div>
+                <div class="card-body" style="padding:12px 16px;background:#fff;">
+                  <div style="background:var(--gray-50);padding:10px;border-radius:8px;border:1px solid var(--gray-200);">
+                    ${daysPreview}
+                  </div>
+                  <div class="flex justify-between items-center mt-3 pt-2" style="border-top:1px solid var(--gray-200);">
+                    <div class="flex gap-1">
+                      <button class="btn btn-outline btn-sm" onclick="editClinicTemplate('${tpl.id}')" title="แก้ไข">✏️ แก้ไข</button>
+                      <button class="btn btn-outline btn-sm" onclick="duplicateClinicTemplate('${tpl.id}')" title="ทำสำเนา">📋 คัดลอก</button>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="deleteClinicTemplatePrompt('${tpl.id}')" title="ลบ Template">🗑️ ลบ</button>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    async function openCreateTemplateForm(editTplId = null) {
+      batchTeachersList = await DataService.getTeachers();
+      const titleEl = document.getElementById('tpl-form-title');
+      const idInput = document.getElementById('tpl-form-id');
+      const nameInput = document.getElementById('tpl-form-name');
+      const gradeSel = document.getElementById('tpl-form-grade');
+      const tsInput = document.getElementById('tpl-form-time-start');
+      const teInput = document.getElementById('tpl-form-time-end');
+
+      tplMultiGradeData = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [] };
+      tplEditingGrade = 1;
+
+      if (editTplId) {
+        const templates = LocalDB.getClinicTemplates() || [];
+        const tpl = templates.find(t => String(t.id) === String(editTplId));
+        if (tpl) {
+          titleEl.textContent = `✏️ แก้ไข Template: ${tpl.name}`;
+          idInput.value = tpl.id;
+          nameInput.value = tpl.name || '';
+          gradeSel.value = (tpl.type === 'all_grades' || tpl.grade === 'all') ? 'all' : (tpl.grade || 1);
+          tsInput.value = tpl.timeStart || '18:30';
+          teInput.value = tpl.timeEnd || '20:30';
+
+          if (tpl.gradesData) {
+            for (let g = 1; g <= 6; g++) {
+              tplMultiGradeData[g] = JSON.parse(JSON.stringify(tpl.gradesData[g] || []));
+            }
+          } else if (tpl.days) {
+            tplMultiGradeData[tpl.grade || 1] = JSON.parse(JSON.stringify(tpl.days));
+          }
+        }
+      } else {
+        titleEl.textContent = '➕ สร้าง Template ใหม่';
+        idInput.value = '';
+        nameInput.value = '';
+        gradeSel.value = '1';
+        tsInput.value = '18:30';
+        teInput.value = '20:30';
+      }
+
+      onTemplateGradeChange();
+      showTemplateView('form');
+    }
+
+    function cancelTemplateForm() {
+      showTemplateView('list');
+      renderTemplateManagerList();
+    }
+
+    function onTemplateGradeChange() {
+      const gradeSel = document.getElementById('tpl-form-grade');
+      const isAll = gradeSel?.value === 'all';
+      const switcherEl = document.getElementById('tpl-all-grades-switcher');
+
+      if (isAll) {
+        switcherEl.classList.remove('hidden');
+        renderTemplateGradeTabs();
+      } else {
+        switcherEl.classList.add('hidden');
+        tplEditingGrade = Number(gradeSel?.value) || 1;
+      }
+      renderTemplateFormDays();
+    }
+
+    function renderTemplateGradeTabs() {
+      const container = document.getElementById('tpl-grade-tabs-btns');
+      if (!container) return;
+      container.innerHTML = [1, 2, 3, 4, 5, 6].map(g => {
+        const hasData = (tplMultiGradeData[g] || []).some(d => d.subject);
+        return `
+          <button type="button" class="btn btn-sm ${g === tplEditingGrade ? 'btn-primary' : 'btn-outline'}" 
+            onclick="switchTemplateEditingGrade(${g})" style="padding:4px 12px;font-size:.82rem;">
+            ม.${g}${hasData ? ' ✓' : ''}
+          </button>
+        `;
+      }).join('');
+    }
+
+    function switchTemplateEditingGrade(g) {
+      saveCurrentTplFormDaysToBuffer();
+      tplEditingGrade = g;
+      renderTemplateGradeTabs();
+      renderTemplateFormDays();
+    }
+
+    function copyCurrentGradeTemplateToAll() {
+      saveCurrentTplFormDaysToBuffer();
+      const currentDays = tplMultiGradeData[tplEditingGrade] || [];
+      if (!currentDays.some(d => d.subject)) {
+        showToast('ไม่มีข้อมูล', `ยังไม่มีข้อมูลใน ม.${tplEditingGrade} ให้คัดลอก`, 'warning');
+        return;
+      }
+      for (let g = 1; g <= 6; g++) {
+        if (g !== tplEditingGrade) {
+          tplMultiGradeData[g] = JSON.parse(JSON.stringify(currentDays));
+        }
+      }
+      showToast('คัดลอกเรียบร้อย', `คัดลอกตารางจาก ม.${tplEditingGrade} ไปยัง ม.1–ม.6 เรียบร้อย`, 'success');
+    }
+
+    function saveCurrentTplFormDaysToBuffer() {
+      const days = [];
+      for (let i = 0; i < 4; i++) {
+        const subject = document.getElementById(`tpl-subject-${i}`)?.value.trim() || '';
+        const teacherId = document.getElementById(`tpl-teacher-${i}`)?.value || '';
+        const teacherObj = (batchTeachersList || []).find(t => String(t.id) === String(teacherId));
+        const teacherName = teacherObj ? teacherObj.name : '';
+        const room = document.getElementById(`tpl-room-${i}`)?.value.trim() || '';
+        const status = document.getElementById(`tpl-status-${i}`)?.value || 'pending';
+        days.push({ dayOfWeek: i, subject, teacherId, teacherName, room, status });
+      }
+      tplMultiGradeData[tplEditingGrade] = days;
+    }
+
+    function renderTemplateFormDays() {
+      const container = document.getElementById('tpl-days-container');
+      if (!container) return;
+
+      const teacherOptions = '<option value="">ไม่มีคลินิก / ไม่ระบุ</option>' +
+        (batchTeachersList || []).map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+      const dayLabels = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี'];
+      const daysData = tplMultiGradeData[tplEditingGrade] || [];
+
+      container.innerHTML = dayLabels.map((day, i) => {
+        const dayItem = daysData.find(d => Number(d.dayOfWeek) === i) || daysData[i] || {};
+        return `
+          <div style="background:var(--gray-50);border:1.5px solid var(--gray-200);border-radius:var(--radius-md);padding:14px;margin-bottom:10px;">
+            <div style="font-weight:700;font-size:.9rem;color:var(--blue-deep);margin-bottom:8px;">
+              📅 วัน${day} ${document.getElementById('tpl-form-grade')?.value === 'all' ? `(ระดับชั้น ม.${tplEditingGrade})` : ''}
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" style="font-size:.8rem;">วิชา</label>
+                <input type="text" class="form-control" id="tpl-subject-${i}" placeholder="พิมพ์ชื่อวิชา..." value="${escapeHtml(dayItem.subject || '')}">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size:.8rem;display:flex;justify-content:space-between;align-items:center;">
+                  <span>ครูผู้สอน</span>
+                  <span id="tpl-teacher-count-${i}" style="color:var(--gray-500);font-weight:normal;font-size:.75rem;"></span>
+                </label>
+                <input type="text" class="form-control" id="tpl-teacher-search-${i}" placeholder="🔍 ค้นหาชื่อครู..." oninput="filterTplFormTeacher(${i}, this.value)" style="font-size:.82rem;padding:5px 8px;margin-bottom:4px;">
+                <select class="form-control" id="tpl-teacher-${i}">${teacherOptions}</select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" style="font-size:.8rem;">ห้อง/สถานที่</label>
+                <input type="text" class="form-control" id="tpl-room-${i}" placeholder="เช่น 2208" value="${escapeHtml(dayItem.room || '')}">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="font-size:.8rem;">สถานะ</label>
+                <select class="form-control" id="tpl-status-${i}">
+                  <option value="pending" ${dayItem.status === 'pending' || !dayItem.status ? 'selected' : ''}>⏳ รอยืนยัน</option>
+                  <option value="active" ${dayItem.status === 'active' ? 'selected' : ''}>✅ มีสอน</option>
+                  <option value="cancelled" ${dayItem.status === 'cancelled' ? 'selected' : ''}>⛔ งดสอน</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      for (let i = 0; i < 4; i++) {
+        const dayItem = daysData.find(d => Number(d.dayOfWeek) === i) || daysData[i] || {};
+        const sel = document.getElementById(`tpl-teacher-${i}`);
+        if (sel && dayItem.teacherId) sel.value = dayItem.teacherId;
+      }
+    }
+
+    function filterTplFormTeacher(dayIndex, keyword) {
+      const q = (keyword || '').trim().toLowerCase();
+      const sel = document.getElementById(`tpl-teacher-${dayIndex}`);
+      if (!sel) return;
+      const currentVal = sel.value;
+      const filtered = q ? batchTeachersList.filter(t => (t.name || '').toLowerCase().includes(q)) : batchTeachersList;
+
+      sel.innerHTML = '<option value="">ไม่มีคลินิก / ไม่ระบุ</option>' +
+        filtered.map(t => `<option value="${t.id}" ${t.id === currentVal ? 'selected' : ''}>${t.name}</option>`).join('');
+
+      if (currentVal && !filtered.some(t => t.id === currentVal)) {
+        const activeT = batchTeachersList.find(t => t.id === currentVal);
+        if (activeT) {
+          const o = document.createElement('option');
+          o.value = activeT.id;
+          o.textContent = `${activeT.name} (เลือกอยู่)`;
+          o.selected = true;
+          sel.insertBefore(o, sel.children[1] || null);
+        }
+      }
+
+      const countEl = document.getElementById(`tpl-teacher-count-${dayIndex}`);
+      if (countEl) countEl.textContent = q ? `พบ ${filtered.length} ท่าน` : '';
+    }
+
+    async function saveTemplateFromManager() {
+      const name = document.getElementById('tpl-form-name')?.value.trim();
+      if (!name) {
+        showToast('แจ้งเตือน', 'กรุณาระบุชื่อ Template', 'warning');
+        return;
+      }
+
+      saveCurrentTplFormDaysToBuffer();
+
+      const editId = document.getElementById('tpl-form-id')?.value;
+      const gradeVal = document.getElementById('tpl-form-grade')?.value;
+      const isAll = gradeVal === 'all';
+      const ts = document.getElementById('tpl-form-time-start')?.value || '18:30';
+      const te = document.getElementById('tpl-form-time-end')?.value || '20:30';
+
+      const tpl = {
+        id: editId || ('tpl_' + Date.now()),
+        name,
+        type: isAll ? 'all_grades' : 'single_grade',
+        grade: isAll ? 'all' : Number(gradeVal),
+        timeStart: ts,
+        timeEnd: te,
+        days: tplMultiGradeData[isAll ? 1 : Number(gradeVal)] || []
+      };
+
+      if (isAll) {
+        tpl.gradesData = tplMultiGradeData;
+      }
+
+      await DataService.saveClinicTemplate(tpl);
+      showToast('บันทึกสำเร็จ', `บันทึก Template "${tpl.name}" เรียบร้อยแล้ว`, 'success');
+      showTemplateView('list');
+      renderTemplateManagerList();
+    }
+
+    function editClinicTemplate(tplId) {
+      openCreateTemplateForm(tplId);
+    }
+
+    async function duplicateClinicTemplate(tplId) {
+      const templates = LocalDB.getClinicTemplates() || [];
+      const tpl = templates.find(t => String(t.id) === String(tplId));
+      if (!tpl) return;
+
+      const dup = JSON.parse(JSON.stringify(tpl));
+      dup.id = 'tpl_' + Date.now();
+      dup.name = `${tpl.name} (สำเนา)`;
+      await DataService.saveClinicTemplate(dup);
+      showToast('ทำสำเนาสำเร็จ', `คัดลอกเป็น "${dup.name}" เรียบร้อยแล้ว`, 'success');
+      renderTemplateManagerList();
+    }
+
+    async function deleteClinicTemplatePrompt(tplId) {
+      const templates = LocalDB.getClinicTemplates() || [];
+      const tpl = templates.find(t => String(t.id) === String(tplId));
+      if (!tpl) return;
+
+      if (!confirm(`ยืนยันการลบ Template "${tpl.name}" ใช่หรือไม่?`)) return;
+
+      await DataService.deleteClinicTemplate(tplId);
+      showToast('ลบสำเร็จ', `ลบ Template เรียบร้อยแล้ว`, 'success');
+      renderTemplateManagerList();
+    }
+
+    function applyTemplateToBatchAndOpen(tplId) {
+      closeModal('modal-clinic-templates');
+      openAddClinicBatch(tplId);
     }
 
     let cachedTeachersList = [];
@@ -1671,29 +2454,58 @@
     }
 
     // ─── TEACHERS (สรุป: ลำดับที่, รายชื่อครูผู้สอน) ─────────
+    let allTeachersCache = [];
+
     async function loadTeachers() {
-      const teachers = await DataService.getTeachers();
+      allTeachersCache = await DataService.getTeachers();
+      allTeachersCache.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'th'));
+      renderTeachersTable();
+    }
+
+    function onTeacherSearchInput(keyword) {
+      renderTeachersTable(keyword);
+    }
+
+    function renderTeachersTable(searchKeyword = undefined) {
+      const q = (searchKeyword !== undefined ? searchKeyword : (document.getElementById('teacher-search-input')?.value || '')).trim().toLowerCase();
       const container = document.getElementById('teachers-table');
-      if (!teachers.length) {
+      const countBadge = document.getElementById('teacher-count-badge');
+
+      const filtered = q
+        ? allTeachersCache.filter(t => (t.name || '').toLowerCase().includes(q) || (t.email || '').toLowerCase().includes(q))
+        : allTeachersCache;
+
+      if (countBadge) {
+        countBadge.textContent = q
+          ? `พบ ${filtered.length} จากทั้งหมด ${allTeachersCache.length} ท่าน`
+          : `ครูทั้งหมด ${allTeachersCache.length} ท่าน`;
+      }
+
+      if (!allTeachersCache.length) {
         container.innerHTML = '<div class="card-body empty-state"><div class="empty-icon">👩‍🏫</div><div class="empty-title">ยังไม่มีข้อมูลครู</div></div>';
         return;
       }
+      if (!filtered.length) {
+        container.innerHTML = '<div class="card-body empty-state"><div class="empty-icon">🔍</div><div class="empty-title">ไม่พบครูผู้สอนที่ค้นหา</div><div class="empty-sub">ลองค้นหาด้วยคำอื่น</div></div>';
+        return;
+      }
+
       container.innerHTML = `
     <div class="table-wrapper">
       <table>
         <thead>
           <tr>
-            <th style="width:15%;">ลำดับที่</th>
-            <th style="width:65%;">รายชื่อครูผู้สอน</th>
-            <th style="width:20%;">จัดการ</th>
+            <th style="width:12%;text-align:center;">ลำดับที่</th>
+            <th style="width:68%;">รายชื่อครูผู้สอน</th>
+            <th style="width:20%;text-align:center;">จัดการ</th>
           </tr>
         </thead>
         <tbody>
-          ${teachers.map((t, i) => `
+          ${filtered.map((t, i) => `
             <tr>
-              <td>${i + 1}</td>
-              <td><strong>${t.name}</strong></td>
-              <td>
+              <td style="text-align:center;color:var(--gray-500);font-weight:600;">${i + 1}</td>
+              <td><strong>${escapeHtml(t.name)}</strong></td>
+              <td style="text-align:center;">
                 <button class="btn btn-outline btn-sm" onclick="editTeacher('${t.id}')">✏️</button>
                 <button class="btn btn-danger btn-sm" onclick="deleteTeacher('${t.id}')">🗑️</button>
               </td>
@@ -1852,19 +2664,36 @@
     }
 
     async function loadStudents() {
-      const grade = document.getElementById('stu-grade-filter').value;
-      const room = document.getElementById('stu-room-filter').value;
+      const grade = document.getElementById('stu-grade-filter')?.value || '';
+      const room = document.getElementById('stu-room-filter')?.value || '';
+      const search = (document.getElementById('stu-search-input')?.value || '').trim().toLowerCase();
       let students = await DataService.getStudents();
+      const totalAll = students.length;
 
       if (grade) students = students.filter(s => String(s.grade) === grade);
       if (room) students = students.filter(s => String(s.room) === room);
+      if (search) {
+        students = students.filter(s =>
+          (s.name || '').toLowerCase().includes(search) ||
+          String(s.number || '').includes(search) ||
+          String(s.studentCode || '').includes(search) ||
+          `ม.${s.grade}/${s.room}`.toLowerCase().includes(search)
+        );
+      }
+
+      const countBadge = document.getElementById('stu-count-badge');
+      if (countBadge) {
+        countBadge.textContent = (grade || room || search)
+          ? `พบ ${students.length} จาก ${totalAll} คน`
+          : `นักเรียนทั้งหมด ${totalAll} คน`;
+      }
 
       // Sort by grade, room, number
       students.sort((a, b) => (Number(a.grade) - Number(b.grade)) || (Number(a.room) - Number(b.room)) || (Number(a.number) - Number(b.number)));
 
       const container = document.getElementById('students-table');
       if (!students.length) {
-        container.innerHTML = '<div class="card-body empty-state"><div class="empty-icon">🎓</div><div class="empty-title">ไม่พบข้อมูลนักเรียน</div><div class="empty-sub">ลองเปลี่ยนตัวกรองชั้น/ห้อง หรือกดปุ่มเพิ่มนักเรียน</div></div>';
+        container.innerHTML = '<div class="card-body empty-state"><div class="empty-icon">🎓</div><div class="empty-title">ไม่พบข้อมูลนักเรียน</div><div class="empty-sub">ลองเปลี่ยนคำค้นหา หรือตัวกรองชั้น/ห้อง</div></div>';
         return;
       }
 
@@ -2486,6 +3315,7 @@
         announcements_config: LocalDB.getAnnouncementsConfig(),
         school_settings: LocalDB.get('school_settings') || {},
         duty_by_date: LocalDB.get('duty_by_date') || {},
+        clinic_templates: LocalDB.getClinicTemplates(),
         exportedAt: new Date().toISOString()
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -2515,6 +3345,7 @@
           if (data.announcements_config) LocalDB.saveAnnouncementsConfig(data.announcements_config);
           if (data.school_settings) LocalDB.set('school_settings', data.school_settings);
           if (data.duty_by_date) LocalDB.set('duty_by_date', data.duty_by_date);
+          if (Array.isArray(data.clinic_templates)) LocalDB.setList('clinic_templates', data.clinic_templates);
 
           showToast('นำเข้าสำเร็จ!', 'กู้คืนข้อมูลทั้งหมดจากไฟล์ JSON เรียบร้อยแล้ว', 'success');
           await loadAdminData();

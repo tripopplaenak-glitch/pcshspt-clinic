@@ -102,11 +102,15 @@ const SupabaseAPI = {
         LocalDB.setList('weeks', weeks.filter(w => String(w.id) !== String(oldRecord.id)));
       } else {
         const mapped = this.mapWeekFromDb(newRecord);
-        const idx = weeks.findIndex(w => String(w.id) === String(mapped.id) || (mapped.weekId && w.weekId === mapped.weekId));
-        if (idx >= 0) weeks[idx] = mapped;
-        else weeks.push(mapped);
-        weeks.sort((a, b) => (toYMD(a.startDate) || '') > (toYMD(b.startDate) || '') ? 1 : -1);
-        LocalDB.setList('weeks', weeks);
+        const s = toYMD(mapped.startDate);
+        const e = toYMD(mapped.endDate);
+        if (String(mapped.id) !== 'w1' && s && e) {
+          const idx = weeks.findIndex(w => String(w.id) === String(mapped.id) || (mapped.weekId && w.weekId === mapped.weekId));
+          if (idx >= 0) weeks[idx] = mapped;
+          else weeks.push(mapped);
+          weeks.sort((a, b) => (toYMD(a.startDate) || '') > (toYMD(b.startDate) || '') ? 1 : -1);
+          LocalDB.setList('weeks', weeks);
+        }
       }
     } else if (table === 'teachers') {
       const teachers = LocalDB.getTeachers();
@@ -153,6 +157,7 @@ const SupabaseAPI = {
       if (newRecord && newRecord.key) {
         if (newRecord.key === 'school_settings') LocalDB.set('school_settings', newRecord.value);
         if (newRecord.key === 'announcements_config') LocalDB.saveAnnouncementsConfig(newRecord.value);
+        if (newRecord.key === 'clinic_templates') LocalDB.setList('clinic_templates', newRecord.value || []);
         if (newRecord.key === 'clinic_custom_data') {
           LocalDB.set('clinic_custom_data', newRecord.value || {});
           const customData = newRecord.value || {};
@@ -217,7 +222,12 @@ const SupabaseAPI = {
         LocalDB.setList('staff', staffData.map(s => this.mapStaffFromDb(s)));
       }
       if (Array.isArray(weeksData)) {
-        const weeks = weeksData.map(w => this.mapWeekFromDb(w));
+        const weeks = weeksData.map(w => this.mapWeekFromDb(w)).filter(w => {
+          const idStr = String(w.id || w.weekId || '');
+          const s = toYMD(w.startDate);
+          const e = toYMD(w.endDate);
+          return idStr !== 'w1' && idStr !== '1' && idStr !== 'week_2026-05-18' && s && e;
+        });
         weeks.sort((a, b) => (toYMD(a.startDate) || '') > (toYMD(b.startDate) || '') ? 1 : -1);
         LocalDB.setList('weeks', weeks);
       }
@@ -232,6 +242,7 @@ const SupabaseAPI = {
         settingsData.forEach(row => {
           if (row.key === 'school_settings') LocalDB.set('school_settings', row.value);
           if (row.key === 'announcements_config') LocalDB.saveAnnouncementsConfig(row.value);
+          if (row.key === 'clinic_templates') LocalDB.setList('clinic_templates', row.value || []);
           if (row.key === 'clinic_custom_data') LocalDB.set('clinic_custom_data', row.value || {});
         });
       }
@@ -244,6 +255,8 @@ const SupabaseAPI = {
           if (custom.notes !== undefined && (!item.notes || custom.notes)) item.notes = custom.notes;
           if (custom.topic !== undefined) item.topic = custom.topic;
           if (custom.subject) { item.subject = custom.subject; item.subjectName = custom.subject; }
+          if (custom.allowRegistration !== undefined) item.allowRegistration = custom.allowRegistration;
+          if (custom.maxStudents !== undefined) item.maxStudents = custom.maxStudents;
           return item;
         });
         LocalDB.setList('clinics', clinics);
@@ -315,7 +328,8 @@ const SupabaseAPI = {
       await this.client.from('settings').upsert([
         { key: 'school_settings', value: schoolSettings, updated_at: new Date() },
         { key: 'announcements_config', value: annConfig, updated_at: new Date() },
-        { key: 'clinic_custom_data', value: customData, updated_at: new Date() }
+        { key: 'clinic_custom_data', value: customData, updated_at: new Date() },
+        { key: 'clinic_templates', value: LocalDB.getClinicTemplates(), updated_at: new Date() }
       ]);
 
       return { success: true, message: 'ส่งข้อมูลทั้งหมดขึ้น Supabase เรียบร้อยแล้ว' };
@@ -337,7 +351,9 @@ const SupabaseAPI = {
         topic: c.topic || '',
         subject: c.subject || c.subjectName || '',
         teacherId: String(c.teacherId || c.teacher_id || ''),
-        teacherName: c.teacherName || c.teacher_name || ''
+        teacherName: c.teacherName || c.teacher_name || '',
+        allowRegistration: Boolean(c.allowRegistration),
+        maxStudents: Number(c.maxStudents) || 0
       };
       LocalDB.set('clinic_custom_data', customData);
       await this.client.from('settings').upsert({
@@ -490,6 +506,17 @@ const SupabaseAPI = {
         updated_at: new Date()
       });
     } catch (e) { console.warn('Supabase saveAnnouncementsConfig error:', e); }
+  },
+
+  async saveClinicTemplates(templates) {
+    if (!this.client) return;
+    try {
+      await this.client.from('settings').upsert({
+        key: 'clinic_templates',
+        value: templates,
+        updated_at: new Date()
+      });
+    } catch (e) { console.warn('Supabase saveClinicTemplates error:', e); }
   },
 
   // --- Mappers ---

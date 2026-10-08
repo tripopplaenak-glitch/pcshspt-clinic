@@ -120,6 +120,8 @@ class LocalDB {
       const custom = customData[String(c.id)] || {};
       return {
         ...c,
+        allowRegistration: custom.allowRegistration !== undefined ? custom.allowRegistration : Boolean(c.allowRegistration),
+        maxStudents: custom.maxStudents !== undefined ? custom.maxStudents : (Number(c.maxStudents) || 0),
         subject: custom.subject || c.subject || c.subjectName || '',
         subjectName: custom.subject || c.subject || c.subjectName || '',
         teacherId: custom.teacherId !== undefined && custom.teacherId !== '' ? custom.teacherId : (c.teacherId || c.teacher_id || ''),
@@ -149,7 +151,18 @@ class LocalDB {
   static saveClinic(c)            {
     c.time = c.time || '18:30–20:30';
     const list = LocalDB.getList('clinics');
-    const idx = list.findIndex(x => String(x.id) === String(c.id));
+    let idx = list.findIndex(x => String(x.id) === String(c.id));
+    if (idx < 0 && c.weekId && c.grade !== undefined && c.dayOfWeek !== undefined) {
+      const cDate = toYMD(c.date);
+      idx = list.findIndex(x =>
+        (x.weekId === c.weekId || String(x.week_id) === String(c.weekId)) &&
+        Number(x.grade) === Number(c.grade) &&
+        (Number(x.dayOfWeek) === Number(c.dayOfWeek) || (cDate && toYMD(x.date) === cDate))
+      );
+      if (idx >= 0) {
+        c.id = list[idx].id;
+      }
+    }
     if (idx >= 0) {
       const old = list[idx];
       if (c.studentCount === undefined && old.studentCount !== undefined) c.studentCount = old.studentCount;
@@ -175,7 +188,9 @@ class LocalDB {
         topic: c.topic || '',
         subject: c.subject || c.subjectName || '',
         teacherId: String(c.teacherId || c.teacher_id || ''),
-        teacherName: c.teacherName || c.teacher_name || ''
+        teacherName: c.teacherName || c.teacher_name || '',
+        allowRegistration: Boolean(c.allowRegistration),
+        maxStudents: Number(c.maxStudents) || 0
       };
       LocalDB.set('clinic_custom_data', customData);
     }
@@ -316,7 +331,17 @@ class LocalDB {
   // Weeks
   static getWeeks()               {
     LocalDB.ensureWeeksForClinics();
-    return LocalDB.getList('weeks');
+    const list = LocalDB.getList('weeks') || [];
+    const clean = list.filter(w => {
+      const idStr = String(w.id || w.weekId || '');
+      const s = toYMD(w.startDate || w.start_date);
+      const e = toYMD(w.endDate || w.end_date);
+      return idStr !== 'w1' && idStr !== '1' && idStr !== 'week_2026-05-18' && s && e;
+    });
+    if (clean.length !== list.length) {
+      LocalDB.setList('weeks', clean);
+    }
+    return clean;
   }
   static saveWeek(w)              {
     const list = LocalDB.getWeeks();
@@ -434,6 +459,25 @@ class LocalDB {
   static getAnnouncements()       { return LocalDB.getList('announcements'); }
   static saveAnnouncement(a)      { const list = LocalDB.getAnnouncements(); const idx = list.findIndex(x => String(x.id) === String(a.id)); if (idx >= 0) list[idx] = a; else { a.id = LocalDB.nextId('ann'); list.push(a); } LocalDB.setList('announcements', list); return a; }
   static deleteAnnouncement(id)   { LocalDB.setList('announcements', LocalDB.getAnnouncements().filter(x => String(x.id) !== String(id))); }
+
+  // Clinic Templates (เทมเพลตตารางคลินิกประจำสัปดาห์ 4 วัน)
+  static getClinicTemplates() {
+    return LocalDB.getList('clinic_templates');
+  }
+  static saveClinicTemplate(tpl) {
+    const list = LocalDB.getList('clinic_templates');
+    if (!tpl.id) tpl.id = 'tpl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    tpl.updatedAt = new Date().toISOString();
+    const idx = list.findIndex(x => String(x.id) === String(tpl.id));
+    if (idx >= 0) list[idx] = tpl;
+    else list.push(tpl);
+    LocalDB.setList('clinic_templates', list);
+    return tpl;
+  }
+  static deleteClinicTemplate(id) {
+    const list = LocalDB.getList('clinic_templates').filter(x => String(x.id) !== String(id));
+    LocalDB.setList('clinic_templates', list);
+  }
 
   // Clear all personnel (ครู, นักเรียน, เจ้าหน้าที่ และเวร)
   static clearAllPersonnel() {
@@ -618,6 +662,24 @@ const DataService = {
   async getAnnouncements()  { return LocalDB.getAnnouncements().sort((a, b) => b.date > a.date ? 1 : -1); },
   async saveAnnouncement(a) { return LocalDB.saveAnnouncement(a); },
   async deleteAnnouncement(id){ return LocalDB.deleteAnnouncement(id); },
+
+  // --- Clinic Templates ---
+  async getClinicTemplates() {
+    return LocalDB.getClinicTemplates();
+  },
+  async saveClinicTemplate(tpl) {
+    const res = LocalDB.saveClinicTemplate(tpl);
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+      await SupabaseAPI.saveClinicTemplates(LocalDB.getClinicTemplates());
+    }
+    return res;
+  },
+  async deleteClinicTemplate(id) {
+    LocalDB.deleteClinicTemplate(id);
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+      await SupabaseAPI.saveClinicTemplates(LocalDB.getClinicTemplates());
+    }
+  },
 
   // --- Cloud Sync Helpers ---
   async initSync() {
