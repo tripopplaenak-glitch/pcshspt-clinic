@@ -1,5 +1,5 @@
 /* ============================================================
-   CSS DESIGN SYSTEM — คลินิกวิชาการ PCCPT
+   CSS DESIGN SYSTEM — คลินิกวิชาการ PCSHSPT
    โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี
    ============================================================ */
 
@@ -716,9 +716,11 @@ tr:nth-child(even):hover td { background: var(--gray-100); }
   min-height: 100vh;
   background: linear-gradient(135deg, var(--blue-deep) 0%, var(--blue-main) 50%, #1e40af 100%);
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
+  justify-content: space-between;
+  padding: 24px 16px 16px;
+  box-sizing: border-box;
 }
 .login-box {
   background: var(--white);
@@ -728,6 +730,7 @@ tr:nth-child(even):hover td { background: var(--gray-100); }
   width: 100%;
   max-width: 420px;
   animation: fadeUp .4s ease;
+  margin: auto 0;
 }
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
@@ -792,13 +795,39 @@ tr:nth-child(even):hover td { background: var(--gray-100); }
 /* ─── FOOTER ─────────────────────────────────────── */
 footer {
   background: var(--blue-deep);
-  color: rgba(255,255,255,.7);
+  color: rgba(255, 255, 255, .8);
   text-align: center;
-  padding: 18px 24px;
-  font-size: .8rem;
+  padding: 16px 20px;
+  font-size: .85rem;
   margin-top: 40px;
+  border-top: 2px solid rgba(251, 191, 36, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 footer strong { color: var(--white); }
+.footer-school {
+  font-family: 'Kanit', sans-serif;
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: 0.2px;
+}
+.footer-dev {
+  font-family: 'Sarabun', sans-serif;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-weight: 300;
+  letter-spacing: 0.2px;
+}
+.login-footer {
+  background: transparent;
+  border-top: none;
+  margin-top: 16px;
+  padding: 8px 16px;
+}
 
 /* ─── SECTION HEADER ─────────────────────────────── */
 .section-header {

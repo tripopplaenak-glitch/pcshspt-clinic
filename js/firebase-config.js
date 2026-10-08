@@ -1,6 +1,6 @@
 // ============================================================
 //  firebase-config.js  — Firebase Configuration
-//  คลินิกวิชาการ PCCPT
+//  คลินิกวิชาการ PCSHSPT
 // ============================================================
 // IMPORTANT: Replace with YOUR Firebase project credentials
 // Get them from: https://console.firebase.google.com/

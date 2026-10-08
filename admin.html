@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>ระบบ Admin — คลินิกวิชาการ PCCPT</title>
+  <title>ระบบ Admin — คลินิกวิชาการ PCSHSPT</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="css/style.css">
   <style>
@@ -1193,7 +1193,8 @@
   </div>
 
   <footer>
-    โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี
+    <div class="footer-school">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
+    <div class="footer-dev">พัฒนาระบบโดย ครูฉวีวรรณ อรุณถาวร และครูชลธีร์ จันทร์ลอย</div>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -2741,7 +2742,7 @@
     function showImportTeachers() {
       importMode = 'teachers';
       document.getElementById('import-modal-title').textContent = '📥 นำเข้ารายชื่อครูผู้สอน CSV / Excel';
-      document.getElementById('import-format-hint').innerHTML = '📋 รูปแบบ: <code>ลำดับ, ชื่อ-สกุลครูผู้สอน, Email</code><br><em>ตัวอย่าง: 1, ครูไตรภพ แปลนาค, tripop@pccpt.ac.th</em>';
+      document.getElementById('import-format-hint').innerHTML = '📋 รูปแบบ: <code>ลำดับ, ชื่อ-สกุลครูผู้สอน, Email</code><br><em>ตัวอย่าง: 1, ครูไตรภพ แปลนาค, tripop@pcshspt.ac.th</em>';
       document.getElementById('csv-paste').value = '';
       document.getElementById('import-preview').innerHTML = '';
       openModal('modal-import');
@@ -3508,7 +3509,7 @@
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `pccpt_clinic_backup_${todayStr()}.json`;
+      a.download = `pcshspt_clinic_backup_${todayStr()}.json`;
       a.click();
       URL.revokeObjectURL(url);
       showToast('Export สำเร็จ', 'ดาวน์โหลดไฟล์สำรองข้อมูล JSON เรียบร้อย', 'success');

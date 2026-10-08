@@ -1,6 +1,6 @@
 // ============================================================
 //  db.js  — Firebase Firestore Database Service & Local Fallback
-//  คลินิกวิชาการ PCCPT
+//  คลินิกวิชาการ PCSHSPT
 // ============================================================
 
 // ─── Firebase SDK imports (CDN via HTML, so globals are available)
