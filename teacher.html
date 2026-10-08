@@ -10,13 +10,23 @@
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="css/style.css">
   <style>
-    /* ─── FLOATING BOOKING WIDGET ─── */
+    /* ─── FLOATING BOOKING WIDGET (DRAGGABLE ON MOBILE & IPAD) ─── */
     .booking-widget-wrapper {
       position: fixed;
       right: 24px;
       bottom: 24px;
       z-index: 1000;
       font-family: 'Kanit', sans-serif;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    /* When any modal is opened, lower z-index and dim widget so it never blocks modal buttons */
+    body:has(.modal-overlay.open) .booking-widget-wrapper,
+    .modal-overlay.open ~ .booking-widget-wrapper {
+      z-index: 800 !important;
+      opacity: 0.15;
+      pointer-events: none !important;
     }
     .booking-widget-card {
       width: 240px;
@@ -25,7 +35,7 @@
       box-shadow: 0 10px 30px rgba(13, 59, 110, 0.2), 0 2px 6px rgba(0,0,0,0.06);
       border: 1.5px solid #bfdbfe;
       overflow: hidden;
-      transition: all .3s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: box-shadow .2s ease, transform .2s ease;
       animation: slideInRight .5s ease-out;
     }
     .booking-widget-card.collapsed {
@@ -38,13 +48,27 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      cursor: grab;
+      touch-action: none;
     }
     .booking-card-header-title {
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       gap: 6px;
+      pointer-events: none;
+    }
+    .booking-drag-grip {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      opacity: 0.75;
+      cursor: grab;
+      margin-right: 2px;
+      line-height: 1;
+      letter-spacing: -1px;
     }
     .booking-btn-close {
       background: rgba(255,255,255,0.2);
@@ -103,22 +127,35 @@
       gap: 8px;
       background: linear-gradient(135deg, #0284c7, #1d4ed8);
       color: #ffffff;
-      padding: 10px 16px;
+      padding: 9px 15px;
       border-radius: 30px;
       font-weight: 700;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       box-shadow: 0 6px 20px rgba(2, 132, 199, 0.4);
       border: 2px solid #ffffff;
-      cursor: pointer;
+      cursor: grab;
+      touch-action: none;
       transition: all .25s ease;
       animation: pulseGlow 2s infinite;
+      white-space: nowrap;
     }
     .booking-widget-pill:hover {
-      transform: scale(1.05);
+      transform: scale(1.04);
       box-shadow: 0 8px 25px rgba(2, 132, 199, 0.6);
     }
     .booking-widget-pill.active {
-      display: flex;
+      display: inline-flex;
+    }
+    /* Dragging active feedback */
+    .booking-widget-wrapper.is-dragging {
+      cursor: grabbing !important;
+      transition: none !important;
+      opacity: 0.95;
+      transform: scale(1.03);
+      box-shadow: 0 16px 36px rgba(13, 59, 110, 0.35) !important;
+    }
+    .booking-widget-wrapper.is-dragging * {
+      cursor: grabbing !important;
     }
     @keyframes slideInRight {
       from { transform: translateX(110%); opacity: 0; }
@@ -128,16 +165,17 @@
       0%, 100% { box-shadow: 0 4px 15px rgba(2, 132, 199, 0.4); }
       50% { box-shadow: 0 6px 25px rgba(2, 132, 199, 0.7); }
     }
-    @media (max-width: 640px) {
+    @media (max-width: 768px) {
       .booking-widget-wrapper {
         right: 12px;
         bottom: 12px;
       }
       .booking-widget-card {
-        width: 250px;
+        width: 240px;
       }
-      .booking-img-box {
-        height: 110px;
+      .booking-widget-pill {
+        padding: 8px 13px;
+        font-size: 0.84rem;
       }
     }
   </style>
@@ -403,11 +441,12 @@
 <div class="booking-widget-wrapper" id="booking-widget-wrapper">
   <!-- Expanded Pop up Card -->
   <div class="booking-widget-card" id="booking-widget-card">
-    <div class="booking-card-header">
+    <div class="booking-card-header" id="booking-card-drag-handle" title="แตะค้างแล้วลากเพื่อย้ายตำแหน่ง">
       <div class="booking-card-header-title">
+        <span class="booking-drag-grip">⠿</span>
         <span>🏢</span> จองสถานที่ได้ที่นี่
       </div>
-      <button class="booking-btn-close" onclick="collapseBookingWidget()" title="ย่อขนาด">✕</button>
+      <button class="booking-btn-close" onclick="collapseBookingWidget(event)" title="ย่อขนาด">✕</button>
     </div>
     <div class="booking-card-body">
       <div class="booking-subtext">
@@ -420,7 +459,8 @@
   </div>
 
   <!-- Minimized Floating Pill -->
-  <button class="booking-widget-pill" id="booking-widget-pill" onclick="expandBookingWidget()">
+  <button class="booking-widget-pill" id="booking-widget-pill" onclick="handlePillClick(event)" title="แตะเพื่อเปิด หรือแตะค้างแล้วลากเพื่อย้ายตำแหน่ง">
+    <span class="booking-drag-grip">⠿</span>
     <span style="font-size:1.15rem;">🏢</span>
     <span>จองสถานที่ได้ที่นี่</span>
   </button>
@@ -436,7 +476,15 @@
 <script src="js/db.js?v=2569_15"></script>
 <script src="js/auth.js?v=2569_15"></script>
 <script>
-// ─── BOOKING WIDGET HELPER ───────────────────────────────
+// ─── BOOKING WIDGET HELPER & DRAGGABLE (TOUCH & MOUSE / MOBILE & IPAD) ─────
+let isDraggingBooking = false;
+let bookingDragMoved = false;
+let bookingDragStartX = 0;
+let bookingDragStartY = 0;
+let bookingInitialLeft = 0;
+let bookingInitialTop = 0;
+let justDraggedBooking = false;
+
 function updateTeacherBookingUrl() {
   const s = LocalDB.get('school_settings') || {};
   const url = s.bookingUrl || 'https://sites.google.com/pcshspt.ac.th/ga-pcshspt/home/service';
@@ -444,16 +492,182 @@ function updateTeacherBookingUrl() {
   if (btn) btn.href = url;
 }
 
-function collapseBookingWidget() {
+function collapseBookingWidget(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
   document.getElementById('booking-widget-card')?.classList.add('collapsed');
   document.getElementById('booking-widget-pill')?.classList.add('active');
   try { sessionStorage.setItem('pccpt_booking_collapsed', 'true'); } catch(e){}
+  setTimeout(clampBookingWidgetToViewport, 60);
 }
 
 function expandBookingWidget() {
+  if (justDraggedBooking) return;
   document.getElementById('booking-widget-card')?.classList.remove('collapsed');
   document.getElementById('booking-widget-pill')?.classList.remove('active');
   try { sessionStorage.removeItem('pccpt_booking_collapsed'); } catch(e){}
+  setTimeout(clampBookingWidgetToViewport, 60);
+}
+
+function handlePillClick(e) {
+  if (justDraggedBooking) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    return;
+  }
+  expandBookingWidget();
+}
+
+function initDraggableBookingWidget() {
+  const wrapper = document.getElementById('booking-widget-wrapper');
+  const cardHeader = document.getElementById('booking-card-drag-handle');
+  const pill = document.getElementById('booking-widget-pill');
+  if (!wrapper) return;
+
+  // Restore saved custom position if available in sessionStorage
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('pccpt_booking_pos') || 'null');
+    if (saved && typeof saved.left === 'number' && typeof saved.top === 'number') {
+      applyBookingWidgetPosition(saved.left, saved.top);
+    }
+  } catch(e){}
+
+  // On Mobile / iPad (<= 768px): default to collapsed if not previously set
+  if (window.innerWidth <= 768 && sessionStorage.getItem('pccpt_booking_collapsed') === null) {
+    collapseBookingWidget();
+  } else if (sessionStorage.getItem('pccpt_booking_collapsed') === 'true') {
+    collapseBookingWidget();
+  }
+
+  const dragTargets = [cardHeader, pill].filter(Boolean);
+  dragTargets.forEach(target => {
+    target.addEventListener('touchstart', onBookingTouchStart, { passive: false });
+    target.addEventListener('mousedown', onBookingMouseDown);
+  });
+
+  window.addEventListener('touchmove', onBookingTouchMove, { passive: false });
+  window.addEventListener('touchend', onBookingTouchEnd);
+  window.addEventListener('touchcancel', onBookingTouchEnd);
+
+  window.addEventListener('mousemove', onBookingMouseMove);
+  window.addEventListener('mouseup', onBookingMouseUp);
+
+  window.addEventListener('resize', clampBookingWidgetToViewport);
+  window.addEventListener('orientationchange', () => {
+    setTimeout(clampBookingWidgetToViewport, 200);
+  });
+}
+
+function onBookingTouchStart(e) {
+  if (e.target.closest('.booking-btn-close') || e.target.closest('.booking-btn-link')) return;
+  const touch = e.touches[0];
+  startBookingDrag(touch.clientX, touch.clientY);
+}
+
+function onBookingMouseDown(e) {
+  if (e.button !== 0) return;
+  if (e.target.closest('.booking-btn-close') || e.target.closest('.booking-btn-link')) return;
+  startBookingDrag(e.clientX, e.clientY);
+}
+
+function startBookingDrag(clientX, clientY) {
+  const wrapper = document.getElementById('booking-widget-wrapper');
+  if (!wrapper) return;
+
+  const rect = wrapper.getBoundingClientRect();
+  isDraggingBooking = true;
+  bookingDragMoved = false;
+  bookingDragStartX = clientX;
+  bookingDragStartY = clientY;
+  bookingInitialLeft = rect.left;
+  bookingInitialTop = rect.top;
+}
+
+function onBookingTouchMove(e) {
+  if (!isDraggingBooking) return;
+  const touch = e.touches[0];
+  handleBookingDragMove(touch.clientX, touch.clientY, e);
+}
+
+function onBookingMouseMove(e) {
+  if (!isDraggingBooking) return;
+  handleBookingDragMove(e.clientX, e.clientY, e);
+}
+
+function handleBookingDragMove(clientX, clientY, event) {
+  const dx = clientX - bookingDragStartX;
+  const dy = clientY - bookingDragStartY;
+
+  if (!bookingDragMoved && Math.hypot(dx, dy) > 6) {
+    bookingDragMoved = true;
+    document.getElementById('booking-widget-wrapper')?.classList.add('is-dragging');
+  }
+
+  if (bookingDragMoved) {
+    if (event && event.cancelable) event.preventDefault();
+    const newLeft = bookingInitialLeft + dx;
+    const newTop = bookingInitialTop + dy;
+    applyBookingWidgetPosition(newLeft, newTop);
+  }
+}
+
+function onBookingTouchEnd() {
+  finishBookingDrag();
+}
+
+function onBookingMouseUp() {
+  finishBookingDrag();
+}
+
+function finishBookingDrag() {
+  if (!isDraggingBooking) return;
+  isDraggingBooking = false;
+  const wrapper = document.getElementById('booking-widget-wrapper');
+  if (wrapper) wrapper.classList.remove('is-dragging');
+
+  if (bookingDragMoved) {
+    justDraggedBooking = true;
+    setTimeout(() => { justDraggedBooking = false; }, 260);
+
+    const rect = wrapper.getBoundingClientRect();
+    try {
+      sessionStorage.setItem('pccpt_booking_pos', JSON.stringify({ left: rect.left, top: rect.top }));
+    } catch(e){}
+  }
+}
+
+function applyBookingWidgetPosition(left, top) {
+  const wrapper = document.getElementById('booking-widget-wrapper');
+  if (!wrapper) return;
+
+  const rect = wrapper.getBoundingClientRect();
+  const width = rect.width || 240;
+  const height = rect.height || 54;
+  const pad = 8;
+
+  const minX = pad;
+  const maxX = Math.max(pad, window.innerWidth - width - pad);
+  const minY = pad;
+  const maxY = Math.max(pad, window.innerHeight - height - pad);
+
+  const clampX = Math.max(minX, Math.min(left, maxX));
+  const clampY = Math.max(minY, Math.min(top, maxY));
+
+  wrapper.style.left = clampX + 'px';
+  wrapper.style.top = clampY + 'px';
+  wrapper.style.right = 'auto';
+  wrapper.style.bottom = 'auto';
+}
+
+function clampBookingWidgetToViewport() {
+  const wrapper = document.getElementById('booking-widget-wrapper');
+  if (!wrapper || !wrapper.style.left) return;
+  const rect = wrapper.getBoundingClientRect();
+  applyBookingWidgetPosition(rect.left, rect.top);
 }
 
 // ─── AUTH GUARD ───────────────────────────────────────────
@@ -462,9 +676,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!session) return;
 
   updateTeacherBookingUrl();
-  if (sessionStorage.getItem('pccpt_booking_collapsed') === 'true') {
-    collapseBookingWidget();
-  }
+  initDraggableBookingWidget();
   window.addEventListener('storage', e => {
     if (!e.key || e.key === 'school_settings') updateTeacherBookingUrl();
   });
