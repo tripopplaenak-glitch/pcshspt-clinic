@@ -90,6 +90,7 @@
         flex-wrap: wrap;
         gap: 4px;
       }
+    }
 
     /* ─── WEEK MANAGEMENT (MOBILE RESPONSIVE & CARDS) ─── */
     .weeks-container-desktop {
@@ -100,6 +101,136 @@
       flex-direction: column;
       gap: 12px;
       padding: 12px;
+    }
+
+    /* ─── ADMIN CLINIC TABLE (FIXED VIEWPORT, VERTICAL SCROLL, 100% WIDTH FIT) ─── */
+    #clinics-table {
+      border: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    #clinics-table > .card-body {
+      padding: 0 !important;
+    }
+    .admin-clinic-table-container {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--gray-200);
+      background: #ffffff;
+      max-height: calc(100vh - 220px);
+      min-height: 380px;
+      overflow-y: auto;
+      overflow-x: hidden; /* ไม่มี Scrollbar แนวนอน พอดี 1 หน้าจอ */
+      box-shadow: var(--shadow-sm);
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .clinics-container-desktop {
+      display: block;
+    }
+    .clinics-container-mobile {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
+      max-height: calc(100vh - 220px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      background: #f8fafc;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+    }
+    @media (max-width: 768px) {
+      .clinics-container-desktop {
+        display: none !important;
+      }
+      .clinics-container-mobile {
+        display: flex !important;
+      }
+    }
+    .clinic-card-mobile {
+      background: #ffffff;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .clinic-card-mobile:hover {
+      border-color: #93c5fd;
+    }
+    .table-admin-fit {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 0.80rem;
+      box-sizing: border-box;
+    }
+    .table-admin-fit th {
+      background: var(--blue-deep);
+      color: #ffffff;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      padding: 7px 4px;
+      font-size: 0.80rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
+      border-bottom: 2px solid rgba(0,0,0,0.15);
+    }
+    .table-admin-fit td {
+      padding: 6px 4px;
+      border-bottom: 1px solid var(--gray-200);
+      vertical-align: middle;
+      font-size: 0.78rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-sizing: border-box;
+    }
+    .table-admin-fit tr:nth-child(even) td {
+      background: #fafbfc;
+    }
+    .table-admin-fit tr:hover td {
+      background: var(--blue-pale);
+    }
+
+    @media (max-width: 1280px) {
+      .table-admin-fit {
+        font-size: 0.75rem;
+      }
+      .table-admin-fit th,
+      .table-admin-fit td {
+        padding: 5px 3px;
+        font-size: 0.75rem;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .table-admin-fit {
+        font-size: 0.70rem;
+      }
+      .table-admin-fit th,
+      .table-admin-fit td {
+        padding: 4px 2px;
+        font-size: 0.70rem;
+      }
+      .table-admin-fit .badge {
+        padding: 1px 4px;
+        font-size: 0.68rem;
+      }
+      .table-admin-fit .btn-sm {
+        padding: 1px 4px;
+        font-size: 0.72rem;
+      }
+      .admin-clinic-table-container {
+        max-height: calc(100vh - 250px);
+      }
     }
     .week-card-mobile {
       background: #ffffff;
@@ -253,6 +384,10 @@
         <a href="manual.html" class="nav-link">📖 คู่มือการใช้งาน</a>
         <a href="teacher.html" class="nav-link">👩‍🏫 ระบบครู</a>
         <a href="admin.html" class="nav-link active">⚙️ Admin</a>
+        <button class="nav-btn" onclick="openModal('modal-github-update')" style="display:inline-flex;align-items:center;gap:6px;background:rgba(2,132,199,0.12);border:1px solid rgba(2,132,199,0.35);color:var(--blue-deep);font-weight:600;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all 0.2s;" title="อัปเดตระบบขึ้น GitHub">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          <span>อัปเดต GitHub</span>
+        </button>
         <button class="nav-btn nav-btn-logout" onclick="AuthService.logout()">ออกจากระบบ</button>
       </nav>
     </div>
@@ -275,6 +410,10 @@
         <div class="sidebar-section">อื่น ๆ</div>
         <div class="sidebar-item" onclick="showTab('tab-announce')" id="si-announce">📢 ประกาศ</div>
         <div class="sidebar-item" onclick="showTab('tab-settings')" id="si-settings">⚙️ ตั้งค่า / เปลี่ยนรหัสผ่าน</div>
+        <div class="sidebar-item" onclick="openModal('modal-github-update')" id="si-github" style="color:var(--blue-deep);font-weight:600;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="display:inline-block;vertical-align:-2px;"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          <span>อัปเดตขึ้น GitHub</span>
+        </div>
       </aside>
 
       <!-- MAIN CONTENT -->
@@ -690,6 +829,38 @@
                   <button class="btn btn-outline btn-sm" onclick="syncDataFromSupabase()" id="btn-sync-from-supabase">🔄 ดึงข้อมูลสดจาก Supabase</button>
                 </div>
                 <div id="supabase-status-msg" class="text-xs mt-2" style="font-weight:600;color:#059669;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GitHub Deployment & Sync Card -->
+          <div class="card mb-4" style="border:1.5px solid #0284c7;box-shadow:0 4px 14px rgba(2,132,199,0.08);">
+            <div class="card-header" style="background:#f0f9ff;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+              <div class="section-title" style="font-size:1.05rem;color:#0369a1;display:flex;align-items:center;gap:8px;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                อัปเดตเว็บไซต์ขึ้น GitHub / เผยแพร่ออนไลน์ (Deploy)
+              </div>
+              <span class="badge" style="background:#0284c7;color:#fff;font-size:0.75rem;">🌐 GitHub Pages Live</span>
+            </div>
+            <div class="card-body">
+              <div class="alert alert-info mb-3" style="background:#f0f9ff;border-color:#bae6fd;color:#0369a1;">
+                🌐 <strong>เว็บไซต์ออนไลน์:</strong> <a href="https://tripopplaenak-glitch.github.io/pcshspt-clinic/" target="_blank" style="font-weight:700;text-decoration:underline;color:#0284c7;">https://tripopplaenak-glitch.github.io/pcshspt-clinic/</a><br>
+                เมื่อแก้ไขข้อมูลหรือหน้าเว็บแล้ว คุณครูสามารถกดปุ่มอัปเดตเพื่อนำไฟล์ขึ้น GitHub Pages ได้ทันที
+              </div>
+              <div class="flex gap-2" style="flex-wrap:wrap;align-items:center;">
+                <button class="btn btn-primary" onclick="openModal('modal-github-update')" style="display:inline-flex;align-items:center;gap:6px;background:#0284c7;border-color:#0284c7;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                  <span>🚀 อัปเดตขึ้น GitHub ตอนนี้</span>
+                </button>
+                <a href="กดอัพเดท_GitHub.bat" download class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+                  ⚡ ดาวน์โหลดไฟล์ตัวช่วย (.bat)
+                </a>
+                <a href="https://github.com/tripopplaenak-glitch/pcshspt-clinic" target="_blank" class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+                  📁 เปิดคลัง GitHub
+                </a>
+                <a href="https://tripopplaenak-glitch.github.io/pcshspt-clinic/" target="_blank" class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
+                  🌐 เปิดดูเว็บออนไลน์
+                </a>
               </div>
             </div>
           </div>
@@ -1192,6 +1363,87 @@
     </div>
   </div>
 
+  <!-- ╔╗╔╗ MODAL: อัปเดตขึ้น GITHUB ╔╗╔╗ -->
+  <div class="modal-overlay" id="modal-github-update">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header" style="background:linear-gradient(135deg, #0f172a, #1e293b);color:#fff;">
+        <div class="modal-title" style="display:flex;align-items:center;gap:8px;color:#fff;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          ระบบอัปเดตเว็บไซต์ขึ้น GitHub
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-github-update')" style="color:#fff;">✕</button>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-weight:700;color:#0f172a;font-size:0.92rem;">📦 คลัง Git:</span>
+            <span class="badge" style="background:#0284c7;color:#fff;">tripopplaenak-glitch/pcshspt-clinic</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-weight:700;color:#0f172a;font-size:0.92rem;">🌐 เว็บไซต์ออนไลน์:</span>
+            <a href="https://tripopplaenak-glitch.github.io/pcshspt-clinic/" target="_blank" style="color:#0284c7;font-weight:600;font-size:0.85rem;text-decoration:underline;">เปิดหน้าเว็บ GitHub Pages ↗</a>
+          </div>
+        </div>
+
+        <div style="font-weight:700;color:#1e293b;margin-bottom:8px;font-size:0.92rem;">🚀 เลือกวิธีอัปเดตตามที่สะดวก:</div>
+
+        <!-- Option 1: Run Batch File -->
+        <div style="border:1.5px solid #0284c7;border-radius:10px;padding:14px;margin-bottom:12px;background:#f0f9ff;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span style="font-size:1.1rem;">⚡</span>
+            <strong style="color:#0369a1;font-size:0.92rem;">วิธีที่ 1 (แนะนำและง่ายที่สุด): กดรันตัวอัปเดต 1-Click</strong>
+          </div>
+          <p style="font-size:0.82rem;color:#475569;margin-bottom:10px;line-height:1.45;">
+            กดปุ่มด้านล่างเพื่อเปิด/ดาวน์โหลดไฟล์ <code>กดอัพเดท_GitHub.bat</code> หรือดับเบิลคลิกชอร์ตคัทบนหน้าจอ Desktop ของคุณครู ระบบจะซิงค์ไฟล์ บันทึก และเปิด GitHub Desktop ให้ทันที
+          </p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="กดอัพเดท_GitHub.bat" download class="btn btn-primary btn-sm" style="background:#0284c7;border-color:#0284c7;">
+              ⚡ คลิกเปิดไฟล์ กดอัพเดท_GitHub.bat
+            </a>
+            <button class="btn btn-outline btn-sm" onclick="copyGitHubBatPath()">
+              📋 คัดลอกตำแหน่งไฟล์บนเครื่อง
+            </button>
+          </div>
+        </div>
+
+        <!-- Option 2: GitHub Desktop -->
+        <div style="border:1px solid #cbd5e1;border-radius:10px;padding:12px 14px;margin-bottom:12px;background:#ffffff;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+            <span style="font-size:1.1rem;">🖥️</span>
+            <strong style="color:#334155;font-size:0.92rem;">วิธีที่ 2: อัปเดตผ่าน GitHub Desktop</strong>
+          </div>
+          <p style="font-size:0.82rem;color:#64748b;margin-bottom:8px;line-height:1.45;">
+            เมื่อรันตัวซิงค์ไฟล์เรียบร้อย โปรแกรม GitHub Desktop จะเปิดขึ้นมา คุณครูเพียงกดปุ่มสีฟ้า <strong>"Push origin"</strong> ด้านบนเพื่อส่งขึ้นออนไลน์
+          </p>
+          <a href="x-github-desktop://openRepo/D:%5Cpcshspt-clinic" class="btn btn-outline btn-sm">
+            🖥️ เปิด GitHub Desktop
+          </a>
+        </div>
+
+        <!-- Option 3: Terminal Command -->
+        <div style="border:1px solid #cbd5e1;border-radius:10px;padding:12px 14px;background:#ffffff;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.1rem;">💻</span>
+              <strong style="color:#334155;font-size:0.92rem;">วิธีที่ 3: คำสั่ง PowerShell / CMD</strong>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="copyGitCommand()" style="font-size:0.75rem;padding:2px 8px;">
+              📋 คัดลอกคำสั่ง
+            </button>
+          </div>
+          <pre id="git-cmd-code" style="background:#0f172a;color:#38bdf8;padding:10px;border-radius:6px;font-size:0.75rem;overflow-x:auto;white-space:pre-wrap;margin:0;">robocopy "D:\ทำเวปคลีนิควิชาการ" "D:\pcshspt-clinic" /E /XD "scratch" ".git" ".agents" /XF "verify_*.js" "กดอัพเดท_GitHub.bat"
+"C:\Users\tripo\AppData\Local\GitHubDesktop\app-3.6.6\resources\app\git\cmd\git.exe" -C "D:\pcshspt-clinic" add -A
+"C:\Users\tripo\AppData\Local\GitHubDesktop\app-3.6.6\resources\app\git\cmd\git.exe" -C "D:\pcshspt-clinic" commit -m "อัปเดตระบบคลินิกวิชาการล่าสุด"</pre>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.8rem;color:#64748b;">💡 หน้าจอ Desktop มีชอร์ตคัท <strong>กดอัพเดท_GitHub</strong> ให้แล้วครับ</span>
+        <button class="btn btn-outline" onclick="closeModal('modal-github-update')">ปิด</button>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <div class="footer-school">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
     <div class="footer-dev">พัฒนาระบบโดย ครูฉวีวรรณ อรุณถาวร และครูชลธีร์ จันทร์ลอย</div>
@@ -1292,6 +1544,22 @@
 
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     function openModal(id) { document.getElementById(id).classList.add('open'); }
+
+    function copyGitHubBatPath() {
+      const path = 'D:\\ทำเวปคลีนิควิชาการ\\กดอัพเดท_GitHub.bat';
+      navigator.clipboard.writeText(path).then(() => {
+        alert('คัดลอกตำแหน่งไฟล์เรียบร้อย:\n' + path + '\n\nคุณครูสามารถนำไปวางใน Run (Win + R) หรือ File Explorer เพื่อเปิดได้ทันทีครับ');
+      }).catch(() => {
+        alert('ตำแหน่งไฟล์: ' + path);
+      });
+    }
+
+    function copyGitCommand() {
+      const cmd = document.getElementById('git-cmd-code')?.innerText || '';
+      navigator.clipboard.writeText(cmd).then(() => {
+        alert('คัดลอกคำสั่งเรียบร้อยแล้ว!\nสามารถนำไปคลิกขวาวางใน PowerShell หรือ Terminal ได้ทันทีครับ');
+      });
+    }
     function escapeHtml(str) {
       if (str === null || str === undefined) return '';
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -1554,29 +1822,7 @@
         return;
       }
 
-      container.innerHTML = `
-    <div class="table-wrapper">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:36px;text-align:center;">
-              <input type="checkbox" id="check-all-clinics" onchange="toggleSelectAllClinics(this.checked)" title="เลือกทั้งหมด" style="cursor:pointer;width:16px;height:16px;">
-            </th>
-            <th>#</th>
-            <th>สัปดาห์</th>
-            <th>ชั้น</th>
-            <th>วัน/วันที่</th>
-            <th>วิชา</th>
-            <th>ครูผู้สอน</th>
-            <th>เวลา</th>
-            <th>ห้อง</th>
-            <th>สถานะ</th>
-            <th>นร.</th>
-            <th>จัดการ</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${clinics.map((c, i) => {
+      const desktopRowsHtml = clinics.map((c, i) => {
         let w = (c.weekId ? weekMap[c.weekId] : null) || (c.date ? weekMap[String(c.date).slice(0, 10)] : null);
         if (!w && c.date) {
           const cDate = String(c.date).slice(0, 10);
@@ -1587,31 +1833,138 @@
           });
         }
         w = w || {};
+        let weekNumDisplay = '–';
+        if (w.weekNum !== undefined && w.weekNum !== null && String(w.weekNum).trim() !== '') {
+          const m = String(w.weekNum).match(/\d+/);
+          weekNumDisplay = m ? m[0] : String(w.weekNum).trim();
+        } else if (c.weekId) {
+          const m = String(c.weekId).match(/\d+/);
+          if (m) weekNumDisplay = m[0];
+        }
+
         const t = teacherMap[String(c.teacherId)] || {};
         const st = getStatusLabel(c.status);
+        const timeClean = (c.time || '18:30–20:30').replace(/น\.?/g, '').trim();
+
         return `
-              <tr>
-                <td style="text-align:center;">
-                  <input type="checkbox" class="clinic-row-cb" value="${c.id}" onchange="onClinicCheckboxChange()" style="cursor:pointer;width:16px;height:16px;">
-                </td>
-                <td>${i + 1}</td>
-                <td><span class="badge badge-gray text-xs">${w.weekNum ? 'สัปดาห์ที่ ' + w.weekNum : '–'}</span></td>
-                <td><span class="badge badge-blue">ม.${c.grade}</span></td>
-                <td><strong>วัน${dayNames[c.dayOfWeek] || '–'}</strong><br><span class="text-xs text-muted">${formatDateThai(c.date)}</span></td>
-                <td><strong>${getSubjectIcon(c.subject)} ${c.subject}</strong>${c.topic ? `<br><span class="text-xs" style="color:#16a34a;font-weight:600;">🎯 ${escapeHtml(c.topic)}</span>` : ''}</td>
-                <td>${t.name || '–'}</td>
-                <td class="text-xs">${typeof formatClinicTime === 'function' ? formatClinicTime(c.time) : (c.time || '18:30–20:30 น.')}</td>
-                <td>${c.room || '–'}</td>
-                <td><span class="status-badge ${st.cls}">${st.icon} ${st.text}</span></td>
-                <td>${c.studentCount || 0}</td>
-                <td>
-                  <button class="btn btn-outline btn-sm" onclick="editClinic('${c.id}')">✏️</button>
-                  <button class="btn btn-danger btn-sm" onclick="deleteClinic('${c.id}')">🗑️</button>
-                </td>
-              </tr>`;
-      }).join('')}
-        </tbody>
-      </table>
+            <tr>
+              <td style="text-align:center;">
+                <input type="checkbox" class="clinic-row-cb" value="${c.id}" onchange="onClinicCheckboxChange(this)" style="cursor:pointer;width:15px;height:15px;">
+              </td>
+              <td style="text-align:center;"><strong>${i + 1}</strong></td>
+              <td style="text-align:center;"><span class="badge badge-gray text-xs" style="font-weight:700;padding:2px 6px;">${weekNumDisplay}</span></td>
+              <td style="text-align:center;"><span class="badge badge-blue">ม.${c.grade}</span></td>
+              <td title="วัน${dayNames[c.dayOfWeek] || '–'} (${formatDateThai(c.date)})"><strong>วัน${dayNames[c.dayOfWeek] || '–'}</strong> <span class="text-xs text-muted" style="margin-left:2px;">(${formatDateThai(c.date)})</span></td>
+              <td title="${escapeHtml(c.subject)}"><strong>${getSubjectIcon(c.subject)} ${escapeHtml(c.subject)}</strong>${c.topic ? ` <span class="text-xs" style="color:#16a34a;font-weight:600;margin-left:3px;" title="${escapeHtml(c.topic)}">🎯 ${escapeHtml(c.topic)}</span>` : ''}</td>
+              <td title="${escapeHtml(t.name || '–')}">${escapeHtml(t.name || '–')}</td>
+              <td class="text-xs" title="${timeClean} น.">${timeClean} น.</td>
+              <td title="${escapeHtml(c.room || '–')}">${escapeHtml(c.room || '–')}</td>
+              <td title="${st.text}"><span class="status-badge ${st.cls}">${st.icon} ${st.text}</span></td>
+              <td style="text-align:center;"><span class="badge ${c.studentCount ? 'badge-blue' : 'badge-gray'}" style="font-weight:700;padding:2px 5px;">${c.studentCount || 0}</span></td>
+              <td style="text-align:center;">
+                <div style="display:inline-flex;gap:3px;align-items:center;justify-content:center;">
+                  <button class="btn btn-outline btn-sm" onclick="editClinic('${c.id}')" title="แก้ไข" style="padding:2px 5px;font-size:0.75rem;">✏️</button>
+                  <button class="btn btn-danger btn-sm" onclick="deleteClinic('${c.id}')" title="ลบ" style="padding:2px 5px;font-size:0.75rem;">🗑️</button>
+                </div>
+              </td>
+            </tr>`;
+      }).join('');
+
+      const mobileCardsHtml = clinics.map((c, i) => {
+        let w = (c.weekId ? weekMap[c.weekId] : null) || (c.date ? weekMap[String(c.date).slice(0, 10)] : null);
+        if (!w && c.date) {
+          const cDate = String(c.date).slice(0, 10);
+          w = weeks.find(wk => {
+            const s = String(wk.startDate || '').slice(0, 10);
+            const e = String(wk.endDate || '').slice(0, 10);
+            return s && e && cDate >= s && cDate <= e;
+          });
+        }
+        w = w || {};
+        let weekNumDisplay = '–';
+        if (w.weekNum !== undefined && w.weekNum !== null && String(w.weekNum).trim() !== '') {
+          const m = String(w.weekNum).match(/\d+/);
+          weekNumDisplay = m ? m[0] : String(w.weekNum).trim();
+        } else if (c.weekId) {
+          const m = String(c.weekId).match(/\d+/);
+          if (m) weekNumDisplay = m[0];
+        }
+
+        const t = teacherMap[String(c.teacherId)] || {};
+        const st = getStatusLabel(c.status);
+        const timeClean = (c.time || '18:30–20:30').replace(/น\.?/g, '').trim();
+
+        return `
+          <div class="clinic-card-mobile">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input type="checkbox" class="clinic-row-cb" value="${c.id}" onchange="onClinicCheckboxChange(this)" style="cursor:pointer;width:16px;height:16px;">
+                <span style="font-weight:700;color:var(--gray-600);font-size:0.85rem;">#${i + 1}</span>
+                <span class="badge badge-gray" style="font-weight:700;font-size:0.75rem;">สัปดาห์ ${weekNumDisplay}</span>
+                <span class="badge badge-blue" style="font-weight:700;font-size:0.75rem;">ม.${c.grade}</span>
+              </div>
+              <div style="display:flex;gap:4px;">
+                <button class="btn btn-outline btn-sm" onclick="editClinic('${c.id}')" title="แก้ไข" style="padding:3px 8px;font-size:0.8rem;">✏️</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteClinic('${c.id}')" title="ลบ" style="padding:3px 8px;font-size:0.8rem;">🗑️</button>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+              <div>
+                <div style="font-weight:700;font-size:0.92rem;color:var(--text);">${getSubjectIcon(c.subject)} ${escapeHtml(c.subject)}${c.topic ? ` <span class="text-xs" style="color:#16a34a;font-weight:600;">🎯 ${escapeHtml(c.topic)}</span>` : ''}</div>
+                <div style="color:var(--gray-600);font-size:0.82rem;margin-top:2px;">👩‍🏫 ${escapeHtml(t.name || '–')}</div>
+              </div>
+              <span class="status-badge ${st.cls}" style="font-size:0.75rem;">${st.icon} ${st.text}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;color:var(--gray-500);border-top:1px dashed var(--gray-200);padding-top:6px;margin-top:2px;">
+              <span>📅 วัน${dayNames[c.dayOfWeek] || '–'} (${formatDateThai(c.date)})</span>
+              <span>⏰ ${timeClean} น.</span>
+              <span>📍 ${escapeHtml(c.room || '–')}</span>
+              <span class="badge ${c.studentCount ? 'badge-blue' : 'badge-gray'}" style="font-weight:700;">👥 ${c.studentCount || 0} คน</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+    <!-- DESKTOP / TABLET VIEW: 100% WIDTH TABLE -->
+    <div class="clinics-container-desktop">
+      <div class="admin-clinic-table-container">
+        <table class="table-admin-fit">
+          <thead>
+            <tr>
+              <th style="width:3.5%;text-align:center;">
+                <input type="checkbox" id="check-all-clinics" onchange="toggleSelectAllClinics(this.checked)" title="เลือกทั้งหมด" style="cursor:pointer;width:15px;height:15px;">
+              </th>
+              <th style="width:3%;text-align:center;">#</th>
+              <th style="width:4.5%;text-align:center;" title="สัปดาห์">สัปดาห์</th>
+              <th style="width:4.5%;text-align:center;">ชั้น</th>
+              <th style="width:14%;">วัน / วันที่</th>
+              <th style="width:18%;">วิชา</th>
+              <th style="width:14.5%;">ครูผู้สอน</th>
+              <th style="width:10.5%;">เวลา</th>
+              <th style="width:9%;">ห้อง</th>
+              <th style="width:8.5%;">สถานะ</th>
+              <th style="width:4%;text-align:center;">นร.</th>
+              <th style="width:6%;text-align:center;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${desktopRowsHtml}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MOBILE VIEW: COMPACT CLINIC CARDS -->
+    <div class="clinics-container-mobile">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 2px;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:0.85rem;cursor:pointer;font-weight:600;">
+          <input type="checkbox" id="check-all-clinics-mobile" onchange="toggleSelectAllClinics(this.checked)" style="width:16px;height:16px;">
+          <span>เลือกทั้งหมด</span>
+        </label>
+        <span class="text-xs text-muted">ทั้งหมด ${clinics.length} รายการ</span>
+      </div>
+      ${mobileCardsHtml}
     </div>`;
     }
 
@@ -3715,15 +4068,51 @@
       }
     }
 
+    function onClinicCheckboxChange(changedCb) {
+      if (changedCb && changedCb.value) {
+        document.querySelectorAll(`.clinic-row-cb[value="${changedCb.value}"]`).forEach(cb => {
+          cb.checked = changedCb.checked;
+        });
+      }
+      const uniqueChecked = new Set();
+      document.querySelectorAll('.clinic-row-cb:checked').forEach(cb => uniqueChecked.add(cb.value));
+      const totalUnique = new Set(Array.from(document.querySelectorAll('.clinic-row-cb')).map(cb => cb.value)).size;
+
+      const countEl = document.getElementById('selected-clinics-count');
+      const delBtn = document.getElementById('btn-delete-selected-clinics');
+      const checkAll = document.getElementById('check-all-clinics');
+      const checkAllMobile = document.getElementById('check-all-clinics-mobile');
+      
+      if (countEl) countEl.textContent = uniqueChecked.size;
+      if (delBtn) {
+        if (uniqueChecked.size > 0) delBtn.classList.remove('hidden');
+        else delBtn.classList.add('hidden');
+      }
+      const isAll = (totalUnique > 0 && uniqueChecked.size === totalUnique);
+      const isIndet = (uniqueChecked.size > 0 && uniqueChecked.size < totalUnique);
+      if (checkAll) {
+        checkAll.checked = isAll;
+        checkAll.indeterminate = isIndet;
+      }
+      if (checkAllMobile) {
+        checkAllMobile.checked = isAll;
+        checkAllMobile.indeterminate = isIndet;
+      }
+    }
+
     function toggleSelectAllClinics(checked) {
       const cbs = document.querySelectorAll('.clinic-row-cb');
       cbs.forEach(cb => { cb.checked = checked; });
+      const checkAll = document.getElementById('check-all-clinics');
+      const checkAllMobile = document.getElementById('check-all-clinics-mobile');
+      if (checkAll) checkAll.checked = checked;
+      if (checkAllMobile) checkAllMobile.checked = checked;
       onClinicCheckboxChange();
     }
 
     async function deleteSelectedClinics() {
       const checked = Array.from(document.querySelectorAll('.clinic-row-cb:checked'));
-      const ids = checked.map(cb => cb.value);
+      const ids = [...new Set(checked.map(cb => cb.value))];
       if (!ids.length) return;
 
       if (!confirm(`ยืนยันการลบตารางคลินิกที่เลือกจำนวน ${ids.length} รายการใช่หรือไม่?\n(การกระทำนี้ไม่สามารถย้อนกลับได้)`)) {
