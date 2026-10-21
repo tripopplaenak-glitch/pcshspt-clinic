@@ -21,21 +21,13 @@ const SUPABASE_CONFIG = {
   anonKey: 'sb_publishable_UnAxE0Dr5Z6fGf1zo-nd2g_QKqXOIc9'
 };
 
-// ─── LOCAL AUTH (No Firebase Auth needed — we use simple password check)
-const AUTH_CREDENTIALS = {
-  teacher: {
-    username: 'teacher',
-    password: '98765432',
-    role: 'teacher',
-    displayName: 'ครูผู้สอน'
-  },
-  admin: {
-    username: 'admin',
-    password: 'Admin',
-    role: 'admin',
-    displayName: 'ผู้ดูแลระบบ'
-  }
-};
+// ─── AUTH → ตรวจรหัสผ่านที่ Supabase Auth (ไม่มีรหัสผ่านในโค้ด)
+// Admin: พิมพ์ username "admin" → login ด้วยอีเมลจริงด้านล่าง
+// ครูผู้สอน: username ตั้งเองได้ (a-z 0-9 . _ - ยาว 3–32 ตัว) → ระบบแปลงเป็น "<username>@<AUTH_TEACHER_DOMAIN>"
+//   ตอนสร้างบัญชีครูใน Supabase ให้ใส่ Email ตามรูปแบบนี้ เช่น kru.somchai → kru.somchai@clinic.example.com
+const AUTH_ADMIN = { username: 'admin', email: 'chollatt1112@gmail.com' };
+const AUTH_TEACHER_DOMAIN = 'clinic.example.com';
+const AUTH_ROLE_NAMES = { admin: 'ผู้ดูแลระบบ', teacher: 'ครูผู้สอน' };
 
 // ─── APP CONSTANTS
 const APP_CONFIG = {

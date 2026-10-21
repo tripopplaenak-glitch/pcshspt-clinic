@@ -483,11 +483,11 @@
   <div class="loading-text">กำลังโหลด...</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-<script src="js/firebase-config.js?v=2569_15"></script>
-<script src="js/supabase-api.js?v=2569_15"></script>
-<script src="js/db.js?v=2569_15"></script>
-<script src="js/auth.js?v=2569_15"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
+<script src="js/firebase-config.js?v=2569_16"></script>
+<script src="js/supabase-api.js?v=2569_16"></script>
+<script src="js/db.js?v=2569_16"></script>
+<script src="js/auth.js?v=2569_16"></script>
 <script>
 // ─── INIT ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1542,55 +1542,32 @@ async function submitStudentRegistration() {
   }
 
   try {
-    // 1. Double check current attendance records
-    const allAtt = await DataService.getAttendance();
-    const cDate = toYMD(regTargetClinic.date);
-    const clinicAtt = allAtt.filter(a => {
-      if (String(a.clinicId) !== String(regTargetClinic.id)) return false;
-      if (cDate && a.date && toYMD(a.date) !== cDate) return false;
-      return true;
+    // ลงทะเบียนผ่านฟังก์ชันฝั่งฐานข้อมูล (เพิ่มได้ทีละ 1 คน, เช็กซ้ำและที่นั่งเต็มที่ฝั่งเซิร์ฟเวอร์)
+    const client = SupabaseAPI.client || SupabaseAPI.init();
+    if (!client) throw new Error('ยังไม่ได้เชื่อมต่อฐานข้อมูล');
+    const { data: result, error } = await client.rpc('register_student', {
+      p_clinic_id: String(regTargetClinic.id),
+      p_student_id: String(student.id)
     });
+    if (error) throw error;
 
-    // Check duplicate
-    const alreadyRegistered = clinicAtt.some(a => String(a.studentId) === String(student.id) || (a.studentName && a.studentName.trim() === student.name.trim()));
-    if (alreadyRegistered) {
-      showToast('แจ้งเตือน', `รายชื่อ "${student.name}" ได้ลงทะเบียนเรียนในรายวิชานี้ไปแล้ว`, 'warning');
-      if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.innerHTML = '✓ ยืนยันการลงทะเบียน (1 คน)'; }
-      return;
-    }
-
-    // Check quota
-    const maxLimit = Number(regTargetClinic.maxStudents) || 0;
-    if (maxLimit > 0 && clinicAtt.length >= maxLimit) {
-      showToast('ขออภัย', 'จำนวนผู้ลงทะเบียนครบตามจำนวนที่กำหนดแล้ว (ที่นั่งเต็ม)', 'error');
-      closeModal('modal-student-registration');
-      await renderSchedule();
-      return;
-    }
-
-    // 2. Build attendance record
-    const newRecord = {
-      date: toYMD(regTargetClinic.date),
-      clinicId: regTargetClinic.id,
-      studentId: student.id,
-      studentName: student.name,
-      grade: student.grade,
-      room: student.room,
-      number: student.number,
-      dormitory: student.dormitory || 'D1',
-      subject: regTargetClinic.subject || regTargetClinic.subjectName || '',
-      teacherId: regTargetClinic.teacherId || '',
-      status: 'present'
+    const regMessages = {
+      duplicate: `รายชื่อ "${student.name}" ได้ลงทะเบียนเรียนในรายวิชานี้ไปแล้ว`,
+      full: 'จำนวนผู้ลงทะเบียนครบตามจำนวนที่กำหนดแล้ว (ที่นั่งเต็ม)',
+      closed: 'รายวิชานี้ปิดรับลงทะเบียนแล้ว',
+      not_found: 'ไม่พบคลินิกนี้ในระบบ',
+      no_student: 'ไม่พบข้อมูลนักเรียนที่เลือก'
     };
+    if (result !== 'ok') {
+      showToast('แจ้งเตือน', regMessages[result] || result, 'warning');
+      if (result === 'full' || result === 'closed') {
+        closeModal('modal-student-registration');
+        await renderSchedule();
+      }
+      return;
+    }
 
-    clinicAtt.push(newRecord);
-    await DataService.setAttendanceForClinic(regTargetClinic.id, clinicAtt);
-
-    // 3. Update clinic studentCount and studentList
-    regTargetClinic.studentCount = clinicAtt.length;
-    regTargetClinic.studentList = clinicAtt;
-    regTargetClinic.attendanceIds = clinicAtt.map(x => x.id);
-    await DataService.saveClinic(regTargetClinic);
+    await DataService.initSync();
 
     closeModal('modal-student-registration');
     showToast('🎉 ลงทะเบียนสำเร็จ!', `นักเรียน "${student.name}" ได้ลงทะเบียนเรียนวิชา "${regTargetClinic.subject}" เรียบร้อยแล้ว`, 'success');

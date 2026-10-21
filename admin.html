@@ -748,12 +748,12 @@
                 <div class="form-group">
                   <label class="form-label">รหัสผ่านปัจจุบัน</label>
                   <input type="password" class="form-control" id="admin-old-pass"
-                    placeholder="รหัสผ่านเดิม (ค่าเริ่มต้น: Admin)">
+                    placeholder="รหัสผ่านปัจจุบัน">
                 </div>
                 <div class="form-group">
                   <label class="form-label">รหัสผ่านใหม่</label>
                   <input type="password" class="form-control" id="admin-new-pass"
-                    placeholder="รหัสผ่านใหม่ (อย่างน้อย 4 ตัวอักษร)">
+                    placeholder="รหัสผ่านใหม่ (อย่างน้อย 8 ตัวอักษร)">
                 </div>
                 <div class="form-group">
                   <label class="form-label">ยืนยันรหัสผ่านใหม่</label>
@@ -768,14 +768,14 @@
           <!-- Set Teacher Password -->
           <div class="card mb-4">
             <div class="card-header">
-              <div class="section-title" style="font-size:1.05rem;">🔑 กำหนดรหัสผ่านสำหรับครูผู้สอน (Teacher)</div>
+              <div class="section-title" style="font-size:1.05rem;">🔑 กำหนดรหัสผ่านสำหรับครูผู้สอน (มีผลกับบัญชีครูทุกบัญชี)</div>
             </div>
             <div class="card-body">
               <div style="max-width:440px;">
                 <div class="form-group">
                   <label class="form-label">รหัสผ่านใหม่สำหรับครูผู้สอน</label>
                   <input type="password" class="form-control" id="teacher-new-pass"
-                    placeholder="รหัสผ่านใหม่สำหรับครู (ค่าเริ่มต้น: 98765432)">
+                    placeholder="รหัสผ่านใหม่สำหรับครู (อย่างน้อย 8 ตัวอักษร)">
                 </div>
                 <div class="form-group">
                   <label class="form-label">ยืนยันรหัสผ่านใหม่</label>
@@ -802,9 +802,9 @@
               <!-- Locked State (Default) -->
               <div id="supabase-locked-box" style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:22px;text-align:center;">
                 <div style="font-size:2rem;margin-bottom:6px;">🔒</div>
-                <div style="font-weight:700;color:#334155;margin-bottom:4px;font-size:1rem;">ลิงก์เชื่อมต่อและคีย์ API ถูกซ่อนไว้เพื่อความปลอดภัย</div>
-                <p style="font-size:0.85rem;color:#64748b;margin-bottom:14px;">โปรดกรอกรหัสผ่านเพื่อแสดงหรือแก้ไขข้อมูลการเชื่อมต่อฐานข้อมูล Supabase</p>
-                <button class="btn btn-primary btn-sm" onclick="promptUnlockSupabase()">🔑 กดแสดงข้อมูล (ใส่รหัสผ่าน)</button>
+                <div style="font-weight:700;color:#334155;margin-bottom:4px;font-size:1rem;">ลิงก์เชื่อมต่อและคีย์ API ถูกซ่อนไว้</div>
+                <p style="font-size:0.85rem;color:#64748b;margin-bottom:14px;">กดปุ่มด้านล่างเพื่อแสดงหรือแก้ไขข้อมูลการเชื่อมต่อฐานข้อมูล Supabase</p>
+                <button class="btn btn-primary btn-sm" onclick="promptUnlockSupabase()">🔑 กดแสดงข้อมูล</button>
               </div>
 
               <!-- Unlocked Container (Hidden by default) -->
@@ -1449,11 +1449,11 @@
     <div class="footer-dev">พัฒนาระบบโดย ครูฉวีวรรณ อรุณถาวร และครูชลธีร์ จันทร์ลอย</div>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="js/firebase-config.js?v=2569_15"></script>
-  <script src="js/supabase-api.js?v=2569_15"></script>
-  <script src="js/db.js?v=2569_15"></script>
-  <script src="js/auth.js?v=2569_15"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
+  <script src="js/firebase-config.js?v=2569_16"></script>
+  <script src="js/supabase-api.js?v=2569_16"></script>
+  <script src="js/db.js?v=2569_16"></script>
+  <script src="js/auth.js?v=2569_16"></script>
   <script src="js/xlsx.full.min.js"></script>
   <script>
     // ─── AUTH GUARD ───────────────────────────────────────────
@@ -3775,7 +3775,7 @@
     }
 
     // ─── PASSWORD CHANGE HANDLERS ─────────────────────────────
-    function changeAdminPassword() {
+    async function changeAdminPassword() {
       const oldPass = document.getElementById('admin-old-pass').value;
       const newPass = document.getElementById('admin-new-pass').value;
       const cnfPass = document.getElementById('admin-confirm-pass').value;
@@ -3789,7 +3789,7 @@
         return;
       }
 
-      const res = AuthService.changePassword('admin', oldPass, newPass);
+      const res = await AuthService.changePassword('admin', oldPass, newPass);
       if (res.success) {
         showToast('เปลี่ยนรหัสผ่านสำเร็จ', 'รหัสผ่าน Admin ได้รับการอัปเดตเรียบร้อยแล้ว', 'success');
         document.getElementById('admin-old-pass').value = '';
@@ -3800,7 +3800,7 @@
       }
     }
 
-    function changeTeacherPassword() {
+    async function changeTeacherPassword() {
       const newPass = document.getElementById('teacher-new-pass').value;
       const cnfPass = document.getElementById('teacher-confirm-pass').value;
 
@@ -3813,7 +3813,7 @@
         return;
       }
 
-      const res = AuthService.setTeacherPassword(newPass);
+      const res = await AuthService.setTeacherPassword(newPass);
       if (res.success) {
         showToast('ตั้งรหัสผ่านสำเร็จ', 'รหัสผ่านสำหรับครูผู้สอนได้รับการอัปเดตเรียบร้อยแล้ว', 'success');
         document.getElementById('teacher-new-pass').value = '';
@@ -4026,19 +4026,13 @@
       }
     }
 
-    // ─── SUPABASE PASSWORD UNLOCK (Password: 0708) ────────────
+    // ─── SUPABASE SETTINGS TOGGLE ────────────
+    // (คีย์ที่แสดงเป็นคีย์สาธารณะ ความปลอดภัยของข้อมูลอยู่ที่ RLS ใน Supabase)
     function promptUnlockSupabase() {
-      const pwd = prompt('กรุณากรอกรหัสผ่านเพื่อแสดงข้อมูล Supabase:');
-      if (pwd === null) return;
-      if (pwd.trim() === '0708') {
-        const lockedBox = document.getElementById('supabase-locked-box');
-        const unlocked = document.getElementById('supabase-unlocked-container');
-        if (lockedBox) lockedBox.style.display = 'none';
-        if (unlocked) unlocked.style.display = 'block';
-        showToast('สำเร็จ', 'ปลดล็อกข้อมูล Supabase เรียบร้อยแล้ว', 'success');
-      } else {
-        showToast('รหัสผ่านไม่ถูกต้อง', 'กรุณาลองใหม่อีกครั้ง', 'error');
-      }
+      const lockedBox = document.getElementById('supabase-locked-box');
+      const unlocked = document.getElementById('supabase-unlocked-container');
+      if (lockedBox) lockedBox.style.display = 'none';
+      if (unlocked) unlocked.style.display = 'block';
     }
 
     function lockSupabaseFields() {

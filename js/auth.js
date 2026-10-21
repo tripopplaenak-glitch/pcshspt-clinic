@@ -4,86 +4,87 @@
 // ============================================================
 
 const AuthService = {
-  // ─── Get effective credentials (with local overrides)
-  getCredentials() {
-    let custom = {};
-    try {
-      custom = JSON.parse(localStorage.getItem('pccpt_auth_overrides') || '{}');
-    } catch (e) {
-      custom = {};
-    }
-    return {
-      teacher: {
-        ...AUTH_CREDENTIALS.teacher,
-        ...(custom.teacher || {})
-      },
-      admin: {
-        ...AUTH_CREDENTIALS.admin,
-        ...(custom.admin || {})
-      }
-    };
+  // ─── Supabase client (สร้างครั้งเดียว ใช้ร่วมกับ SupabaseAPI)
+  getClient() {
+    return SupabaseAPI.client || SupabaseAPI.init();
   },
 
-  // ─── Login
-  login(username, password) {
-    const creds = this.getCredentials();
-    const cred = Object.values(creds).find(
-      c => c.username === username && c.password === password
-    );
-    if (!cred) return null;
-    const session = { ...cred, loggedAt: Date.now() };
+  // ─── แปลง username ที่พิมพ์ → อีเมลในระบบ Supabase + บทบาทที่ต้องเป็น
+  resolveLogin(username) {
+    const u = String(username || '').trim().toLowerCase();
+    if (u === AUTH_ADMIN.username) return { email: AUTH_ADMIN.email, role: 'admin' };
+    // ครูผู้สอน: รับเฉพาะตัวอักษรที่ปลอดภัย ไม่รับอีเมลโดยตรง
+    if (!/^[a-z0-9._-]{3,32}$/.test(u)) return null;
+    return { email: `${u}@${AUTH_TEACHER_DOMAIN}`, role: 'teacher' };
+  },
+
+  // ─── Login (ตรวจรหัสที่ Supabase Auth)
+  async login(username, password) {
+    const target = this.resolveLogin(username);
+    const client = this.getClient();
+    if (!target || !client) return null;
+    const { data, error } = await client.auth.signInWithPassword({ email: target.email, password });
+    if (error || !data.user) {
+      console.warn('[Auth] login failed:', error && error.message);
+      return null;
+    }
+    // บทบาทอ่านจาก app_metadata (แก้ได้เฉพาะผ่าน SQL/Dashboard) และต้องตรงกับช่องทางที่ login
+    const role = data.user.app_metadata && data.user.app_metadata.role;
+    if (role !== target.role) {
+      console.warn(`[Auth] role mismatch: account role="${role || ''}", expected="${target.role}"`);
+      await client.auth.signOut();
+      return null;
+    }
+    // pccpt_session ใช้เลือกเมนูที่แสดงเท่านั้น — สิทธิ์เขียนข้อมูลตรวจที่ Supabase (RLS)
+    localStorage.removeItem('pccpt_auth_overrides');
+    const session = {
+      username: String(username).trim().toLowerCase(),
+      role,
+      displayName: AUTH_ROLE_NAMES[role],
+      loggedAt: Date.now()
+    };
     localStorage.setItem('pccpt_session', JSON.stringify(session));
     return session;
   },
 
-  // ─── Change Password
-  changePassword(role, oldPassword, newPassword) {
-    const creds = this.getCredentials();
-    const cred = creds[role];
-    if (!cred) return { success: false, message: 'ไม่พบบทบาทผู้ใช้นี้' };
-    if (cred.password !== oldPassword) {
-      return { success: false, message: 'รหัสผ่านเดิมไม่ถูกต้อง' };
+  // ─── Change own password (ต้องยืนยันรหัสเดิม)
+  async changePassword(role, oldPassword, newPassword) {
+    const client = this.getClient();
+    if (!client) return { success: false, message: 'ยังไม่ได้เชื่อมต่อ Supabase' };
+    if (!newPassword || newPassword.length < 8) {
+      return { success: false, message: 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 8 ตัวอักษร' };
     }
-    if (!newPassword || newPassword.length < 4) {
-      return { success: false, message: 'รหัสผ่านใหม่ต้องมีความยาวอย่างน้อย 4 ตัวอักษร' };
+    const { data: userData } = await client.auth.getUser();
+    const user = userData && userData.user;
+    if (!user || !user.app_metadata || user.app_metadata.role !== role) {
+      return { success: false, message: 'กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่อีกครั้ง' };
     }
-
-    let custom = {};
-    try {
-      custom = JSON.parse(localStorage.getItem('pccpt_auth_overrides') || '{}');
-    } catch (e) {}
-    custom[role] = custom[role] || {};
-    custom[role].password = newPassword;
-    localStorage.setItem('pccpt_auth_overrides', JSON.stringify(custom));
-
-    // Update current session if matching role
-    const currentSession = this.getSession();
-    if (currentSession && currentSession.role === role) {
-      currentSession.password = newPassword;
-      localStorage.setItem('pccpt_session', JSON.stringify(currentSession));
-    }
+    const { error: authErr } = await client.auth.signInWithPassword({ email: user.email, password: oldPassword });
+    if (authErr) return { success: false, message: 'รหัสผ่านเดิมไม่ถูกต้อง' };
+    const { error } = await client.auth.updateUser({ password: newPassword });
+    if (error) return { success: false, message: error.message };
     return { success: true, message: 'เปลี่ยนรหัสผ่านสำเร็จ' };
   },
 
   // ─── Admin update teacher password directly
-  setTeacherPassword(newPassword) {
-    if (!newPassword || newPassword.length < 4) {
-      return { success: false, message: 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร' };
+  async setTeacherPassword(newPassword) {
+    if (!newPassword || newPassword.length < 8) {
+      return { success: false, message: 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร' };
     }
-    let custom = {};
-    try {
-      custom = JSON.parse(localStorage.getItem('pccpt_auth_overrides') || '{}');
-    } catch (e) {}
-    custom.teacher = custom.teacher || {};
-    custom.teacher.password = newPassword;
-    localStorage.setItem('pccpt_auth_overrides', JSON.stringify(custom));
+    const client = this.getClient();
+    if (!client) return { success: false, message: 'ยังไม่ได้เชื่อมต่อ Supabase' };
+    const { error } = await client.rpc('admin_set_teacher_password', { p_new: newPassword });
+    if (error) return { success: false, message: error.message };
     return { success: true, message: 'ตั้งรหัสผ่านครูผู้สอนเรียบร้อยแล้ว' };
   },
 
   // ─── Logout
   logout() {
     localStorage.removeItem('pccpt_session');
-    window.location.href = 'login.html';
+    const goLogin = () => { window.location.href = 'login.html'; };
+    const client = SupabaseAPI.client;
+    if (client) client.auth.signOut().finally(goLogin);
+    else goLogin();
   },
 
   // ─── Get current session
