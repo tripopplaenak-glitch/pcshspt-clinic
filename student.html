@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>นักเรียน — คลินิกวิชาการ PCSHSPT</title>
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .student-box { max-width: 460px; }
+    .student-box.wide { max-width: 760px; }
+    .error-msg { background: var(--red-pale); color: var(--red-main); border: 1px solid #fca5a5; border-radius: var(--radius-md); padding: 10px 14px; font-size: .875rem; margin-bottom: 14px; display: none; }
+    .student-card { background: var(--blue-pale); border: 1px solid #93c5fd; border-radius: var(--radius-lg); padding: 14px 16px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .student-card .name { font-weight: 700; font-family: 'Kanit', sans-serif; color: var(--blue-deep); font-size: 1.05rem; }
+    .student-card .meta { font-size: .85rem; color: var(--gray-600); margin-top: 2px; }
+    .history-item { border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+    .history-item .subject { font-weight: 700; color: var(--blue-deep); }
+    .history-item .info { font-size: .84rem; color: var(--gray-600); margin-top: 3px; line-height: 1.5; }
+    .section-label { font-weight: 700; font-family: 'Kanit', sans-serif; color: var(--blue-deep); margin: 20px 0 10px; font-size: 1rem; }
+    .action-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+    .hint { font-size: .8rem; color: var(--gray-500); margin-top: 4px; }
+  </style>
+</head>
+<body>
+<div class="login-page">
+  <div class="login-box student-box" id="student-box">
+    <div class="login-logo">
+      <img src="assets/logo.png" alt="โลโก้โรงเรียน">
+      <h2>โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</h2>
+      <p>ระบบคลินิกวิชาการ | สำหรับนักเรียน</p>
+    </div>
+
+    <!-- ═══ VIEW: LOGIN ═══ -->
+    <div id="view-login" class="hidden">
+      <div id="login-error" class="error-msg"></div>
+      <form onsubmit="doStudentLogin(event)">
+        <div class="form-group">
+          <label class="form-label">รหัสประจำตัวนักเรียน</label>
+          <input type="text" class="form-control" id="login-code" inputmode="numeric"
+            autocomplete="username" placeholder="เช่น 02456">
+        </div>
+        <div class="form-group">
+          <label class="form-label">รหัสผ่าน</label>
+          <input type="password" class="form-control" id="login-password"
+            autocomplete="current-password" placeholder="รหัสผ่าน">
+          <div class="hint">เข้าสู่ระบบครั้งแรกใช้รหัสผ่าน <strong>1234</strong> แล้วระบบจะให้ตั้งรหัสผ่านใหม่</div>
+        </div>
+        <button type="submit" class="btn btn-primary w-full btn-lg" id="login-btn">🔑 เข้าสู่ระบบ</button>
+      </form>
+      <div class="alert alert-info" style="margin-top:16px;margin-bottom:0;">
+        <span>💡</span>
+        <div><strong>ลืมรหัสผ่าน?</strong> แจ้งครูผู้สอนหรือผู้ดูแลระบบเพื่อรีเซ็ตรหัสผ่าน แล้วนำรหัสใหม่ที่ได้รับมาเข้าสู่ระบบ</div>
+      </div>
+    </div>
+
+    <!-- ═══ VIEW: CHANGE PASSWORD ═══ -->
+    <div id="view-change" class="hidden">
+      <div id="change-notice" class="alert alert-warning">
+        <span>🔐</span>
+        <div><strong>กรุณาตั้งรหัสผ่านใหม่ก่อนใช้งาน</strong><br>เพื่อไม่ให้ผู้อื่นเข้าบัญชีของคุณได้ ต้องตั้งรหัสใหม่ก่อนจึงจะลงทะเบียนเรียนได้</div>
+      </div>
+      <div id="change-error" class="error-msg"></div>
+      <form onsubmit="doChangePassword(event)">
+        <div class="form-group" id="old-password-group">
+          <label class="form-label">รหัสผ่านปัจจุบัน</label>
+          <input type="password" class="form-control" id="old-password" autocomplete="current-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label">รหัสผ่านใหม่</label>
+          <input type="password" class="form-control" id="new-password" autocomplete="new-password"
+            placeholder="อย่างน้อย 6 ตัวอักษร">
+          <div class="hint">ห้ามใช้ 1234 หรือรหัสประจำตัวเป็นรหัสผ่าน</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ยืนยันรหัสผ่านใหม่</label>
+          <input type="password" class="form-control" id="confirm-password" autocomplete="new-password"
+            placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง">
+        </div>
+        <button type="submit" class="btn btn-primary w-full btn-lg" id="change-btn">💾 บันทึกรหัสผ่านใหม่</button>
+      </form>
+      <div style="text-align:center;margin-top:12px;display:flex;justify-content:center;gap:12px;">
+        <button type="button" class="btn btn-outline btn-sm hidden" id="change-cancel-btn" onclick="render()">← กลับ</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="doStudentLogout()">ออกจากระบบ</button>
+      </div>
+    </div>
+
+    <!-- ═══ VIEW: HOME (ประวัติการลงทะเบียน) ═══ -->
+    <div id="view-home" class="hidden">
+      <div class="student-card">
+        <div>
+          <div class="name" id="home-name"></div>
+          <div class="meta" id="home-meta"></div>
+        </div>
+        <span class="badge badge-green">✅ เข้าสู่ระบบแล้ว</span>
+      </div>
+
+      <div class="action-row">
+        <a href="schedule.html" class="btn btn-success">📅 ไปหน้าตารางสอนเพื่อลงทะเบียน</a>
+        <button class="btn btn-outline" onclick="openChangePassword()">🔐 เปลี่ยนรหัสผ่าน</button>
+        <button class="btn btn-outline" onclick="doStudentLogout()">ออกจากระบบ</button>
+      </div>
+
+      <div class="section-label">📋 ประวัติการลงทะเบียนของฉัน</div>
+      <div id="history-list"><div class="empty-state"><div class="spinner"></div></div></div>
+    </div>
+
+    <div style="text-align:center;margin-top:20px;display:flex;justify-content:center;gap:12px;font-size:0.85rem;">
+      <a href="schedule.html" class="text-muted">← กลับหน้าตารางสอน</a>
+      <span class="text-muted">&bull;</span>
+      <a href="manual.html" class="text-muted">📖 คู่มือการใช้งาน</a>
+    </div>
+  </div>
+
+  <footer class="login-footer">
+    <div class="footer-school">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
+    <div class="footer-dev">พัฒนาระบบโดย ครูฉวีวรรณ อรุณถาวร และครูชลธีร์ จันทร์ลอย</div>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
+<script src="js/firebase-config.js?v=2569_17"></script>
+<script src="js/supabase-api.js?v=2569_17"></script>
+<script src="js/db.js?v=2569_17"></script>
+<script src="js/auth.js?v=2569_17"></script>
+<script src="js/student-auth.js?v=2569_17"></script>
+<script>
+// รหัสที่เพิ่งใช้ login (เก็บในหน่วยความจำเท่านั้น) — ใช้เป็นรหัสเดิมตอนบังคับเปลี่ยนรหัส ไม่ต้องพิมพ์ซ้ำ
+let justLoggedInPassword = '';
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function showView(id) {
+  ['view-login', 'view-change', 'view-home'].forEach(v => {
+    document.getElementById(v).classList.toggle('hidden', v !== id);
+  });
+  document.getElementById('student-box').classList.toggle('wide', id === 'view-home');
+}
+
+function showError(elId, msg) {
+  const el = document.getElementById(elId);
+  el.textContent = '❌ ' + msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+
+function render() {
+  const s = StudentAuth.getSession();
+  if (!s) {
+    showView('view-login');
+    return;
+  }
+  if (s.mustChange) {
+    openChangePassword(true);
+    return;
+  }
+  // กลับไปลงทะเบียนวิชาที่กดไว้ก่อน login
+  if (sessionStorage.getItem(StudentAuth.PENDING_KEY)) {
+    window.location.href = 'schedule.html';
+    return;
+  }
+  const st = s.student || {};
+  document.getElementById('home-name').textContent = st.name || '';
+  document.getElementById('home-meta').textContent =
+    `รหัสประจำตัว ${st.code || ''} • ม.${st.grade}/${st.room} เลขที่ ${st.number}`;
+  showView('view-home');
+  loadHistory();
+}
+
+function openChangePassword(forced) {
+  const hasOld = forced && justLoggedInPassword;
+  document.getElementById('change-notice').classList.toggle('hidden', !forced);
+  document.getElementById('old-password-group').classList.toggle('hidden', Boolean(hasOld));
+  document.getElementById('change-cancel-btn').classList.toggle('hidden', Boolean(forced));
+  ['old-password', 'new-password', 'confirm-password'].forEach(id => { document.getElementById(id).value = ''; });
+  showError('change-error', '');
+  showView('view-change');
+}
+
+// ─── Login
+async function doStudentLogin(e) {
+  e.preventDefault();
+  const code = document.getElementById('login-code').value.trim();
+  const password = document.getElementById('login-password').value;
+  showError('login-error', '');
+  if (!code || !password) {
+    showError('login-error', 'กรุณากรอกรหัสประจำตัวและรหัสผ่าน');
+    return;
+  }
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังเข้าสู่ระบบ...';
+  try {
+    const res = await StudentAuth.login(code, password);
+    if (!res.ok) {
+      showError('login-error', res.error === 'locked'
+        ? `ใส่รหัสผ่านผิดหลายครั้ง บัญชีถูกล็อกชั่วคราว กรุณาลองใหม่ในอีก ${res.minutes} นาที`
+        : 'รหัสประจำตัวหรือรหัสผ่านไม่ถูกต้อง');
+      return;
+    }
+    justLoggedInPassword = password;
+    document.getElementById('login-password').value = '';
+    render();
+  } catch (err) {
+    console.error('[StudentAuth] login error:', err);
+    showError('login-error', 'เชื่อมต่อระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔑 เข้าสู่ระบบ';
+  }
+}
+
+// ─── Change password
+async function doChangePassword(e) {
+  e.preventDefault();
+  const s = StudentAuth.getSession();
+  const oldGroupHidden = document.getElementById('old-password-group').classList.contains('hidden');
+  const oldPw = oldGroupHidden ? justLoggedInPassword : document.getElementById('old-password').value;
+  const newPw = document.getElementById('new-password').value;
+  const cnfPw = document.getElementById('confirm-password').value;
+  showError('change-error', '');
+
+  if (!oldPw) { showError('change-error', 'กรุณากรอกรหัสผ่านปัจจุบัน'); return; }
+  if (newPw.length < 6) { showError('change-error', 'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร'); return; }
+  if (newPw === '1234' || (s && s.student && newPw === s.student.code)) {
+    showError('change-error', 'ห้ามใช้ 1234 หรือรหัสประจำตัวเป็นรหัสผ่าน');
+    return;
+  }
+  if (newPw !== cnfPw) { showError('change-error', 'รหัสผ่านใหม่และการยืนยันไม่ตรงกัน'); return; }
+
+  const btn = document.getElementById('change-btn');
+  btn.disabled = true;
+  try {
+    const result = await StudentAuth.changePassword(oldPw, newPw);
+    if (result === 'ok') {
+      justLoggedInPassword = '';
+      showToast('เปลี่ยนรหัสผ่านสำเร็จ', 'ครั้งต่อไปให้ใช้รหัสผ่านใหม่ในการเข้าสู่ระบบ', 'success');
+      render();
+    } else if (result === 'wrong_password') {
+      showError('change-error', 'รหัสผ่านปัจจุบันไม่ถูกต้อง');
+      document.getElementById('old-password-group').classList.remove('hidden');
+    } else if (result === 'weak') {
+      showError('change-error', 'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัว และห้ามใช้ 1234 หรือรหัสประจำตัว');
+    } else if (result === 'session_expired') {
+      showToast('หมดเวลาเข้าสู่ระบบ', 'กรุณาเข้าสู่ระบบอีกครั้ง', 'warning');
+      render();
+    } else {
+      showError('change-error', 'เปลี่ยนรหัสผ่านไม่สำเร็จ');
+    }
+  } catch (err) {
+    console.error('[StudentAuth] change password error:', err);
+    showError('change-error', 'เชื่อมต่อระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ─── Logout
+async function doStudentLogout() {
+  justLoggedInPassword = '';
+  sessionStorage.removeItem(StudentAuth.PENDING_KEY);
+  await StudentAuth.logout();
+  render();
+}
+
+// ─── History
+async function loadHistory() {
+  const listEl = document.getElementById('history-list');
+  try {
+    const res = await StudentAuth.history();
+    if (!res || !res.ok) {
+      if (res && res.error === 'session_expired') { render(); return; }
+      listEl.innerHTML = '<div class="empty-state"><div class="empty-title">โหลดประวัติไม่สำเร็จ</div></div>';
+      return;
+    }
+    if (!res.items.length) {
+      listEl.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">ยังไม่มีประวัติการลงทะเบียน</div>
+          <div class="empty-sub">ไปที่หน้าตารางสอน แล้วกดลงทะเบียนวิชาที่สนใจ</div>
+        </div>`;
+      return;
+    }
+    listEl.innerHTML = res.items.map(it => `
+      <div class="history-item">
+        <div style="flex:1;min-width:200px;">
+          <div class="subject">${getSubjectIcon(it.subject)} ${escapeHtml(it.subject || '–')}</div>
+          ${it.topic ? `<div class="info">🎯 ${escapeHtml(it.topic)}</div>` : ''}
+          <div class="info">
+            📅 ${formatDateThai(it.date)} • 🕐 ${formatClinicTime(it.time)}<br>
+            👩‍🏫 ${escapeHtml(it.teacher || '–')} • 📍 ${escapeHtml(it.room || '–')}
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          <span class="badge badge-green">ลงทะเบียนแล้ว</span>
+          ${it.can_cancel
+            ? `<button class="btn btn-danger btn-sm" data-clinic-id="${escapeHtml(it.clinic_id)}" data-subject="${escapeHtml(it.subject || '')}" onclick="cancelRegistration(this.dataset.clinicId, this.dataset.subject)">ยกเลิกการลงทะเบียน</button>`
+            : ''}
+        </div>
+      </div>`).join('');
+  } catch (err) {
+    console.error('[StudentAuth] history error:', err);
+    listEl.innerHTML = '<div class="empty-state"><div class="empty-title">เชื่อมต่อระบบไม่สำเร็จ</div></div>';
+  }
+}
+
+async function cancelRegistration(clinicId, subject) {
+  if (!confirm(`ยืนยันยกเลิกการลงทะเบียนวิชา "${subject}" ใช่หรือไม่?`)) return;
+  try {
+    const result = await StudentAuth.cancel(clinicId);
+    if (result === 'ok') {
+      showToast('ยกเลิกการลงทะเบียนแล้ว', subject, 'success');
+    } else {
+      showToast('ยกเลิกไม่สำเร็จ', STUDENT_RESULT_MESSAGES[result] || result, 'warning');
+      if (result === 'session_expired') { render(); return; }
+    }
+  } catch (err) {
+    console.error('[StudentAuth] cancel error:', err);
+    showToast('เกิดข้อผิดพลาด', 'เชื่อมต่อระบบไม่สำเร็จ', 'error');
+  }
+  await loadHistory();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof SupabaseAPI !== 'undefined') SupabaseAPI.init();
+  render();
+});
+</script>
+</body>
+</html>

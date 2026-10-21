@@ -283,6 +283,7 @@
       <a href="schedule.html" class="nav-link active">📅 ตารางสอน</a>
       <a href="attendance.html" class="nav-link">📋 สรุปการเข้าเรียน</a>
       <a href="manual.html" class="nav-link">📖 คู่มือการใช้งาน</a>
+      <a href="student.html" class="nav-link" id="nav-student-link">🎓 นักเรียน</a>
       <a href="login.html" class="nav-link nav-btn nav-btn-login" id="nav-login-btn">🔑 เข้าสู่ระบบ</a>
       <span class="nav-link hidden" id="nav-user-info" style="background:rgba(255,255,255,.1);border-radius:8px;"></span>
       <a href="teacher.html" class="nav-link hidden" id="nav-teacher-link">👩‍🏫 ระบบครู</a>
@@ -448,20 +449,10 @@
 
       <!-- Instructions -->
       <div class="alert alert-info" style="font-size:0.84rem;margin-bottom:14px;padding:9px 14px;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;border-radius:8px;line-height:1.5;">
-        💡 <strong>คำแนะนำ:</strong> ค้นหาและเลือกรายชื่อของตนเองเพื่อลงทะเบียน (กรอกได้ทีละ 1 คน) ระบบจะแจ้งเตือนทันทีหากเคยลงทะเบียนแล้ว
+        💡 <strong>ลงทะเบียนในชื่อของคุณ</strong> (ตามบัญชีนักเรียนที่เข้าสู่ระบบอยู่) ถ้าไม่ใช่ชื่อของคุณ ให้กด "ไม่ใช่ฉัน" เพื่อออกจากระบบ
       </div>
-
-      <!-- Student Selector -->
-      <div class="form-group" style="margin-bottom:12px;">
-        <label class="form-label" style="font-weight:700;display:flex;justify-content:space-between;align-items:center;font-size:0.88rem;">
-          <span>👤 เลือกรายชื่อนักเรียน (<span id="reg-student-grade-label"></span>):</span>
-          <span id="reg-student-found-count" class="text-xs text-muted"></span>
-        </label>
-        <input type="text" class="form-control" id="reg-student-search-input" placeholder="🔍 พิมพ์ชื่อ-สกุล, ห้อง หรือเลขที่เพื่อค้นหา..." oninput="filterRegistrationStudentOptions(this.value)" autocomplete="off" style="font-size:0.92rem;padding:8px 12px;margin-bottom:8px;">
-        <input type="hidden" id="reg-student-selected-id" value="">
-        <div id="reg-student-select-list" class="student-select-list">
-          <!-- Filled by JS as touch-friendly cards -->
-        </div>
+      <div style="text-align:right;margin:-6px 0 10px;">
+        <button type="button" class="btn btn-outline btn-sm" onclick="switchStudentAccount()">ไม่ใช่ฉัน / เปลี่ยนบัญชี</button>
       </div>
 
       <!-- Selected Student Preview & Validation Alert -->
@@ -488,6 +479,7 @@
 <script src="js/supabase-api.js?v=2569_16"></script>
 <script src="js/db.js?v=2569_16"></script>
 <script src="js/auth.js?v=2569_16"></script>
+<script src="js/student-auth.js?v=2569_17"></script>
 <script>
 // ─── INIT ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -516,6 +508,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadAnnouncements();
   await loadWeeks();
   await renderSchedule();
+
+  // กลับมาจากหน้าเข้าสู่ระบบนักเรียน → เปิดวิชาที่กดลงทะเบียนไว้ให้อัตโนมัติ
+  const pendingClinicId = sessionStorage.getItem(StudentAuth.PENDING_KEY);
+  if (pendingClinicId && StudentAuth.getSession()) {
+    sessionStorage.removeItem(StudentAuth.PENDING_KEY);
+    openStudentRegistrationModal(pendingClinicId);
+  }
 
   // 2. Sync immediately when switching back to tab or unlocking phone
   document.addEventListener('visibilitychange', () => {
@@ -574,6 +573,10 @@ let selectedMultiWeekIds = []; // Up to 4 weeks
 
 // ─── Navbar links based on role
 function updateNavbarLinks() {
+  const stu = StudentAuth.getSession();
+  const studentLink = document.getElementById('nav-student-link');
+  if (studentLink && stu && stu.student) studentLink.textContent = `🎓 ${stu.student.name}`;
+
   const s = AuthService.getSession();
   const teacherLink = document.getElementById('nav-teacher-link');
   const adminLink   = document.getElementById('nav-admin-link');
@@ -1305,11 +1308,37 @@ function filterModalStudentList(keyword) {
 let regGradeStudentsCache = [];
 let regTargetClinic = null;
 
+// ส่งนักเรียนไปเข้าสู่ระบบ แล้วกลับมาเปิดวิชาเดิมให้อัตโนมัติ
+function goStudentLogin(clinicId, message) {
+  sessionStorage.setItem(StudentAuth.PENDING_KEY, String(clinicId));
+  showToast('กรุณาเข้าสู่ระบบนักเรียน', message || 'ใช้รหัสประจำตัวและรหัสผ่านของคุณ', 'info');
+  setTimeout(() => { window.location.href = 'student.html'; }, 900);
+}
+
+async function switchStudentAccount() {
+  const clinicId = regTargetClinic ? regTargetClinic.id : '';
+  closeModal('modal-student-registration');
+  await StudentAuth.logout();
+  goStudentLogin(clinicId, 'เข้าสู่ระบบด้วยบัญชีของคุณเอง');
+}
+
 async function openStudentRegistrationModal(clinicId) {
   const allClinics = await DataService.getClinics();
   const c = allClinics.find(x => String(x.id) === String(clinicId));
   if (!c) {
     showToast('ไม่พบข้อมูลวิชา', '', 'warning');
+    return;
+  }
+
+  // ต้องเข้าสู่ระบบนักเรียน และเปลี่ยนรหัสเริ่มต้นแล้ว จึงลงทะเบียนได้
+  const stuSession = StudentAuth.getSession();
+  if (!stuSession || stuSession.mustChange) {
+    goStudentLogin(c.id, stuSession ? 'กรุณาตั้งรหัสผ่านใหม่ก่อนลงทะเบียน' : '');
+    return;
+  }
+  const me = stuSession.student || {};
+  if (Number(me.grade) !== Number(c.grade)) {
+    showToast('ลงทะเบียนไม่ได้', `วิชานี้เปิดสำหรับ ม.${c.grade} (คุณอยู่ ม.${me.grade})`, 'warning');
     return;
   }
   regTargetClinic = c;
@@ -1373,108 +1402,24 @@ async function openStudentRegistrationModal(clinicId) {
     `;
   }
 
-  // Filter students strictly by grade of this clinic
-  const cleanGrade = Number(c.grade) || 1;
-  const gradeLabelEl = document.getElementById('reg-student-grade-label');
-  if (gradeLabelEl) gradeLabelEl.textContent = `ม.${cleanGrade}`;
-
-  const allStudents = await DataService.getStudents();
-  regGradeStudentsCache = allStudents.filter(s => Number(s.grade) === cleanGrade);
-  regGradeStudentsCache.sort((a, b) => (Number(a.room) - Number(b.room)) || (Number(a.number) - Number(b.number)));
-
-  // Reset inputs
-  const searchInput = document.getElementById('reg-student-search-input');
-  if (searchInput) searchInput.value = '';
-
-  const selectedInput = document.getElementById('reg-student-selected-id');
-  if (selectedInput) selectedInput.value = '';
-  selectedStudentRegistrationId = '';
-
-  const validationBox = document.getElementById('student-reg-validation-box');
-  if (validationBox) validationBox.innerHTML = '';
+  // นักเรียนที่ลงทะเบียนได้ = เจ้าของบัญชีที่ login อยู่เท่านั้น
+  regGradeStudentsCache = [{
+    id: me.id, name: me.name, grade: me.grade, room: me.room,
+    number: me.number, dormitory: me.dormitory, studentCode: me.code
+  }];
+  selectedStudentRegistrationId = String(me.id);
 
   const confirmBtn = document.getElementById('btn-confirm-student-reg');
   if (confirmBtn) confirmBtn.disabled = true;
 
-  filterRegistrationStudentOptions('');
   openModal('modal-student-registration');
+  await onRegistrationStudentPick();
 }
 
 let selectedStudentRegistrationId = '';
 
-function filterRegistrationStudentOptions(keyword) {
-  const q = (keyword || '').trim().toLowerCase();
-  const listEl = document.getElementById('reg-student-select-list');
-  if (!listEl) return;
-
-  const filtered = q
-    ? regGradeStudentsCache.filter(s =>
-        (s.name || '').toLowerCase().includes(q) ||
-        String(s.studentCode || '').includes(q) ||
-        String(s.number || '').includes(q) ||
-        String(s.room || '').includes(q)
-      )
-    : regGradeStudentsCache;
-
-  const countEl = document.getElementById('reg-student-found-count');
-  if (countEl) countEl.textContent = `(พบ ${filtered.length} คน จากทั้งหมด ${regGradeStudentsCache.length} คน)`;
-
-  if (!filtered.length) {
-    listEl.innerHTML = '<div style="padding:14px;color:#94a3b8;text-align:center;font-size:0.88rem;">-- ไม่พบรายชื่อนักเรียนที่ตรงกับคำค้นหา --</div>';
-    return;
-  }
-
-  // Pre-check registered student IDs in current clinic
-  const existingAtt = (regTargetClinic?.studentList && Array.isArray(regTargetClinic.studentList))
-    ? regTargetClinic.studentList
-    : [];
-  const existingIds = new Set(existingAtt.map(a => String(a.studentId || a.id || '')));
-
-  listEl.innerHTML = filtered.map(s => {
-    const isReg = existingIds.has(String(s.id));
-    const isSelected = String(s.id) === String(selectedStudentRegistrationId);
-    return `
-      <div class="student-pick-item ${isReg ? 'already-registered' : ''} ${isSelected ? 'selected' : ''}" 
-           onclick="onRegistrationStudentItemClick('${s.id}')"
-           data-student-id="${s.id}">
-        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
-          <span class="badge badge-blue" style="font-size:0.75rem;padding:2px 6px;white-space:nowrap;">ม.${s.grade}/${s.room}</span>
-          <span style="font-weight:600;font-size:0.84rem;color:#475569;white-space:nowrap;">เลขที่ ${s.number}</span>
-          <span style="font-weight:600;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(s.name)}</span>
-        </div>
-        <div style="margin-left:6px;white-space:nowrap;">
-          ${isReg ? '<span class="tag tag-red" style="font-size:0.72rem;">⚠️ ลงทะเบียนแล้ว</span>' : (isSelected ? '<span class="tag tag-green" style="font-weight:700;">✓ เลือกแล้ว</span>' : '<span style="color:#94a3b8;font-size:0.8rem;">แตะเพื่อเลือก</span>')}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-async function onRegistrationStudentItemClick(studentId) {
-  selectedStudentRegistrationId = String(studentId);
-  const selectedInput = document.getElementById('reg-student-selected-id');
-  if (selectedInput) selectedInput.value = selectedStudentRegistrationId;
-
-  // Highlight selected element in list
-  const listEl = document.getElementById('reg-student-select-list');
-  if (listEl) {
-    const items = listEl.querySelectorAll('.student-pick-item');
-    items.forEach(el => {
-      const id = el.getAttribute('data-student-id');
-      const isSelected = (id === selectedStudentRegistrationId);
-      el.classList.toggle('selected', isSelected);
-      const tagEl = el.querySelector('div:last-child');
-      if (tagEl && !el.classList.contains('already-registered')) {
-        tagEl.innerHTML = isSelected ? '<span class="tag tag-green" style="font-weight:700;">✓ เลือกแล้ว</span>' : '<span style="color:#94a3b8;font-size:0.8rem;">แตะเพื่อเลือก</span>';
-      }
-    });
-  }
-
-  await onRegistrationStudentPick();
-}
-
 async function onRegistrationStudentPick() {
-  const studentId = selectedStudentRegistrationId || document.getElementById('reg-student-selected-id')?.value;
+  const studentId = selectedStudentRegistrationId;
   const validationBox = document.getElementById('student-reg-validation-box');
   const confirmBtn = document.getElementById('btn-confirm-student-reg');
   if (!studentId || !regTargetClinic) return;
@@ -1523,7 +1468,7 @@ async function onRegistrationStudentPick() {
 }
 
 async function submitStudentRegistration() {
-  const studentId = selectedStudentRegistrationId || document.getElementById('reg-student-selected-id')?.value;
+  const studentId = selectedStudentRegistrationId;
   const confirmBtn = document.getElementById('btn-confirm-student-reg');
   if (!studentId || !regTargetClinic) {
     showToast('แจ้งเตือน', 'กรุณาเลือกรายชื่อนักเรียนก่อนยืนยัน', 'warning');
@@ -1542,25 +1487,15 @@ async function submitStudentRegistration() {
   }
 
   try {
-    // ลงทะเบียนผ่านฟังก์ชันฝั่งฐานข้อมูล (เพิ่มได้ทีละ 1 คน, เช็กซ้ำและที่นั่งเต็มที่ฝั่งเซิร์ฟเวอร์)
-    const client = SupabaseAPI.client || SupabaseAPI.init();
-    if (!client) throw new Error('ยังไม่ได้เชื่อมต่อฐานข้อมูล');
-    const { data: result, error } = await client.rpc('register_student', {
-      p_clinic_id: String(regTargetClinic.id),
-      p_student_id: String(student.id)
-    });
-    if (error) throw error;
+    // ลงทะเบียนในชื่อของบัญชีที่ login อยู่ — ฐานข้อมูลเป็นผู้ตรวจ (ลงชื่อแทนคนอื่นไม่ได้)
+    const result = await StudentAuth.register(regTargetClinic.id);
 
-    const regMessages = {
-      duplicate: `รายชื่อ "${student.name}" ได้ลงทะเบียนเรียนในรายวิชานี้ไปแล้ว`,
-      full: 'จำนวนผู้ลงทะเบียนครบตามจำนวนที่กำหนดแล้ว (ที่นั่งเต็ม)',
-      closed: 'รายวิชานี้ปิดรับลงทะเบียนแล้ว',
-      not_found: 'ไม่พบคลินิกนี้ในระบบ',
-      no_student: 'ไม่พบข้อมูลนักเรียนที่เลือก'
-    };
     if (result !== 'ok') {
-      showToast('แจ้งเตือน', regMessages[result] || result, 'warning');
-      if (result === 'full' || result === 'closed') {
+      showToast('แจ้งเตือน', STUDENT_RESULT_MESSAGES[result] || result, 'warning');
+      if (result === 'session_expired' || result === 'must_change') {
+        closeModal('modal-student-registration');
+        goStudentLogin(regTargetClinic.id);
+      } else if (result === 'full' || result === 'closed' || result === 'past') {
         closeModal('modal-student-registration');
         await renderSchedule();
       }

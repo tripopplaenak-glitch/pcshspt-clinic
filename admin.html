@@ -536,6 +536,17 @@
             </div>
           </div>
 
+          <!-- STUDENT ACCOUNTS INFO -->
+          <div class="alert alert-success mb-3">
+            <span>🔐</span>
+            <div>
+              <strong>บัญชีนักเรียน:</strong> ทุกคนที่มีรหัสประจำตัวได้บัญชีอัตโนมัติ (รวมนักเรียนที่เพิ่มหรือนำเข้าใหม่)
+              — username คือ <strong>รหัสประจำตัว</strong> รหัสผ่านเริ่มต้น <strong>1234</strong>
+              และต้องตั้งรหัสใหม่ก่อนลงทะเบียน · นักเรียนลืมรหัส กดปุ่ม 🔑 ในแถวของนักเรียนเพื่อสุ่มรหัสใหม่
+              · นำเข้ารายชื่อซ้ำ หรือลบแล้วเพิ่มกลับด้วยรหัสประจำตัวเดิม รหัสผ่านของนักเรียนจะยังเป็นรหัสเดิม
+            </div>
+          </div>
+
           <!-- ADVICE BOX -->
           <div class="alert alert-info mb-3">
             <span>💡</span>
@@ -1454,6 +1465,7 @@
   <script src="js/supabase-api.js?v=2569_16"></script>
   <script src="js/db.js?v=2569_16"></script>
   <script src="js/auth.js?v=2569_16"></script>
+  <script src="js/student-auth.js?v=2569_17"></script>
   <script src="js/xlsx.full.min.js"></script>
   <script>
     // ─── AUTH GUARD ───────────────────────────────────────────
@@ -3241,13 +3253,16 @@
         'D1': 'D1 บัวอุบล (ญ)', 'D2': 'D2 บุษกร (ญ)', 'D3': 'D3 บัวชมพู (ญ)',
         'D4': 'D4 นิลกมล (ช)', 'D5': 'D5 โกเมน (ช)', 'D6': 'D6 นิลปัทม์ (ช)'
       };
+      const accounts = await getStudentAccountMap();
 
       container.innerHTML = `
     <div class="table-wrapper">
       <table>
-        <thead><tr><th>#</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>ห้อง</th><th>เลขที่</th><th>หอพัก</th><th>รหัสนักเรียน</th><th>จัดการ</th></tr></thead>
+        <thead><tr><th>#</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>ห้อง</th><th>เลขที่</th><th>หอพัก</th><th>รหัสนักเรียน</th><th>บัญชีนักเรียน</th><th>จัดการ</th></tr></thead>
         <tbody>
-          ${students.map((s, i) => `
+          ${students.map((s, i) => {
+            const code = normalizeStudentCode(s.studentCode);
+            return `
             <tr>
               <td>${i + 1}</td>
               <td><strong>${s.name}</strong></td>
@@ -3255,15 +3270,51 @@
               <td>ห้อง ${s.room}</td>
               <td>${s.number}</td>
               <td>${dormMap[s.dormitory] || s.dormitory || 'D1'}</td>
-              <td>${normalizeStudentCode(s.studentCode) || '–'}</td>
+              <td>${code || '–'}</td>
+              <td>${renderStudentAccountBadge(code ? accounts[code] : null)}</td>
               <td>
                 <button class="btn btn-outline btn-sm" onclick="editStudent('${s.id}')">✏️</button>
+                ${code ? `<button class="btn btn-outline btn-sm" title="รีเซ็ตรหัสผ่านนักเรียน" onclick="resetStudentPassword('${s.id}')">🔑</button>` : ''}
                 <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">🗑️</button>
               </td>
-            </tr>`).join('')}
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
     </div>`;
+    }
+
+    // ─── บัญชีนักเรียน (สถานะรหัสผ่าน) — เก็บไว้ 30 วินาที เพราะ loadStudents ถูกเรียกทุกครั้งที่พิมพ์ค้นหา
+    let studentAccountCache = { at: 0, map: {} };
+
+    async function getStudentAccountMap(force) {
+      if (!force && Date.now() - studentAccountCache.at < 30000) return studentAccountCache.map;
+      try {
+        const map = {};
+        (await StudentAuth.staffAccountStatus()).forEach(a => { map[a.code] = a; });
+        studentAccountCache = { at: Date.now(), map };
+      } catch (e) {
+        console.warn('[StudentAuth] account status error:', e);
+      }
+      return studentAccountCache.map;
+    }
+
+    function renderStudentAccountBadge(acc) {
+      if (!acc) return '<span class="badge badge-gray">ยังไม่มีบัญชี</span>';
+      if (acc.locked) return '<span class="badge badge-red">🔒 ล็อกชั่วคราว</span>';
+      if (acc.must_change) return '<span class="badge badge-gold">ยังไม่ตั้งรหัสใหม่</span>';
+      return '<span class="badge badge-green">✅ ใช้งานแล้ว</span>';
+    }
+
+    async function resetStudentPassword(id) {
+      const students = await DataService.getStudents();
+      const s = students.find(x => String(x.id) === String(id));
+      const code = s ? normalizeStudentCode(s.studentCode) : '';
+      if (!code) return;
+      if (await staffResetStudentPasswordUI(code, s.name)) {
+        studentAccountCache.at = 0;
+        await loadStudents();
+      }
     }
 
     function openAddStudent() {
@@ -3319,6 +3370,7 @@
       await DataService.saveStudent(obj);
       closeModal('modal-student');
       showToast('บันทึกสำเร็จ', '', 'success');
+      studentAccountCache.at = 0;
       await loadStudents();
     }
 
