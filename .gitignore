@@ -1,0 +1,9 @@
+# ไฟล์ส่วนตัว/ความลับ — ห้ามขึ้น GitHub (คลังนี้เป็นสาธารณะ)
+*recovery-codes*
+*recovery*.txt
+*.env
+*password*
+*secret*
+
+# ไฟล์ชั่วคราวของ Office
+~$*
