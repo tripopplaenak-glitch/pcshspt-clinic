@@ -33,29 +33,6 @@
       <p>ระบบคลินิกวิชาการ | สำหรับนักเรียน</p>
     </div>
 
-    <!-- ═══ VIEW: LOGIN ═══ -->
-    <div id="view-login" class="hidden">
-      <div id="login-error" class="error-msg"></div>
-      <form onsubmit="doStudentLogin(event)">
-        <div class="form-group">
-          <label class="form-label">รหัสประจำตัวนักเรียน</label>
-          <input type="text" class="form-control" id="login-code" inputmode="numeric"
-            autocomplete="username" placeholder="เช่น 02456">
-        </div>
-        <div class="form-group">
-          <label class="form-label">รหัสผ่าน</label>
-          <input type="password" class="form-control" id="login-password"
-            autocomplete="current-password" placeholder="รหัสผ่าน">
-          <div class="hint">เข้าสู่ระบบครั้งแรกใช้รหัสผ่าน <strong>1234</strong> แล้วระบบจะให้ตั้งรหัสผ่านใหม่</div>
-        </div>
-        <button type="submit" class="btn btn-primary w-full btn-lg" id="login-btn">🔑 เข้าสู่ระบบ</button>
-      </form>
-      <div class="alert alert-info" style="margin-top:16px;margin-bottom:0;">
-        <span>💡</span>
-        <div><strong>ลืมรหัสผ่าน?</strong> แจ้งครูผู้สอนหรือผู้ดูแลระบบเพื่อรีเซ็ตรหัสผ่าน แล้วนำรหัสใหม่ที่ได้รับมาเข้าสู่ระบบ</div>
-      </div>
-    </div>
-
     <!-- ═══ VIEW: CHANGE PASSWORD ═══ -->
     <div id="view-change" class="hidden">
       <div id="change-notice" class="alert alert-warning">
@@ -67,6 +44,7 @@
         <div class="form-group" id="old-password-group">
           <label class="form-label">รหัสผ่านปัจจุบัน</label>
           <input type="password" class="form-control" id="old-password" autocomplete="current-password">
+          <div class="hint">รหัสที่ใช้เข้าสู่ระบบเมื่อสักครู่ (ครั้งแรกคือ 1234 หรือรหัสที่ได้รับจากครู)</div>
         </div>
         <div class="form-group">
           <label class="form-label">รหัสผ่านใหม่</label>
@@ -125,9 +103,9 @@
 <script src="js/supabase-api.js?v=2569_17"></script>
 <script src="js/db.js?v=2569_17"></script>
 <script src="js/auth.js?v=2569_17"></script>
-<script src="js/student-auth.js?v=2569_17"></script>
+<script src="js/student-auth.js?v=2569_18"></script>
 <script>
-// รหัสที่เพิ่งใช้ login (เก็บในหน่วยความจำเท่านั้น) — ใช้เป็นรหัสเดิมตอนบังคับเปลี่ยนรหัส ไม่ต้องพิมพ์ซ้ำ
+// รหัสผ่านเดิมสำหรับฟอร์มเปลี่ยนรหัส (login ทำที่หน้า login.html จึงต้องให้นักเรียนพิมพ์รหัสเดิมเอง)
 let justLoggedInPassword = '';
 
 function escapeHtml(str) {
@@ -141,7 +119,7 @@ function escapeHtml(str) {
 }
 
 function showView(id) {
-  ['view-login', 'view-change', 'view-home'].forEach(v => {
+  ['view-change', 'view-home'].forEach(v => {
     document.getElementById(v).classList.toggle('hidden', v !== id);
   });
   document.getElementById('student-box').classList.toggle('wide', id === 'view-home');
@@ -156,7 +134,7 @@ function showError(elId, msg) {
 function render() {
   const s = StudentAuth.getSession();
   if (!s) {
-    showView('view-login');
+    window.location.replace('login.html?role=student');
     return;
   }
   if (s.mustChange) {
@@ -184,39 +162,6 @@ function openChangePassword(forced) {
   ['old-password', 'new-password', 'confirm-password'].forEach(id => { document.getElementById(id).value = ''; });
   showError('change-error', '');
   showView('view-change');
-}
-
-// ─── Login
-async function doStudentLogin(e) {
-  e.preventDefault();
-  const code = document.getElementById('login-code').value.trim();
-  const password = document.getElementById('login-password').value;
-  showError('login-error', '');
-  if (!code || !password) {
-    showError('login-error', 'กรุณากรอกรหัสประจำตัวและรหัสผ่าน');
-    return;
-  }
-  const btn = document.getElementById('login-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ กำลังเข้าสู่ระบบ...';
-  try {
-    const res = await StudentAuth.login(code, password);
-    if (!res.ok) {
-      showError('login-error', res.error === 'locked'
-        ? `ใส่รหัสผ่านผิดหลายครั้ง บัญชีถูกล็อกชั่วคราว กรุณาลองใหม่ในอีก ${res.minutes} นาที`
-        : 'รหัสประจำตัวหรือรหัสผ่านไม่ถูกต้อง');
-      return;
-    }
-    justLoggedInPassword = password;
-    document.getElementById('login-password').value = '';
-    render();
-  } catch (err) {
-    console.error('[StudentAuth] login error:', err);
-    showError('login-error', 'เชื่อมต่อระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '🔑 เข้าสู่ระบบ';
-  }
 }
 
 // ─── Change password

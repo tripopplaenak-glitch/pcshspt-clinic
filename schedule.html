@@ -283,7 +283,6 @@
       <a href="schedule.html" class="nav-link active">📅 ตารางสอน</a>
       <a href="attendance.html" class="nav-link">📋 สรุปการเข้าเรียน</a>
       <a href="manual.html" class="nav-link">📖 คู่มือการใช้งาน</a>
-      <a href="student.html" class="nav-link" id="nav-student-link">🎓 นักเรียน</a>
       <a href="login.html" class="nav-link nav-btn nav-btn-login" id="nav-login-btn">🔑 เข้าสู่ระบบ</a>
       <span class="nav-link hidden" id="nav-user-info" style="background:rgba(255,255,255,.1);border-radius:8px;"></span>
       <a href="teacher.html" class="nav-link hidden" id="nav-teacher-link">👩‍🏫 ระบบครู</a>
@@ -479,7 +478,7 @@
 <script src="js/supabase-api.js?v=2569_16"></script>
 <script src="js/db.js?v=2569_16"></script>
 <script src="js/auth.js?v=2569_16"></script>
-<script src="js/student-auth.js?v=2569_17"></script>
+<script src="js/student-auth.js?v=2569_18"></script>
 <script>
 // ─── INIT ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -573,9 +572,7 @@ let selectedMultiWeekIds = []; // Up to 4 weeks
 
 // ─── Navbar links based on role
 function updateNavbarLinks() {
-  const stu = StudentAuth.getSession();
-  const studentLink = document.getElementById('nav-student-link');
-  if (studentLink && stu && stu.student) studentLink.textContent = `🎓 ${stu.student.name}`;
+  updateNavbarStudent();
 
   const s = AuthService.getSession();
   const teacherLink = document.getElementById('nav-teacher-link');
@@ -1312,7 +1309,7 @@ let regTargetClinic = null;
 function goStudentLogin(clinicId, message) {
   sessionStorage.setItem(StudentAuth.PENDING_KEY, String(clinicId));
   showToast('กรุณาเข้าสู่ระบบนักเรียน', message || 'ใช้รหัสประจำตัวและรหัสผ่านของคุณ', 'info');
-  setTimeout(() => { window.location.href = 'student.html'; }, 900);
+  setTimeout(() => { window.location.href = 'login.html?role=student'; }, 900);
 }
 
 async function switchStudentAccount() {

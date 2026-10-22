@@ -26,6 +26,7 @@
     .role-icon { font-size: 2rem; }
     .role-title { font-weight: 700; font-family: 'Kanit', sans-serif; color: var(--blue-deep); }
     .role-desc { font-size: .8rem; color: var(--gray-500); margin-top: 2px; }
+    .student-hint { background: var(--blue-pale); color: var(--blue-deep); border: 1px solid #93c5fd; border-radius: var(--radius-md); padding: 10px 14px; font-size: .84rem; line-height: 1.6; margin-bottom: 14px; }
     .error-msg { background: var(--red-pale); color: var(--red-main); border: 1px solid #fca5a5; border-radius: var(--radius-md); padding: 10px 14px; font-size: .875rem; margin-bottom: 14px; display: none; }
   </style>
 </head>
@@ -43,6 +44,13 @@
     <!-- Role Selection -->
     <div style="margin-bottom:18px;">
       <div class="form-label">เลือกประเภทผู้ใช้</div>
+      <div class="role-card" id="role-student" onclick="selectRole('student')">
+        <span class="role-icon">🎓</span>
+        <div>
+          <div class="role-title">นักเรียน</div>
+          <div class="role-desc">ลงทะเบียนเรียน ดูประวัติ และเปลี่ยนรหัสผ่าน (ใช้รหัสประจำตัว)</div>
+        </div>
+      </div>
       <div class="role-card" id="role-teacher" onclick="selectRole('teacher')">
         <span class="role-icon">👩‍🏫</span>
         <div>
@@ -62,9 +70,9 @@
     <!-- Login Form -->
     <form id="login-form" onsubmit="doLogin(event)">
       <div class="form-group" id="username-group">
-        <label class="form-label">ชื่อผู้ใช้ (Username)</label>
+        <label class="form-label" id="username-label">ชื่อผู้ใช้ (Username)</label>
         <input type="text" class="form-control" id="username-input"
-          autocomplete="username" placeholder="กรอกชื่อผู้ใช้">
+          autocomplete="username" placeholder="ชื่อผู้ใช้ หรือรหัสประจำตัวนักเรียน">
       </div>
       <div class="form-group">
         <label class="form-label">รหัสผ่าน</label>
@@ -73,6 +81,10 @@
             autocomplete="current-password" placeholder="กรอกรหัสผ่าน" style="padding-right:42px;">
           <button type="button" onclick="togglePw()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;" id="pw-toggle">👁️</button>
         </div>
+      </div>
+      <div class="student-hint hidden" id="student-hint">
+        💡 เข้าสู่ระบบครั้งแรกใช้รหัสผ่าน <strong>1234</strong> แล้วระบบจะให้ตั้งรหัสผ่านใหม่<br>
+        🔐 ลืมรหัสผ่าน? แจ้งครูผู้สอนหรือผู้ดูแลระบบเพื่อรีเซ็ตรหัสผ่าน
       </div>
       <button type="submit" class="btn btn-primary w-full btn-lg" id="login-btn">
         🔑 เข้าสู่ระบบ
@@ -97,19 +109,51 @@
 <script src="js/supabase-api.js?v=2569_16"></script>
 <script src="js/db.js?v=2569_16"></script>
 <script src="js/auth.js?v=2569_16"></script>
+<script src="js/student-auth.js?v=2569_18"></script>
 <script>
 let selectedRole = '';
 
-function selectRole(role) {
+// ไฮไลต์การ์ดบทบาท + ปรับป้ายช่องชื่อผู้ใช้ (นักเรียนใช้รหัสประจำตัว)
+function setRole(role) {
   selectedRole = role;
-  document.getElementById('role-teacher').classList.toggle('selected', role === 'teacher');
-  document.getElementById('role-admin').classList.toggle('selected', role === 'admin');
+  ['student', 'teacher', 'admin'].forEach(r => {
+    document.getElementById('role-' + r).classList.toggle('selected', r === role);
+  });
+  const isStudent = role === 'student';
+  const uInp = document.getElementById('username-input');
+  document.getElementById('username-label').textContent = isStudent ? 'รหัสประจำตัวนักเรียน' : 'ชื่อผู้ใช้ (Username)';
+  uInp.placeholder = isStudent ? 'เช่น 02456' : (role ? 'กรอกชื่อผู้ใช้' : 'ชื่อผู้ใช้ หรือรหัสประจำตัวนักเรียน');
+  uInp.inputMode = isStudent ? 'numeric' : 'text';
+  document.getElementById('student-hint').classList.toggle('hidden', !isStudent);
+}
+
+function selectRole(role) {
+  setRole(role);
   const uInp = document.getElementById('username-input');
   if (!uInp.value) {
     uInp.focus();
   } else {
     document.getElementById('password-input').focus();
   }
+}
+
+async function doStudentLoginFlow(code, password, errMsg, btn) {
+  try {
+    const res = await StudentAuth.login(code, password);
+    if (res.ok) {
+      window.location.href = 'student.html';
+      return;
+    }
+    errMsg.textContent = res.error === 'locked'
+      ? `❌ ใส่รหัสผ่านผิดหลายครั้ง บัญชีถูกล็อกชั่วคราว กรุณาลองใหม่ในอีก ${res.minutes} นาที`
+      : '❌ รหัสประจำตัวหรือรหัสผ่านไม่ถูกต้อง';
+  } catch (err) {
+    console.error('[StudentAuth] login error:', err);
+    errMsg.textContent = '❌ เชื่อมต่อระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
+  }
+  errMsg.style.display = 'block';
+  btn.textContent = '🔑 เข้าสู่ระบบ';
+  btn.disabled = false;
 }
 
 function togglePw() {
@@ -127,7 +171,7 @@ function doLogin(e) {
   errMsg.style.display = 'none';
 
   if (!username) {
-    errMsg.textContent = '❌ กรุณากรอกชื่อผู้ใช้ (Username)';
+    errMsg.textContent = selectedRole === 'student' ? '❌ กรุณากรอกรหัสประจำตัวนักเรียน' : '❌ กรุณากรอกชื่อผู้ใช้ (Username)';
     errMsg.style.display = 'block';
     document.getElementById('username-input').focus();
     return;
@@ -144,7 +188,14 @@ function doLogin(e) {
   btn.textContent = '⏳ กำลังเข้าสู่ระบบ...';
   btn.disabled = true;
 
+  // นักเรียน: เลือกการ์ดนักเรียน หรือพิมพ์รหัสประจำตัวที่เป็นตัวเลขล้วน
+  const asStudent = selectedRole === 'student' || (!selectedRole && /^\d{1,5}$/.test(username));
+
   setTimeout(async () => {
+    if (asStudent) {
+      await doStudentLoginFlow(username, password, errMsg, btn);
+      return;
+    }
     const session = await AuthService.login(username, password);
     if (!session) {
       errMsg.textContent = '❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
@@ -162,22 +213,18 @@ function doLogin(e) {
   }, 600);
 }
 
-// Auto highlight role card if user types admin or teacher
+// Auto highlight role card from what the user types (admin / ตัวเลข = นักเรียน / อื่น ๆ = ครู)
 document.addEventListener('DOMContentLoaded', () => {
+  if (new URLSearchParams(location.search).get('role') === 'student') setRole('student');
+
   const uInp = document.getElementById('username-input');
   if (uInp) {
     uInp.addEventListener('input', (e) => {
       const v = e.target.value.trim().toLowerCase();
-      if (v === 'admin') {
-        document.getElementById('role-admin').classList.add('selected');
-        document.getElementById('role-teacher').classList.remove('selected');
-      } else if (v) {
-        document.getElementById('role-teacher').classList.add('selected');
-        document.getElementById('role-admin').classList.remove('selected');
-      } else {
-        document.getElementById('role-teacher').classList.remove('selected');
-        document.getElementById('role-admin').classList.remove('selected');
-      }
+      if (v === 'admin') setRole('admin');
+      else if (/^\d+$/.test(v)) setRole('student');
+      else if (v) setRole('teacher');
+      else setRole('');
     });
   }
 

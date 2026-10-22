@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>คู่มือครูผู้สอน — คลินิกวิชาการ PCSHSPT</title>
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .manual-nav-tabs,
+    .role-tabs {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .manual-tab-btn,
+    .role-tab {
+      flex: 1;
+      min-width: 220px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      cursor: pointer;
+      border: 2px solid #cbd5e1;
+      background: #ffffff;
+      color: #334155;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      font-family: 'Kanit', sans-serif;
+    }
+    .manual-tab-btn:hover,
+    .role-tab:hover {
+      background: #f8fafc;
+      border-color: #0284c7;
+      color: #0284c7;
+      transform: translateY(-1px);
+    }
+    .manual-tab-btn.active,
+    .role-tab.active {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #ffffff;
+      border-color: #0284c7;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+    }
+    .manual-tab-btn#tab-btn-teacher.active,
+    .role-tab#tab-btn-teacher.active {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      border-color: #16a34a;
+      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+    }
+    @media (max-width: 600px) {
+      .manual-nav-tabs,
+      .role-tabs {
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .manual-tab-btn,
+      .role-tab {
+        min-width: 100%;
+        padding: 12px 14px;
+        font-size: 0.95rem;
+      }
+    }
+
+    .pdf-download-bar {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: linear-gradient(135deg, #f0fdf4, #e0f2fe);
+      border: 1.5px solid #bae6fd;
+      border-radius: 14px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(2, 132, 199, 0.08);
+    }
+    .pdf-btn-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-pdf {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+    .btn-pdf:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    }
+    .btn-pdf-student {
+      background: #0284c7;
+      color: #ffffff;
+    }
+    .btn-pdf-student:hover {
+      background: #0369a1;
+      color: #ffffff;
+    }
+    .btn-pdf-teacher {
+      background: #16a34a;
+      color: #ffffff;
+    }
+    .btn-pdf-teacher:hover {
+      background: #15803d;
+      color: #ffffff;
+    }
+    .btn-pdf-all {
+      background: #ffffff;
+      border: 1.5px solid #0284c7;
+      color: #0284c7;
+    }
+    .btn-pdf-all:hover {
+      background: #f0f9ff;
+      color: #0369a1;
+    }
+
+    .manual-content-panel {
+      display: none;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+    .manual-content-panel.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .guide-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .guide-step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      border-bottom: 2px solid #f1f5f9;
+      padding-bottom: 10px;
+    }
+    .step-badge {
+      background: #0284c7;
+      color: #ffffff;
+      font-family: 'Kanit', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 4px 14px;
+      border-radius: 8px;
+    }
+    .step-badge-green {
+      background: #16a34a;
+    }
+    .step-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+      font-family: 'Kanit', sans-serif;
+    }
+
+    .mockup-box {
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin: 14px 0;
+      font-size: 0.95rem;
+    }
+    .mockup-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .flow-item {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .flow-item-num {
+      width: 28px;
+      height: 28px;
+      line-height: 28px;
+      background: #0284c7;
+      color: #fff;
+      font-weight: 700;
+      border-radius: 50%;
+      margin: 0 auto 6px;
+      font-size: 0.9rem;
+    }
+    .flow-item-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #0f172a;
+      font-family: 'Kanit', sans-serif;
+    }
+    .flow-item-desc {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .alert-box-ui {
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 12px 0;
+      font-size: 0.92rem;
+      line-height: 1.55;
+    }
+    .alert-tip-ui {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-left: 4px solid #2563eb;
+      color: #1e3a8a;
+    }
+    .alert-warn-ui {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #d97706;
+      color: #78350f;
+    }
+    .alert-success-ui {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left: 4px solid #16a34a;
+      color: #14532d;
+    }
+
+    .tag-chip {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .tag-chip-blue { background: #e0f2fe; color: #0369a1; }
+    .tag-chip-green { background: #dcfce7; color: #166534; }
+    .tag-chip-red { background: #fee2e2; color: #991b1b; }
+    .tag-chip-yellow { background: #fef3c7; color: #92400e; }
+
+    .mockup-window {
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+      overflow: hidden;
+      margin: 14px 0;
+    }
+    .mockup-window-header {
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #0f172a;
+    }
+    .mockup-window-body {
+      padding: 16px;
+    }
+    .mockup-switch-ui {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #f8fafc;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .mockup-toggle-btn {
+      width: 44px;
+      height: 24px;
+      background: #16a34a;
+      border-radius: 14px;
+      position: relative;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    .mockup-toggle-btn::after {
+      content: '';
+      position: absolute;
+      right: 3px;
+      top: 3px;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .badge-quota {
+      background: #dcfce7;
+      color: #166534;
+      font-weight: 700;
+      border: 1px solid #86efac;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 0.82rem;
+    }
+
+    @media (max-width: 768px) {
+      .manual-tab-btn {
+        min-width: 100%;
+      }
+      .pdf-download-bar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .btn-pdf {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <div class="navbar-brand">
+        <img src="assets/logo.png" alt="โลโก้" class="navbar-logo">
+        <div class="navbar-title">
+          <h1 class="brand-title-full">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</h1>
+          <h1 class="brand-title-short">คู่มือการใช้งาน PCSHSPT</h1>
+          <p>ระบบคลินิกวิชาการ | คู่มือครูผู้สอน</p>
+        </div>
+      </div>
+      <nav class="navbar-nav">
+        <a href="schedule.html" class="nav-link">📅 ตารางสอน</a>
+        <a href="attendance.html" class="nav-link">📋 สรุปการเข้าเรียน</a>
+        <a href="teacher.html" class="nav-link">👩‍🏫 ระบบครู</a>
+        <a href="manual-teacher.html" class="nav-link active">📖 คู่มือครู</a>
+        <a href="admin.html" class="nav-link hidden" id="nav-admin-link">⚙️ Admin</a>
+        <span class="nav-link" id="nav-user-info" style="background:rgba(255,255,255,.1);border-radius:8px;"></span>
+        <button class="nav-btn nav-btn-logout" onclick="AuthService.logout()">ออกจากระบบ</button>
+      </nav>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">📖</div>
+      <div class="hero-text">
+        <h1>คู่มือครูผู้สอน</h1>
+        <p>การจัดการรอบสอน เปิดรับลงทะเบียน กรอกรายชื่อนักเรียน และรีเซ็ตรหัสผ่านนักเรียน</p>
+        <span class="hero-sub">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</span>
+      </div>
+    </div>
+  </div>
+
+  <main class="main-content">
+
+    <!-- PDF DOWNLOAD ACTION BAR -->
+    <div class="pdf-download-bar">
+      <div>
+        <div style="font-weight:700;color:#0f172a;font-size:1.05rem;display:flex;align-items:center;gap:6px;">
+          <span>📥</span> <span>ดาวน์โหลดคู่มือฉบับเอกสาร PDF สำหรับพิมพ์หรือบันทึกเก็บไว้:</span>
+        </div>
+        <p style="margin:2px 0 0 0;font-size:0.88rem;color:#475569;">
+          จัดหน้าขนาดกระดาษ A4 สวยงาม คมชัด พร้อมภาพประกอบ สามารถกดดาวน์โหลดได้ทันที
+        </p>
+      </div>
+      <div class="pdf-btn-group">
+        <a href="คู่มือการใช้งาน_ส่วนของครูผู้สอน.pdf" download class="btn-pdf btn-pdf-teacher">
+          <span>📄</span>
+          <span>PDF คู่มือครูผู้สอน</span>
+        </a>
+        <a href="คู่มือการใช้งาน_ระบบคลินิกวิชาการ_PCSHSPT.pdf" download class="btn-pdf btn-pdf-all">
+          <span>📘</span>
+          <span>PDF ฉบับรวมทุกส่วน</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════════════════════════════════ -->
+    <!-- PANEL 2: ครูผู้สอน (TEACHER MANUAL)                      -->
+    <!-- ═════════════════════════════════════════════════════════ -->
+    <div id="panel-teacher" class="manual-content-panel active">
+
+      <div class="guide-card" style="border-left:4px solid #16a34a;background:#f0f9ff;">
+        <h3 style="font-size:1.15rem;color:#166534;margin:0 0 6px 0;font-family:'Kanit',sans-serif;">
+          👩‍🏫 สรุปภาพรวมสำหรับคุณครูผู้สอน
+        </h3>
+        <p style="margin:0;font-size:0.95rem;color:#334155;line-height:1.6;">
+          คุณครูสามารถเข้าสู่ระบบเพื่อตรวจสอบรอบสอนที่รับผิดชอบ ปรับปรุงเวลาและห้องเรียน แจ้งสถานะเปิดสอนหรืองดสอน 
+          <strong>เปิดให้นักเรียนลงทะเบียนออนไลน์พร้อมกำหนดโควตาที่นั่ง</strong> ตลอดจน<strong>ลงทะเบียนคัดเลือกนักเรียนแบบเลือกได้หลายห้อง (Multi-Room)</strong> เช็คชื่อเข้าเรียน
+          และ<strong>รีเซ็ตรหัสผ่านให้นักเรียนที่ลืมรหัส</strong>ได้อย่างครบวงจร
+        </p>
+      </div>
+
+      <!-- Quick Flow Grid -->
+      <div class="flow-grid">
+        <div class="flow-item">
+          <div class="flow-item-num" style="background:#16a34a;">1</div>
+          <div class="flow-item-title">เข้าสู่ระบบ</div>
+          <div class="flow-item-desc">รหัสผ่านครูผู้สอน</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num" style="background:#16a34a;">2</div>
+          <div class="flow-item-title">แดชบอร์ดสอน</div>
+          <div class="flow-item-desc">ตรวจดูรอบที่รับผิดชอบ</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num" style="background:#16a34a;">3</div>
+          <div class="flow-item-title">ปรับเวลา/ห้อง/งด</div>
+          <div class="flow-item-desc">แก้ไขข้อมูลการสอน</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num" style="background:#0284c7;">4</div>
+          <div class="flow-item-title">เปิดรับลงทะเบียน</div>
+          <div class="flow-item-desc">ตั้งค่าโควตาออนไลน์</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num" style="background:#16a34a;">5</div>
+          <div class="flow-item-title">เลือกเด็กหลายห้อง</div>
+          <div class="flow-item-desc">Multi-Room Selector</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-item-num" style="background:#f59e0b;">6</div>
+          <div class="flow-item-title">รีเซ็ตรหัสนักเรียน</div>
+          <div class="flow-item-desc">กรณีนักเรียนลืมรหัส</div>
+        </div>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ขั้นตอนที่ 1</span>
+          <h3 class="step-title">การเข้าสู่ระบบครูผู้สอน (Teacher Login)</h3>
+        </div>
+        <p>คุณครูผู้สอนเข้าสู่ระบบเพื่อจัดการข้อมูลคลินิกวิชาการตามขั้นตอนดังนี้:</p>
+        <div class="mockup-box">
+          <div class="mockup-label">🔐 ขั้นตอนการเข้าสู่ระบบ</div>
+          <ol style="margin:4px 0;padding-left:20px;line-height:1.8;">
+            <li>คลิกปุ่ม <strong>"🔑 เข้าสู่ระบบ"</strong> ที่มุมขวาบนของหน้าเว็บ (หรือไปที่หน้า <code>login.html</code>)</li>
+            <li>หน้าเข้าสู่ระบบมี 3 แบบ (นักเรียน / ครูผู้สอน / Admin) ให้คลิกเลือก <strong>"👩‍🏫 ครูผู้สอน" (Teacher)</strong></li>
+            <li>กรอกข้อมูลเข้าสู่ระบบ: <strong>กรอกชื่อผู้ใช้ (Username) และรหัสผ่านประจำตัวครู (รหัสที่ได้รับจาก admin ระบบ)</strong></li>
+            <li>คลิกปุ่ม <strong>"เข้าสู่ระบบ"</strong> ระบบจะนำท่านเข้าสู่หน้า <strong>"ระบบครูผู้สอน" (teacher.html)</strong> โดยอัตโนมัติ</li>
+          </ol>
+        </div>
+        <div class="alert-box-ui alert-tip-ui">
+          💡 <strong>หมายเหตุ:</strong> ระบบจำการเข้าสู่ระบบไว้ในเบราว์เซอร์อย่างปลอดภัย เมื่อเปิดใช้งานในครั้งถัดไปจะไม่ต้องกรอกรหัสผ่านซ้ำจนกว่าจะกด "ออกจากระบบ"
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ขั้นตอนที่ 2</span>
+          <h3 class="step-title">หน้าแดชบอร์ดและการตรวจสอบรอบการสอน</h3>
+        </div>
+        <p>ในหน้าแดชบอร์ดครูผู้สอน ระบบจะแสดงการ์ดรอบการสอนเฉพาะวิชาและระดับชั้นที่ท่านรับผิดชอบ พร้อมปุ่มเครื่องมือครบครัน:</p>
+        <ul>
+          <li><strong><code>✏️ แก้ไขข้อมูล</code> :</strong> ปรับเปลี่ยนเวลาสอน ห้องเรียน หัวข้อเรื่องที่ติว (Topic) หรือแจ้งสถานะงดสอน</li>
+          <li><strong><code>📝 ลงทะเบียนนักเรียน</code> :</strong> เปิดรับลงทะเบียนออนไลน์ กำหนดโควตาที่นั่ง หรือจัดการรายชื่อผู้สมัคร</li>
+          <li><strong><code>📋 กรอกรายชื่อ</code> :</strong> คัดเลือกและบันทึกรายชื่อนักเรียนแบบเลือกได้หลายห้องพร้อมกัน (Multi-Room)</li>
+          <li><strong><code>📅 ลงปฏิทิน</code> :</strong> เพิ่มรอบสอนเข้า Google Calendar ส่วนตัวของครู</li>
+        </ul>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ขั้นตอนที่ 3</span>
+          <h3 class="step-title">การปรับปรุงข้อมูลรอบสอน (เวลา / ห้อง / หัวข้อเรื่อง / สถานะงดสอน)</h3>
+        </div>
+        <p>หากมีการเปลี่ยนแปลงสถานที่ เวลา หรือติดราชการจำเป็น:</p>
+        <ol style="line-height:1.75;">
+          <li>คลิกปุ่ม <strong>"✏️ แก้ไข"</strong> ในการ์ดรอบการสอนนั้น</li>
+          <li>ปรับเปลี่ยนข้อมูล: <strong>เวลาสอน</strong>, <strong>ห้องเรียน</strong> (เช่น ห้องศูนย์การเรียนรู้คณิตศาสตร์), <strong>หัวข้อเรื่องที่สอน (Topic)</strong> เพื่อให้นักเรียนทราบเนื้อหาล่วงหน้า, หรือ <strong>สถานะการสอน</strong> (เปิดสอน หรือ งดสอน)</li>
+          <li>คลิก <strong>"💾 บันทึกการเปลี่ยนแปลง"</strong> ข้อมูลจะอัปเดตไปยังหน้าตารางสอนของนักเรียนทันทีแบบเรียลไทม์</li>
+        </ol>
+        <div class="alert-box-ui alert-warn-ui">
+          ⚠️ <strong>ข้อควรปฏิบัติเมื่อต้องงดสอน:</strong> กรุณาเปลี่ยนสถานะเป็น "งดสอน" ล่วงหน้าอย่างน้อยภายในเวลา 16.30 น. ของวันนั้น เพื่อให้นักเรียนและครูหอพักทราบล่วงหน้า
+        </div>
+      </div>
+
+      <!-- STEP 4 (NEW HIGHLIGHT) -->
+      <div class="guide-card" style="border-left:4px solid #0284c7;">
+        <div class="guide-step-header">
+          <span class="step-badge">ขั้นตอนที่ 4 (ฟังก์ชันใหม่!)</span>
+          <h3 class="step-title">การตั้งค่าเปิดรับลงทะเบียนออนไลน์ & กำหนดโควตานักเรียน (Registration & Quota)</h3>
+        </div>
+        <p>คุณครูสามารถเปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ด้วยตนเองผ่านระบบ พร้อมกำหนดจำนวนที่นั่งสูงสุด (โควตา) ได้ตามขั้นตอนดังนี้:</p>
+
+        <ol style="font-size:0.95rem;line-height:1.75;">
+          <li>คลิกปุ่ม <strong>"📝 ลงทะเบียนนักเรียน"</strong> บนการ์ดรอบการสอน</li>
+          <li>หน้าต่าง <strong>"ตั้งค่าการเปิดรับลงทะเบียนนักเรียน"</strong> จะปรากฏขึ้นมา:
+            <ul>
+              <li><strong>สวิตช์เปิดรับลงทะเบียน:</strong> ติ๊กเปิดสวิตช์ <em>"เปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ด้วยตนเอง"</em> เพื่อให้นักเรียนสามารถกดสมัครได้จากหน้าตารางสอน</li>
+              <li><strong>จำกัดจำนวนที่นั่ง (โควตาคน):</strong> กรอกจำนวนนักเรียนสูงสุดที่รับได้ เช่น <code>15</code> หรือ <code>20</code> คน (หรือเว้นว่างไว้หากไม่ต้องการจำกัดจำนวน)</li>
+              <li><strong>แถบสถานะแบบเรียลไทม์:</strong> ระบบจะแสดงสถานะให้เห็นชัดเจน:
+                <div style="margin:6px 0;display:flex;gap:8px;flex-wrap:wrap;">
+                  <span class="badge-quota">🟢 เปิดรับลงทะเบียน (12/15 คน)</span>
+                  <span class="tag-chip tag-chip-red">⛔ ครบตามจำนวนแล้ว (15/15 คน)</span>
+                  <span class="tag-chip tag-chip-yellow">⚪ ยังไม่เปิดรับสมัคร</span>
+                </div>
+              </li>
+            </ul>
+          </li>
+          <li><strong>การจัดการรายชื่อที่นักเรียนสมัครเข้ามา:</strong> คุณครูสามารถดูรายชื่อนักเรียนที่กดลงทะเบียนออนไลน์เข้ามาในตารางด้านล่าง และสามารถคลิกปุ่มถอดถอนรายชื่อ <code>✕ ลบ</code> ได้หากนักเรียนแจ้งสละสิทธิ์
+            <br><span style="color:#475569;">(นักเรียนยกเลิกการลงทะเบียนเองได้ระหว่างที่ครูยังเปิดรับลงทะเบียนและยังไม่ถึงวันเรียน ถ้าครูปิดรับลงทะเบียนแล้ว นักเรียนจะยกเลิกเองไม่ได้ ต้องแจ้งครู)</span></li>
+          <li>คลิกปุ่ม <strong>"💾 บันทึกการตั้งค่า"</strong> ข้อมูลจะถูกนำไปอัปเดตบนหน้าเว็บของนักเรียนทันที</li>
+        </ol>
+
+        <!-- Visual Mockup Window for Teacher Registration Settings -->
+        <div class="mockup-window">
+          <div class="mockup-window-header">
+            <span>⚙️ ตั้งค่าการเปิดรับลงทะเบียนนักเรียน (จำลองหน้าจอคุณครู)</span>
+            <span style="color:#64748b;cursor:pointer;">✕</span>
+          </div>
+          <div class="mockup-window-body">
+            <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:12px;border-radius:8px;margin-bottom:14px;">
+              <strong style="color:#0f172a;font-size:1rem;">วิชา: แคลคูลัสเบื้องต้น (ระดับชั้น ม.5)</strong>
+              <div style="font-size:0.85rem;color:#475569;margin-top:2px;">วันอังคาร 3 พ.ย. 2569 &bull; เวลา 18:30–20:00 น. &bull; ห้องศูนย์การเรียนรู้คณิตศาสตร์</div>
+            </div>
+
+            <!-- Toggle Switch UI Mockup -->
+            <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+              <div>
+                <div style="font-weight:700;color:#166534;font-size:0.95rem;">เปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ด้วยตนเอง</div>
+                <div style="font-size:0.82rem;color:#15803d;">เมื่อเปิดใช้งาน นักเรียนจะเห็นปุ่ม "ลงทะเบียนเข้าเรียน" บนหน้าตารางสอน</div>
+              </div>
+              <div class="mockup-switch-ui">
+                <span style="color:#166534;font-weight:700;">เปิดใช้งาน</span>
+                <span class="mockup-toggle-btn"></span>
+              </div>
+            </div>
+
+            <div style="margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div>
+                <label style="font-weight:700;font-size:0.88rem;color:#0f172a;">จำกัดจำนวนที่นั่งสูงสุด (โควตาคน):</label>
+                <input type="number" class="form-control" value="15" readonly style="margin-top:4px;padding:6px 12px;border:1.5px solid #cbd5e1;border-radius:6px;width:100%;font-weight:700;">
+                <span style="font-size:0.75rem;color:#64748b;">(ใส่ 0 หรือเว้นว่าง หากไม่จำกัดจำนวน)</span>
+              </div>
+              <div>
+                <label style="font-weight:700;font-size:0.88rem;color:#0f172a;">สถานะปัจจุบัน:</label>
+                <div style="margin-top:6px;">
+                  <span class="badge-quota" style="font-size:0.9rem;padding:6px 14px;">🟢 เปิดรับลงทะเบียน (12/15 คน)</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="text-align:right;">
+              <button class="btn btn-outline btn-sm" style="margin-right:8px;">ปิด</button>
+              <button class="btn btn-primary btn-sm" style="font-weight:700;padding:6px 20px;">💾 บันทึกการตั้งค่า</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ขั้นตอนที่ 5</span>
+          <h3 class="step-title">การลงทะเบียนนักเรียนแบบเลือกได้หลายห้อง (Multi-Room Selector)</h3>
+        </div>
+        <p>กรณีที่คุณครูต้องการกำหนดหรือคัดเลือกรายชื่อนักเรียนด้วยตนเอง ระบบรองรับการเลือกนักเรียนจากหลายห้องเรียนได้พร้อมกันในหน้าเดียว:</p>
+
+        <div class="mockup-box">
+          <div class="mockup-label">👥 หน้าต่างจัดการรายชื่อนักเรียน (ATTENDANCE MODAL)</div>
+          <div style="background:#fff;border:1px solid #cbd5e1;padding:12px;border-radius:8px;">
+            <div style="font-weight:700;margin-bottom:6px;color:#0f172a;">1. เลือกห้องเรียนที่ต้องการ (เลือกได้หลายห้องพร้อมกัน):</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+              <span class="tag-chip tag-chip-blue" style="background:#0284c7;color:#fff;">✓ ม.5/1</span>
+              <span class="tag-chip tag-chip-blue" style="background:#0284c7;color:#fff;">✓ ม.5/2</span>
+              <span class="tag-chip tag-chip-blue">ม.5/3</span>
+              <span class="tag-chip tag-chip-blue">ม.5/4</span>
+              <span class="tag-chip tag-chip-blue">ม.5/5</span>
+              <span class="tag-chip tag-chip-blue">ม.5/6</span>
+              <span class="tag-chip tag-chip-yellow" style="cursor:pointer;">[ เลือกทุกห้อง ]</span>
+              <span class="tag-chip tag-chip-yellow" style="cursor:pointer;">[ ล้างห้อง ]</span>
+            </div>
+            <div style="border-top:1px dashed #e2e8f0;padding-top:8px;display:flex;gap:10px;flex-wrap:wrap;">
+              <span class="tag-chip tag-chip-green" style="cursor:pointer;">✓ ติ๊กทั้งหมดในห้องที่แสดง</span>
+              <span class="tag-chip tag-chip-red" style="cursor:pointer;">✕ ล้างที่เลือกทั้งหมด</span>
+            </div>
+          </div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:0.92rem;">
+          <tr style="background:#f1f5f9;border:1px solid #cbd5e1;">
+            <th style="padding:8px 12px;text-align:left;width:30%;">ปุ่มฟังก์ชัน</th>
+            <th style="padding:8px 12px;text-align:left;">ประโยชน์และการทำงาน</th>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;">
+            <td style="padding:8px 12px;"><strong>ปุ่มเลือกห้อง (1, 2, 3...)</strong></td>
+            <td style="padding:8px 12px;">สามารถคลิกเลือกหลายห้องพร้อมกันได้ รายชื่อเด็กของทุกห้องที่เลือกจะนำมาแสดงรวมกันทันที</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
+            <td style="padding:8px 12px;"><strong>เลือกทุกห้อง / ล้างห้อง</strong></td>
+            <td style="padding:8px 12px;">ช่วยเปิดดูนักเรียนทั้งระดับชั้นในคลิกเดียว หรือรีเซ็ตเพื่อเลือกเฉพาะบางห้อง</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;">
+            <td style="padding:8px 12px;"><strong>ติ๊กทั้งหมดในห้องที่แสดง</strong></td>
+            <td style="padding:8px 12px;">ติ๊กเลือกนักเรียนทุกคนในห้องที่กำลังแสดงอยู่ทันที เหมาะสำหรับวิชาที่เรียนทั้งห้อง</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
+            <td style="padding:8px 12px;"><strong>ระบบจำสถานะข้ามห้อง</strong></td>
+            <td style="padding:8px 12px;">นักเรียนที่ติ๊กเลือกไว้แล้ว จะไม่สูญหายแม้คุณครูจะสลับไปคลิกดูห้องอื่น</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- STEP 6: RESET STUDENT PASSWORD -->
+      <div class="guide-card" style="border-left:4px solid #f59e0b;">
+        <div class="guide-step-header">
+          <span class="step-badge">ขั้นตอนที่ 6</span>
+          <h3 class="step-title">การรีเซ็ตรหัสผ่านนักเรียน (กรณีนักเรียนลืมรหัส)</h3>
+        </div>
+        <p>เมื่อนักเรียนแจ้งว่าลืมรหัสผ่าน หรือบัญชีถูกล็อก คุณครูรีเซ็ตให้ได้ทันที:</p>
+        <ol style="font-size:0.95rem;line-height:1.75;">
+          <li>ที่หน้า <strong>"👩‍🏫 ระบบครู"</strong> เลื่อนลงไปที่กล่อง <strong>"🔑 รีเซ็ตรหัสผ่านนักเรียน"</strong> (ด้านล่างรายการรอบสอน)</li>
+          <li>กรอก <strong>รหัสประจำตัวนักเรียน</strong> (เช่น <code>02456</code>) แล้วกด <strong>"รีเซ็ตรหัสผ่าน"</strong></li>
+          <li>ระบบจะถามยืนยันพร้อมแสดงชื่อนักเรียน ตรวจสอบว่าถูกคน แล้วกดตกลง</li>
+          <li>ระบบจะแสดง <strong>รหัสผ่านใหม่ 6 หลัก</strong> <u>เพียงครั้งเดียว</u> ให้แจ้งนักเรียนโดยตรง (ไม่ควรประกาศในกลุ่ม)</li>
+          <li>นักเรียนเข้าสู่ระบบด้วยรหัสใหม่ แล้วระบบจะบังคับให้ตั้งรหัสผ่านใหม่ของตนเอง</li>
+        </ol>
+
+        <div class="mockup-box">
+          <div class="mockup-label">🔑 กล่องรีเซ็ตรหัสผ่านนักเรียน (หน้าระบบครู)</div>
+          <div style="background:#fff;border:1px solid #cbd5e1;padding:12px;border-radius:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <input type="text" class="form-control" value="02456" readonly style="max-width:240px;background:#f8fafc;padding:6px 12px;border:1.5px solid #cbd5e1;border-radius:6px;">
+            <button class="btn btn-primary btn-sm">รีเซ็ตรหัสผ่าน</button>
+          </div>
+        </div>
+
+        <div class="alert-box-ui alert-tip-ui">
+          💡 <strong>ข้อควรรู้:</strong> รีเซ็ตแล้วรหัสเดิมใช้ไม่ได้ทันที และบัญชีที่ถูกล็อก (ใส่รหัสผิด 5 ครั้ง) จะปลดล็อกให้ด้วย
+          · ถ้าลืมรหัสที่ระบบแสดง ให้กดรีเซ็ตใหม่อีกครั้งได้ · ผู้ดูแลระบบ (Admin) รีเซ็ตได้จากปุ่ม 🔑 ในตารางนักเรียนเช่นกัน
+        </div>
+      </div>
+
+      <!-- STEP 7: STUDENT ACCOUNTS OVERVIEW -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ข้อมูลสำหรับตอบคำถามนักเรียน</span>
+          <h3 class="step-title">ระบบบัญชีนักเรียนทำงานอย่างไร</h3>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:0.92rem;">
+          <tr style="background:#f1f5f9;border:1px solid #cbd5e1;">
+            <th style="padding:8px 12px;text-align:left;width:32%;">เรื่อง</th>
+            <th style="padding:8px 12px;text-align:left;">รายละเอียด</th>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;">
+            <td style="padding:8px 12px;"><strong>ชื่อผู้ใช้ของนักเรียน</strong></td>
+            <td style="padding:8px 12px;">รหัสประจำตัวนักเรียน 5 หลัก · รหัสผ่านครั้งแรก <code>1234</code> และต้องตั้งรหัสใหม่ก่อนลงทะเบียน</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
+            <td style="padding:8px 12px;"><strong>การลงทะเบียน</strong></td>
+            <td style="padding:8px 12px;">นักเรียนต้องเข้าสู่ระบบก่อน และลงทะเบียนได้เฉพาะชื่อตนเอง เฉพาะวิชาของระดับชั้นตนเอง (ลงชื่อแทนเพื่อนไม่ได้)</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;">
+            <td style="padding:8px 12px;"><strong>การยกเลิกโดยนักเรียน</strong></td>
+            <td style="padding:8px 12px;">ทำได้เองที่หน้าของฉัน ระหว่างที่ครูยังเปิดรับลงทะเบียนและยังไม่ผ่านวันเรียน</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
+            <td style="padding:8px 12px;"><strong>ครูเพิ่มรายชื่อแทนนักเรียน</strong></td>
+            <td style="padding:8px 12px;">ยังทำได้ตามปกติจากหน้าระบบครู (ขั้นตอนที่ 5) ไม่ต้องใช้บัญชีนักเรียน</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;">
+            <td style="padding:8px 12px;"><strong>บัญชีถูกล็อก</strong></td>
+            <td style="padding:8px 12px;">ใส่รหัสผิด 5 ครั้งติดกัน ล็อก 15 นาที หรือครูรีเซ็ตรหัสให้เพื่อปลดล็อกทันที</td>
+          </tr>
+        </table>
+      </div>
+
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-school">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
+    <div class="footer-dev">พัฒนาระบบโดย ครูฉวีวรรณ อรุณถาวร และครูชลธีร์ จันทร์ลอย</div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
+  <script src="js/firebase-config.js?v=2569_16"></script>
+  <script src="js/supabase-api.js?v=2569_16"></script>
+  <script src="js/db.js?v=2569_16"></script>
+  <script src="js/auth.js?v=2569_16"></script>
+  <!-- AUTH-GUARD: คู่มือครูเปิดได้หลังเข้าสู่ระบบครู/Admin -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const session = AuthService.requireAuth(['teacher', 'admin']);
+      if (!session) return;
+      const ui = document.getElementById('nav-user-info');
+      if (ui) ui.textContent = session.displayName;
+      if (session.role === 'admin') document.getElementById('nav-admin-link')?.classList.remove('hidden');
+    });
+  </script>
+</body>
+</html>

@@ -94,6 +94,28 @@ const StudentAuth = {
   }
 };
 
+// ─── แถบเมนูหน้าสาธารณะ: นักเรียนที่ login อยู่ → ปุ่ม "เข้าสู่ระบบ" กลายเป็นชื่อนักเรียน + ปุ่มออกจากระบบ
+//     (ถ้าครู/Admin login อยู่ ใช้แถบเมนูของครูตามเดิม)
+function updateNavbarStudent() {
+  if (typeof AuthService !== 'undefined' && AuthService.getSession()) return;
+  const s = StudentAuth.getSession();
+  if (!s || !s.student) return;
+  const loginBtn = document.getElementById('nav-login-btn');
+  if (loginBtn) {
+    loginBtn.textContent = `🎓 ${s.student.name}`;
+    loginBtn.href = 'student.html';
+    loginBtn.title = 'ประวัติการลงทะเบียน / เปลี่ยนรหัสผ่าน';
+  }
+  const logoutBtn = document.getElementById('nav-logout-btn');
+  if (logoutBtn) {
+    logoutBtn.classList.remove('hidden');
+    logoutBtn.onclick = async () => {
+      await StudentAuth.logout();
+      window.location.reload();
+    };
+  }
+}
+
 // ─── ใช้ในหน้าครู/Admin: รีเซ็ตรหัสนักเรียน แล้วแสดงรหัสใหม่ให้ครูดูครั้งเดียว
 async function staffResetStudentPasswordUI(code, name) {
   const label = name ? `${name} (รหัสประจำตัว ${code})` : `รหัสประจำตัว ${code}`;

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>คู่มือการใช้งานระบบ — คลินิกวิชาการ PCSHSPT</title>
+  <title>คู่มือนักเรียน — คลินิกวิชาการ PCSHSPT</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="stylesheet" href="css/style.css">
   <style>
@@ -361,7 +361,7 @@
         <div class="navbar-title">
           <h1 class="brand-title-full">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</h1>
           <h1 class="brand-title-short">คู่มือการใช้งาน PCSHSPT</h1>
-          <p>ระบบคลินิกวิชาการ | คู่มือการใช้งานระบบ</p>
+          <p>ระบบคลินิกวิชาการ | คู่มือการใช้งานสำหรับนักเรียน</p>
         </div>
       </div>
       <nav class="navbar-nav">
@@ -369,6 +369,8 @@
         <a href="attendance.html" class="nav-link">📋 สรุปการเข้าเรียน</a>
         <a href="manual.html" class="nav-link active">📖 คู่มือการใช้งาน</a>
         <a href="login.html" class="nav-link nav-btn nav-btn-login" id="nav-login-btn">🔑 เข้าสู่ระบบ</a>
+        <span class="nav-link hidden" id="nav-user-info" style="background:rgba(255,255,255,.1);border-radius:8px;"></span>
+        <button class="nav-btn nav-btn-logout hidden" id="nav-logout-btn" onclick="AuthService.logout()">ออกจากระบบ</button>
       </nav>
     </div>
   </nav>
@@ -378,8 +380,8 @@
     <div class="hero-inner">
       <div class="hero-badge">📖</div>
       <div class="hero-text">
-        <h1>คู่มือการใช้งานระบบคลินิกวิชาการ</h1>
-        <p>ขั้นตอนการใช้งานฉบับสมบูรณ์ พร้อมภาพประกอบและปุ่มดาวน์โหลดไฟล์ PDF</p>
+        <h1>คู่มือการใช้งานสำหรับนักเรียน</h1>
+        <p>วิธีดูตารางคลินิก เข้าสู่ระบบด้วยรหัสประจำตัว ลงทะเบียนเรียน และยกเลิกการลงทะเบียน</p>
         <span class="hero-sub">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</span>
       </div>
     </div>
@@ -402,27 +404,7 @@
           <span>📄</span>
           <span>PDF คู่มือนักเรียน</span>
         </a>
-        <a href="คู่มือการใช้งาน_ส่วนของครูผู้สอน.pdf" download class="btn-pdf btn-pdf-teacher">
-          <span>📄</span>
-          <span>PDF คู่มือครูผู้สอน</span>
-        </a>
-        <a href="คู่มือการใช้งาน_ระบบคลินิกวิชาการ_PCSHSPT.pdf" download class="btn-pdf btn-pdf-all">
-          <span>📘</span>
-          <span>PDF ฉบับรวมทุกส่วน</span>
-        </a>
       </div>
-    </div>
-
-    <!-- ROLE SELECTOR TABS -->
-    <div class="role-tabs manual-nav-tabs">
-      <button class="role-tab manual-tab-btn active" id="tab-btn-student" onclick="switchRoleTab('student')">
-        <span>👨‍🎓</span>
-        <span>1. ส่วนของนักเรียน (ม.1 – ม.6)</span>
-      </button>
-      <button class="role-tab manual-tab-btn" id="tab-btn-teacher" onclick="switchRoleTab('teacher')">
-        <span>👩‍🏫</span>
-        <span>2. ส่วนของครูผู้สอนรายวิชา</span>
-      </button>
     </div>
 
     <!-- ═════════════════════════════════════════════════════════ -->
@@ -435,8 +417,10 @@
           🎯 สรุปภาพรวมสำหรับนักเรียน
         </h3>
         <p style="margin:0;font-size:0.95rem;color:#334155;line-height:1.6;">
-          นักเรียนสามารถเปิดตรวจสอบตารางสอนเสริมคลินิกวิชาการ <strong>ลงทะเบียนเข้าเรียนออนไลน์ด้วยตนเองในวิชาที่เปิดรับสมัคร</strong> ตรวจสอบรายชื่อที่มีสิทธิ์เข้าเรียน ตลอดจนกดบันทึกนัดหมายลงใน Google Calendar บนสมาร์ทโฟนได้ทันที 
-          <strong>โดยไม่ต้องเข้าสู่ระบบและไม่ต้องจำรหัสผ่าน</strong>
+          นักเรียน<strong>เปิดดูตารางคลินิกวิชาการได้ทันทีโดยไม่ต้องเข้าสู่ระบบ</strong>
+          แต่การ<strong>ลงทะเบียนเรียนต้องเข้าสู่ระบบนักเรียนก่อน</strong> โดยใช้<strong>รหัสประจำตัวนักเรียน</strong>เป็นชื่อผู้ใช้
+          ระบบจะลงทะเบียนได้เฉพาะชื่อของตนเองเท่านั้น (ลงชื่อแทนเพื่อนไม่ได้) และนักเรียนสามารถดูประวัติการลงทะเบียน
+          ยกเลิกการลงทะเบียน และเปลี่ยนรหัสผ่านได้ด้วยตนเอง
         </p>
       </div>
 
@@ -445,27 +429,27 @@
         <div class="flow-item">
           <div class="flow-item-num">1</div>
           <div class="flow-item-title">เปิดตารางสอน</div>
-          <div class="flow-item-desc">เข้าผ่านเว็บเบราว์เซอร์</div>
+          <div class="flow-item-desc">ดูได้เลย ไม่ต้องเข้าสู่ระบบ</div>
         </div>
         <div class="flow-item">
           <div class="flow-item-num">2</div>
-          <div class="flow-item-title">เลือกระดับชั้น</div>
-          <div class="flow-item-desc">ม.1 ถึง ม.6 (ค่าเริ่มต้น ม.1)</div>
+          <div class="flow-item-title">เข้าสู่ระบบ</div>
+          <div class="flow-item-desc">รหัสประจำตัว + รหัสผ่าน</div>
         </div>
         <div class="flow-item">
           <div class="flow-item-num">3</div>
-          <div class="flow-item-title">ดูการ์ดวิชา</div>
-          <div class="flow-item-desc">วัน เวลา ห้อง และสถานะ</div>
+          <div class="flow-item-title">ตั้งรหัสผ่านใหม่</div>
+          <div class="flow-item-desc">ครั้งแรกเท่านั้น (เริ่มต้น 1234)</div>
         </div>
         <div class="flow-item">
           <div class="flow-item-num" style="background:#16a34a;">4</div>
-          <div class="flow-item-title">ลงทะเบียนออนไลน์</div>
-          <div class="flow-item-desc">กดสมัครเข้าเรียนด้วยตนเอง</div>
+          <div class="flow-item-title">ลงทะเบียนเรียน</div>
+          <div class="flow-item-desc">กดลงทะเบียนในชื่อตนเอง</div>
         </div>
         <div class="flow-item">
           <div class="flow-item-num">5</div>
-          <div class="flow-item-title">ตรวจรายชื่อตนเอง</div>
-          <div class="flow-item-desc">เช็คความถูกต้องในตาราง</div>
+          <div class="flow-item-title">ดูประวัติ / ยกเลิก</div>
+          <div class="flow-item-desc">ที่หน้าของฉัน (🎓 ชื่อ)</div>
         </div>
         <div class="flow-item">
           <div class="flow-item-num">6</div>
@@ -478,9 +462,9 @@
       <div class="guide-card">
         <div class="guide-step-header">
           <span class="step-badge">ขั้นตอนที่ 1</span>
-          <h3 class="step-title">การเข้าใช้งานระบบ (Public Access ไม่ต้องล็อกอิน)</h3>
+          <h3 class="step-title">การเปิดดูตารางคลินิก (ไม่ต้องเข้าสู่ระบบ)</h3>
         </div>
-        <p>นักเรียนสามารถเปิดดูตารางเรียนและลงทะเบียนได้ทันทีผ่านเว็บเบราว์เซอร์บนสมาร์ทโฟน แท็บเล็ต หรือคอมพิวเตอร์ โดยไม่ต้องล็อกอิน:</p>
+        <p>นักเรียนเปิดดูตารางคลินิก รายชื่อผู้ลงทะเบียน และบันทึกลง Google Calendar ได้ทันทีผ่านเว็บเบราว์เซอร์บนสมาร์ทโฟน แท็บเล็ต หรือคอมพิวเตอร์ <strong>โดยไม่ต้องเข้าสู่ระบบ</strong> (ต้องเข้าสู่ระบบเฉพาะตอนลงทะเบียนเรียน ดูขั้นตอนที่ 4):</p>
         <div class="alert-box-ui alert-tip-ui" style="margin-top:10px;">
           💡 <strong>แนะนำการ Add to Home Screen:</strong> นักเรียนสามารถกด <strong>"Add to Home Screen (เพิ่มไปยังหน้าจอโฮม)"</strong> บนสมาร์ทโฟน เพื่อเปิดดูตารางเรียนได้สะดวกรวดเร็วเหมือนแอปพลิเคชัน
         </div>
@@ -566,7 +550,7 @@
           </tr>
           <tr style="border:1px solid #e2e8f0;">
             <td style="padding:8px 12px;"><strong><span class="badge-quota">🟢 เปิดรับสมัคร</span></strong></td>
-            <td style="padding:8px 12px;">วิชานี้เปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ได้ด้วยตนเอง มีปุ่ม <strong>"➕ ลงทะเบียนเข้าเรียน"</strong></td>
+            <td style="padding:8px 12px;">วิชานี้เปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ได้ด้วยตนเอง มีปุ่ม <strong>"➕ ลงทะเบียนเข้าเรียน"</strong> (ต้องเข้าสู่ระบบนักเรียนก่อน)</td>
           </tr>
           <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
             <td style="padding:8px 12px;"><strong><span class="tag-chip tag-chip-red">⛔ เต็มแล้ว</span></strong></td>
@@ -575,29 +559,72 @@
         </table>
       </div>
 
-      <!-- STEP 4 (NEW HIGHLIGHT) -->
-      <div class="guide-card" style="border-left:4px solid #16a34a;">
+      <!-- STEP 4: LOGIN -->
+      <div class="guide-card" style="border-left:4px solid #0284c7;">
         <div class="guide-step-header">
-          <span class="step-badge step-badge-green">ขั้นตอนที่ 4 (ฟังก์ชันใหม่!)</span>
-          <h3 class="step-title">ระบบลงทะเบียนเรียนออนไลน์ด้วยตนเอง (Student Self-Registration)</h3>
+          <span class="step-badge">ขั้นตอนที่ 4</span>
+          <h3 class="step-title">การเข้าสู่ระบบนักเรียน และตั้งรหัสผ่านครั้งแรก</h3>
         </div>
-        <p>สำหรับวิชาที่ครูผู้สอนเปิดรับลงทะเบียนออนไลน์ นักเรียนสามารถลงทะเบียนเรียนได้ง่ายๆ ด้วยตนเองใน 3 ขั้นตอน:</p>
-
+        <p>ก่อนลงทะเบียนเรียน นักเรียนต้องเข้าสู่ระบบด้วยบัญชีของตนเอง:</p>
         <ol style="font-size:0.95rem;line-height:1.75;">
-          <li>คลิกปุ่ม <strong>"➕ ลงทะเบียนเข้าเรียน"</strong> บนการ์ดวิชา หรือคลิกปุ่มลงทะเบียนในหน้าต่างรายละเอียดวิชา</li>
-          <li>หน้าต่าง <strong>"ลงทะเบียนเรียนคลินิกวิชาการ"</strong> จะเปิดขึ้นมา โดยระบบจะคัดกรองเฉพาะรายชื่อนักเรียนในระดับชั้นของวิชานั้น (ม.1 – ม.6) ให้อัตโนมัติ:
+          <li>คลิกปุ่ม <strong>"🔑 เข้าสู่ระบบ"</strong> ที่มุมขวาบนของหน้าเว็บ แล้วเลือก <strong>"🎓 นักเรียน"</strong></li>
+          <li>กรอก <strong>รหัสประจำตัวนักเรียน</strong> (ตัวเลข 5 หลัก เช่น <code>02456</code>) และ <strong>รหัสผ่าน</strong></li>
+          <li><strong>เข้าสู่ระบบครั้งแรก</strong> ให้ใช้รหัสผ่าน <code>1234</code> ระบบจะให้ตั้งรหัสผ่านใหม่ทันที:
             <ul>
-              <li><strong>ช่องค้นหา:</strong> พิมพ์ชื่อ-นามสกุล หรือเลขห้อง เพื่อค้นหารายชื่อตนเองได้อย่างสะดวกรวดเร็ว</li>
-              <li><strong>การรักษาความเป็นส่วนตัว:</strong> ตัวเลือกจะแสดงเฉพาะ <strong>ระดับชั้น, ห้อง, เลขที่ และชื่อ-นามสกุล</strong> (ไม่มีการแสดงรหัสประจำตัวหรือข้อมูลหอพัก)</li>
-              <li><strong>ระบบตรวจสอบความถูกต้อง:</strong> เมื่อคลิกเลือกชื่อตนเอง ระบบจะตรวจสอบสถานะทันที:
-                <div style="margin:8px 0;display:flex;gap:10px;flex-wrap:wrap;">
-                  <span class="tag-chip tag-chip-green">✅ พร้อมลงทะเบียน (กรณีไม่เคยลงทะเบียนมาก่อน)</span>
-                  <span class="tag-chip tag-chip-red">⚠️ รายชื่อนี้ได้ลงทะเบียนไปแล้ว (ป้องกันการกดซ้ำ)</span>
-                </div>
-              </li>
+              <li>รหัสผ่านใหม่ต้องมี <strong>อย่างน้อย 6 ตัวอักษร</strong></li>
+              <li>ห้ามใช้ <code>1234</code> หรือรหัสประจำตัวของตนเองเป็นรหัสผ่าน</li>
+              <li><strong>ต้องตั้งรหัสผ่านใหม่ก่อน จึงจะลงทะเบียนเรียนได้</strong></li>
             </ul>
           </li>
-          <li>คลิกปุ่มสีเขียว <strong>"✓ ยืนยันการลงทะเบียน (1 คน)"</strong> ระบบจะบันทึกรายชื่อนักเรียนเข้าสู่คลินิกทันที และยอดผู้เรียนจะอัปเดตแบบเรียลไทม์!</li>
+          <li>เมื่อเข้าสู่ระบบแล้ว มุมขวาบนจะแสดง <strong>"🎓 ชื่อของนักเรียน"</strong> แทนปุ่มเข้าสู่ระบบ</li>
+        </ol>
+
+        <div class="mockup-window">
+          <div class="mockup-window-header">
+            <span>🔑 หน้าเข้าสู่ระบบ (จำลองหน้าจอ)</span>
+          </div>
+          <div class="mockup-window-body">
+            <div style="font-weight:700;font-size:0.88rem;color:#0f172a;margin-bottom:6px;">เลือกประเภทผู้ใช้</div>
+            <div style="border:2px solid #0284c7;background:#eff6ff;border-radius:10px;padding:10px 14px;margin-bottom:6px;font-weight:700;color:#1e3a8a;">🎓 นักเรียน</div>
+            <div style="border:2px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-bottom:6px;color:#475569;">👩‍🏫 ครูผู้สอน</div>
+            <div style="border:2px solid #e2e8f0;border-radius:10px;padding:10px 14px;margin-bottom:12px;color:#475569;">⚙️ ผู้ดูแลระบบ (Admin)</div>
+            <label style="font-weight:700;font-size:0.88rem;color:#0f172a;">รหัสประจำตัวนักเรียน</label>
+            <input type="text" class="form-control" value="02456" readonly style="margin:4px 0 8px;background:#f8fafc;font-size:0.88rem;padding:6px 12px;border:1.5px solid #cbd5e1;border-radius:6px;width:100%;">
+            <label style="font-weight:700;font-size:0.88rem;color:#0f172a;">รหัสผ่าน</label>
+            <input type="password" class="form-control" value="1234" readonly style="margin:4px 0 12px;background:#f8fafc;font-size:0.88rem;padding:6px 12px;border:1.5px solid #cbd5e1;border-radius:6px;width:100%;">
+            <button class="btn btn-primary btn-sm" style="width:100%;font-weight:700;">🔑 เข้าสู่ระบบ</button>
+          </div>
+        </div>
+
+        <div class="alert-box-ui alert-warn-ui">
+          🔐 <strong>รักษารหัสผ่านของตนเอง:</strong> อย่าบอกรหัสผ่านให้ผู้อื่น และควรรีบเข้าสู่ระบบเพื่อตั้งรหัสผ่านใหม่ตั้งแต่วันแรก
+          เพราะถ้ามีคนอื่นรู้รหัสประจำตัวของเราและเข้าสู่ระบบด้วย <code>1234</code> ก่อน เขาจะลงทะเบียนในชื่อของเราได้
+        </div>
+        <div class="alert-box-ui alert-tip-ui">
+          💡 <strong>ลืมรหัสผ่าน?</strong> แจ้งครูผู้สอนคนใดก็ได้ หรือผู้ดูแลระบบ เพื่อรีเซ็ตรหัสผ่าน ครูจะได้รหัสใหม่ 6 หลักมาแจ้งให้
+          นำรหัสนั้นไปเข้าสู่ระบบ แล้วตั้งรหัสผ่านใหม่อีกครั้ง<br>
+          🔒 <strong>ใส่รหัสผิด 5 ครั้งติดกัน</strong> บัญชีจะถูกล็อกชั่วคราว 15 นาที ให้รอแล้วลองใหม่ หรือขอให้ครูรีเซ็ตรหัสผ่าน
+        </div>
+      </div>
+
+      <!-- STEP 5: REGISTRATION -->
+      <div class="guide-card" style="border-left:4px solid #16a34a;">
+        <div class="guide-step-header">
+          <span class="step-badge step-badge-green">ขั้นตอนที่ 5</span>
+          <h3 class="step-title">การลงทะเบียนเรียนออนไลน์ (ลงได้เฉพาะชื่อของตนเอง)</h3>
+        </div>
+        <p>สำหรับวิชาที่ครูผู้สอนเปิดรับลงทะเบียนออนไลน์:</p>
+
+        <ol style="font-size:0.95rem;line-height:1.75;">
+          <li>ที่หน้า <strong>"📅 ตารางสอน"</strong> คลิกปุ่ม <strong>"➕ ลงทะเบียนเข้าเรียน"</strong> บนการ์ดวิชา
+            <ul>
+              <li>ถ้ายังไม่ได้เข้าสู่ระบบ ระบบจะพาไปหน้าเข้าสู่ระบบก่อน แล้วพากลับมาที่วิชาเดิมให้อัตโนมัติ</li>
+              <li>ลงทะเบียนได้เฉพาะวิชาของ <strong>ระดับชั้นตนเอง</strong> เท่านั้น</li>
+            </ul>
+          </li>
+          <li>หน้าต่างลงทะเบียนจะแสดง <strong>ชื่อของนักเรียนที่เข้าสู่ระบบอยู่</strong> ตรวจสอบว่าเป็นชื่อของตนเอง
+            (ถ้าไม่ใช่ ให้กด <strong>"ไม่ใช่ฉัน / เปลี่ยนบัญชี"</strong> แล้วเข้าสู่ระบบด้วยบัญชีของตนเอง)</li>
+          <li>คลิกปุ่มสีเขียว <strong>"✓ ยืนยันการลงทะเบียน"</strong> ระบบจะบันทึกชื่อเข้าสู่คลินิกทันที</li>
         </ol>
 
         <!-- Visual Mockup Window -->
@@ -620,16 +647,11 @@
               </div>
             </div>
 
-            <div style="margin-bottom:10px;">
-              <label style="font-weight:700;font-size:0.88rem;color:#0f172a;">🔍 ค้นหารายชื่อนักเรียน (ระดับชั้น ม.5):</label>
-              <input type="text" class="form-control" value="สมชาย" readonly style="margin-top:4px;background:#f8fafc;font-size:0.88rem;padding:6px 12px;border:1.5px solid #cbd5e1;border-radius:6px;width:100%;">
+            <div style="font-size:0.84rem;background:#e0f2fe;border:1px solid #bae6fd;color:#0369a1;border-radius:8px;padding:8px 12px;margin-bottom:8px;">
+              💡 <strong>ลงทะเบียนในชื่อของคุณ</strong> (ตามบัญชีนักเรียนที่เข้าสู่ระบบอยู่)
             </div>
-
-            <div style="margin-bottom:12px;">
-              <label style="font-weight:700;font-size:0.88rem;color:#0f172a;">เลือกรายชื่อนักเรียน:</label>
-              <div style="border:1.5px solid #0284c7;border-radius:8px;padding:8px 12px;background:#f0f9ff;font-weight:600;color:#0369a1;margin-top:4px;">
-                ม.5/1 เลขที่ 4 | นายสมชาย ตั้งใจเรียน
-              </div>
+            <div style="text-align:right;margin-bottom:8px;">
+              <button class="btn btn-outline btn-sm">ไม่ใช่ฉัน / เปลี่ยนบัญชี</button>
             </div>
 
             <!-- Validation Box Preview -->
@@ -649,14 +671,54 @@
         </div>
 
         <div class="alert-box-ui alert-warn-ui">
-          ⚠️ <strong>ข้อควรระวัง:</strong> นักเรียน 1 คนสามารถลงทะเบียนในแต่ละคลินิกได้เพียง 1 ครั้งเท่านั้น หากขึ้นข้อความสีแดง <em>"รายชื่อนี้ได้ลงทะเบียนเรียนไปแล้ว!"</em> หมายถึงมีชื่อในระบบแล้ว ไม่จำเป็นต้องลงทะเบียนซ้ำ
+          ⚠️ <strong>ข้อควรรู้:</strong> ลงทะเบียนแต่ละวิชาได้ 1 ครั้ง และ<strong>ลงทะเบียนแทนเพื่อนไม่ได้</strong>
+          ถ้าเพื่อนต้องการเรียน ให้เพื่อนเข้าสู่ระบบด้วยบัญชีของตนเอง · ถ้าที่นั่งเต็มหรือครูปิดรับลงทะเบียนแล้ว ระบบจะแจ้งเตือนและไม่บันทึก
         </div>
       </div>
 
-      <!-- STEP 5 -->
+      <!-- STEP 6: MY PAGE -->
       <div class="guide-card">
         <div class="guide-step-header">
-          <span class="step-badge">ขั้นตอนที่ 5</span>
+          <span class="step-badge">ขั้นตอนที่ 6</span>
+          <h3 class="step-title">ดูประวัติ ยกเลิกการลงทะเบียน และเปลี่ยนรหัสผ่าน</h3>
+        </div>
+        <p>คลิก <strong>"🎓 ชื่อของนักเรียน"</strong> ที่มุมขวาบน เพื่อเปิดหน้าของฉัน:</p>
+        <ul>
+          <li><strong>📋 ประวัติการลงทะเบียนของฉัน:</strong> แสดงทุกวิชาที่ลงทะเบียนไว้ พร้อมวัน เวลา ครูผู้สอน และห้องเรียน</li>
+          <li><strong>ยกเลิกการลงทะเบียน:</strong> กดปุ่มสีแดง <strong>"ยกเลิกการลงทะเบียน"</strong> ในวิชาที่ต้องการ
+            — ยกเลิกได้เฉพาะวิชาที่ <strong>ครูยังเปิดรับลงทะเบียนอยู่</strong> และ <strong>ยังไม่ผ่านวันเรียน</strong>
+            (ถ้าไม่มีปุ่มยกเลิก ให้แจ้งครูผู้สอนโดยตรง)</li>
+          <li><strong>🔐 เปลี่ยนรหัสผ่าน:</strong> กรอกรหัสผ่านปัจจุบัน แล้วตั้งรหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</li>
+          <li><strong>ออกจากระบบ:</strong> ควรกดออกจากระบบทุกครั้งเมื่อใช้เครื่องคอมพิวเตอร์หรือโทรศัพท์ของผู้อื่น</li>
+        </ul>
+
+        <div class="mockup-window">
+          <div class="mockup-window-header">
+            <span>🎓 หน้าของฉัน (จำลองหน้าจอ)</span>
+          </div>
+          <div class="mockup-window-body">
+            <div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:10px 14px;margin-bottom:12px;">
+              <strong style="color:#1e3a8a;">นายสมชาย ตั้งใจเรียน</strong>
+              <div style="font-size:0.82rem;color:#475569;">รหัสประจำตัว 02456 • ม.5/1 เลขที่ 4</div>
+            </div>
+            <div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+              <div>
+                <strong style="color:#1e3a8a;">🔢 แคลคูลัสเบื้องต้น</strong>
+                <div style="font-size:0.82rem;color:#475569;">📅 3 พ.ย. 2569 • 🕐 18:30–20:30 น.<br>👩‍🏫 นางสาวฉวีวรรณ อรุณถาวร • 📍 ห้องศูนย์การเรียนรู้คณิตศาสตร์</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                <span class="tag-chip tag-chip-green">ลงทะเบียนแล้ว</span>
+                <button class="btn btn-danger btn-sm">ยกเลิกการลงทะเบียน</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 7 -->
+      <div class="guide-card">
+        <div class="guide-step-header">
+          <span class="step-badge">ขั้นตอนที่ 7</span>
           <h3 class="step-title">การตรวจสอบรายชื่อนักเรียนที่มีสิทธิ์เข้าเรียน</h3>
         </div>
         <p>หากต้องการตรวจสอบรายชื่อเพื่อนหรือเช็คว่าตนเองลงทะเบียนติดเรียบร้อยแล้วหรือไม่:</p>
@@ -664,14 +726,14 @@
           <li>คลิกที่ปุ่ม <strong>"👥 ดูรายชื่อนักเรียน"</strong> บนการ์ดวิชา</li>
           <li>หน้าต่างรายชื่อจะเปิดขึ้นมา พร้อมแสดงลำดับ เลขประจำตัว ชื่อ-นามสกุล ห้องเรียน และหอพัก</li>
           <li><strong>ช่องค้นหา:</strong> พิมพ์ชื่อหรือเลขห้องเพื่อกรองหาชื่อตนเองได้อย่างสะดวกรวดเร็ว</li>
-          <li><strong>กรณียังไม่มีรายชื่อ:</strong> หากวิชานั้นเปิดรับลงทะเบียน จะมีปุ่มสีเขียวให้กดลงทะเบียนเข้าเรียนได้ทันทีจากในหน้านี้</li>
+          <li><strong>กรณียังไม่มีรายชื่อ:</strong> หากวิชานั้นเปิดรับลงทะเบียน จะมีปุ่มสีเขียวให้กดลงทะเบียนเข้าเรียนได้จากในหน้านี้ (ต้องเข้าสู่ระบบนักเรียนก่อน ดูขั้นตอนที่ 4–5)</li>
         </ol>
       </div>
 
-      <!-- STEP 6 -->
+      <!-- STEP 8 -->
       <div class="guide-card">
         <div class="guide-step-header">
-          <span class="step-badge">ขั้นตอนที่ 6</span>
+          <span class="step-badge">ขั้นตอนที่ 8</span>
           <h3 class="step-title">การเชื่อมต่อ Google Calendar (+ Google Calendar)</h3>
         </div>
         <p>ระบบรองรับการเชื่อมต่อไปยัง Google Calendar บนสมาร์ทโฟนและคอมพิวเตอร์ เพื่อตั้งเตือนความจำ:</p>
@@ -682,10 +744,10 @@
         </ul>
       </div>
 
-      <!-- STEP 7 (NEW HIGHLIGHT) -->
+      <!-- STEP 9 -->
       <div class="guide-card">
         <div class="guide-step-header">
-          <span class="step-badge">ขั้นตอนที่ 7 (ฟังก์ชันใหม่!)</span>
+          <span class="step-badge">ขั้นตอนที่ 9</span>
           <h3 class="step-title">การดูตารางสรุปบอร์ดรวมทุกระดับชั้น (ม.1 – ม.6)</h3>
         </div>
         <p>นักเรียนสามารถเปิดดูภาพรวมตารางคลินิกวิชาการของทุกระดับชั้นพร้อมกันในหน้าเดียวได้ที่เมนู <strong>"📋 สรุปการเข้าเรียน"</strong>:</p>
@@ -696,230 +758,45 @@
         </ul>
       </div>
 
-    </div>
-
-    <!-- ═════════════════════════════════════════════════════════ -->
-    <!-- PANEL 2: ครูผู้สอน (TEACHER MANUAL)                      -->
-    <!-- ═════════════════════════════════════════════════════════ -->
-    <div id="panel-teacher" class="manual-content-panel">
-
-      <div class="guide-card" style="border-left:4px solid #16a34a;background:#f0f9ff;">
-        <h3 style="font-size:1.15rem;color:#166534;margin:0 0 6px 0;font-family:'Kanit',sans-serif;">
-          👩‍🏫 สรุปภาพรวมสำหรับคุณครูผู้สอน
-        </h3>
-        <p style="margin:0;font-size:0.95rem;color:#334155;line-height:1.6;">
-          คุณครูสามารถเข้าสู่ระบบเพื่อตรวจสอบรอบสอนที่รับผิดชอบ ปรับปรุงเวลาและห้องเรียน แจ้งสถานะเปิดสอนหรืองดสอน 
-          <strong>เปิดให้นักเรียนลงทะเบียนออนไลน์พร้อมกำหนดโควตาที่นั่ง</strong> ตลอดจน<strong>ลงทะเบียนคัดเลือกนักเรียนแบบเลือกได้หลายห้อง (Multi-Room)</strong> และเช็คชื่อเข้าเรียนได้อย่างครบวงจร
-        </p>
-      </div>
-
-      <!-- Quick Flow Grid -->
-      <div class="flow-grid">
-        <div class="flow-item">
-          <div class="flow-item-num" style="background:#16a34a;">1</div>
-          <div class="flow-item-title">เข้าสู่ระบบ</div>
-          <div class="flow-item-desc">รหัสผ่านครูผู้สอน</div>
-        </div>
-        <div class="flow-item">
-          <div class="flow-item-num" style="background:#16a34a;">2</div>
-          <div class="flow-item-title">แดชบอร์ดสอน</div>
-          <div class="flow-item-desc">ตรวจดูรอบที่รับผิดชอบ</div>
-        </div>
-        <div class="flow-item">
-          <div class="flow-item-num" style="background:#16a34a;">3</div>
-          <div class="flow-item-title">ปรับเวลา/ห้อง/งด</div>
-          <div class="flow-item-desc">แก้ไขข้อมูลการสอน</div>
-        </div>
-        <div class="flow-item">
-          <div class="flow-item-num" style="background:#0284c7;">4</div>
-          <div class="flow-item-title">เปิดรับลงทะเบียน</div>
-          <div class="flow-item-desc">ตั้งค่าโควตาออนไลน์</div>
-        </div>
-        <div class="flow-item">
-          <div class="flow-item-num" style="background:#16a34a;">5</div>
-          <div class="flow-item-title">เลือกเด็กหลายห้อง</div>
-          <div class="flow-item-desc">Multi-Room Selector</div>
-        </div>
-      </div>
-
-      <!-- STEP 1 -->
-      <div class="guide-card">
+      <!-- FAQ -->
+      <div class="guide-card" style="border-left:4px solid #f59e0b;">
         <div class="guide-step-header">
-          <span class="step-badge step-badge-green">ขั้นตอนที่ 1</span>
-          <h3 class="step-title">การเข้าสู่ระบบครูผู้สอน (Teacher Login)</h3>
+          <span class="step-badge">คำถามที่พบบ่อย</span>
+          <h3 class="step-title">ปัญหาที่พบบ่อยและวิธีแก้</h3>
         </div>
-        <p>คุณครูผู้สอนเข้าสู่ระบบเพื่อจัดการข้อมูลคลินิกวิชาการตามขั้นตอนดังนี้:</p>
-        <div class="mockup-box">
-          <div class="mockup-label">🔐 ขั้นตอนการเข้าสู่ระบบ</div>
-          <ol style="margin:4px 0;padding-left:20px;line-height:1.8;">
-            <li>คลิกปุ่ม <strong>"🔑 เข้าสู่ระบบ"</strong> ที่มุมขวาบนของหน้าเว็บ (หรือไปที่หน้า <code>login.html</code>)</li>
-            <li>คลิกเลือกบทบาท: <strong>"👩‍🏫 ครูผู้สอน" (Teacher)</strong></li>
-            <li>กรอกข้อมูลเข้าสู่ระบบ: <strong>กรอกชื่อผู้ใช้ (Username) และรหัสผ่านประจำตัวครู (รหัสที่ได้รับจาก admin ระบบ)</strong></li>
-            <li>คลิกปุ่ม <strong>"เข้าสู่ระบบ"</strong> ระบบจะนำท่านเข้าสู่หน้า <strong>"ระบบครูผู้สอน" (teacher.html)</strong> โดยอัตโนมัติ</li>
-          </ol>
-        </div>
-        <div class="alert-box-ui alert-tip-ui">
-          💡 <strong>หมายเหตุ:</strong> ระบบจำการเข้าสู่ระบบไว้ในเบราว์เซอร์อย่างปลอดภัย เมื่อเปิดใช้งานในครั้งถัดไปจะไม่ต้องกรอกรหัสผ่านซ้ำจนกว่าจะกด "ออกจากระบบ"
-        </div>
-      </div>
-
-      <!-- STEP 2 -->
-      <div class="guide-card">
-        <div class="guide-step-header">
-          <span class="step-badge step-badge-green">ขั้นตอนที่ 2</span>
-          <h3 class="step-title">หน้าแดชบอร์ดและการตรวจสอบรอบการสอน</h3>
-        </div>
-        <p>ในหน้าแดชบอร์ดครูผู้สอน ระบบจะแสดงการ์ดรอบการสอนเฉพาะวิชาและระดับชั้นที่ท่านรับผิดชอบ พร้อมปุ่มเครื่องมือครบครัน:</p>
-        <ul>
-          <li><strong><code>✏️ แก้ไขข้อมูล</code> :</strong> ปรับเปลี่ยนเวลาสอน ห้องเรียน หัวข้อเรื่องที่ติว (Topic) หรือแจ้งสถานะงดสอน</li>
-          <li><strong><code>📝 ลงทะเบียนนักเรียน</code> :</strong> เปิดรับลงทะเบียนออนไลน์ กำหนดโควตาที่นั่ง หรือจัดการรายชื่อผู้สมัคร</li>
-          <li><strong><code>📋 กรอกรายชื่อ</code> :</strong> คัดเลือกและบันทึกรายชื่อนักเรียนแบบเลือกได้หลายห้องพร้อมกัน (Multi-Room)</li>
-          <li><strong><code>📅 ลงปฏิทิน</code> :</strong> เพิ่มรอบสอนเข้า Google Calendar ส่วนตัวของครู</li>
-        </ul>
-      </div>
-
-      <!-- STEP 3 -->
-      <div class="guide-card">
-        <div class="guide-step-header">
-          <span class="step-badge step-badge-green">ขั้นตอนที่ 3</span>
-          <h3 class="step-title">การปรับปรุงข้อมูลรอบสอน (เวลา / ห้อง / หัวข้อเรื่อง / สถานะงดสอน)</h3>
-        </div>
-        <p>หากมีการเปลี่ยนแปลงสถานที่ เวลา หรือติดราชการจำเป็น:</p>
-        <ol style="line-height:1.75;">
-          <li>คลิกปุ่ม <strong>"✏️ แก้ไข"</strong> ในการ์ดรอบการสอนนั้น</li>
-          <li>ปรับเปลี่ยนข้อมูล: <strong>เวลาสอน</strong>, <strong>ห้องเรียน</strong> (เช่น ห้องศูนย์การเรียนรู้คณิตศาสตร์), <strong>หัวข้อเรื่องที่สอน (Topic)</strong> เพื่อให้นักเรียนทราบเนื้อหาล่วงหน้า, หรือ <strong>สถานะการสอน</strong> (เปิดสอน หรือ งดสอน)</li>
-          <li>คลิก <strong>"💾 บันทึกการเปลี่ยนแปลง"</strong> ข้อมูลจะอัปเดตไปยังหน้าตารางสอนของนักเรียนทันทีแบบเรียลไทม์</li>
-        </ol>
-        <div class="alert-box-ui alert-warn-ui">
-          ⚠️ <strong>ข้อควรปฏิบัติเมื่อต้องงดสอน:</strong> กรุณาเปลี่ยนสถานะเป็น "งดสอน" ล่วงหน้าอย่างน้อยภายในเวลา 16.30 น. ของวันนั้น เพื่อให้นักเรียนและครูหอพักทราบล่วงหน้า
-        </div>
-      </div>
-
-      <!-- STEP 4 (NEW HIGHLIGHT) -->
-      <div class="guide-card" style="border-left:4px solid #0284c7;">
-        <div class="guide-step-header">
-          <span class="step-badge">ขั้นตอนที่ 4 (ฟังก์ชันใหม่!)</span>
-          <h3 class="step-title">การตั้งค่าเปิดรับลงทะเบียนออนไลน์ & กำหนดโควตานักเรียน (Registration & Quota)</h3>
-        </div>
-        <p>คุณครูสามารถเปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ด้วยตนเองผ่านระบบ พร้อมกำหนดจำนวนที่นั่งสูงสุด (โควตา) ได้ตามขั้นตอนดังนี้:</p>
-
-        <ol style="font-size:0.95rem;line-height:1.75;">
-          <li>คลิกปุ่ม <strong>"📝 ลงทะเบียนนักเรียน"</strong> บนการ์ดรอบการสอน</li>
-          <li>หน้าต่าง <strong>"ตั้งค่าการเปิดรับลงทะเบียนนักเรียน"</strong> จะปรากฏขึ้นมา:
-            <ul>
-              <li><strong>สวิตช์เปิดรับลงทะเบียน:</strong> ติ๊กเปิดสวิตช์ <em>"เปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ด้วยตนเอง"</em> เพื่อให้นักเรียนสามารถกดสมัครได้จากหน้าตารางสอน</li>
-              <li><strong>จำกัดจำนวนที่นั่ง (โควตาคน):</strong> กรอกจำนวนนักเรียนสูงสุดที่รับได้ เช่น <code>15</code> หรือ <code>20</code> คน (หรือเว้นว่างไว้หากไม่ต้องการจำกัดจำนวน)</li>
-              <li><strong>แถบสถานะแบบเรียลไทม์:</strong> ระบบจะแสดงสถานะให้เห็นชัดเจน:
-                <div style="margin:6px 0;display:flex;gap:8px;flex-wrap:wrap;">
-                  <span class="badge-quota">🟢 เปิดรับลงทะเบียน (12/15 คน)</span>
-                  <span class="tag-chip tag-chip-red">⛔ ครบตามจำนวนแล้ว (15/15 คน)</span>
-                  <span class="tag-chip tag-chip-yellow">⚪ ยังไม่เปิดรับสมัคร</span>
-                </div>
-              </li>
-            </ul>
-          </li>
-          <li><strong>การจัดการรายชื่อที่นักเรียนสมัครเข้ามา:</strong> คุณครูสามารถดูรายชื่อนักเรียนที่กดลงทะเบียนออนไลน์เข้ามาในตารางด้านล่าง และสามารถคลิกปุ่มถอดถอนรายชื่อ <code>✕ ลบ</code> ได้หากนักเรียนแจ้งสละสิทธิ์</li>
-          <li>คลิกปุ่ม <strong>"💾 บันทึกการตั้งค่า"</strong> ข้อมูลจะถูกนำไปอัปเดตบนหน้าเว็บของนักเรียนทันที</li>
-        </ol>
-
-        <!-- Visual Mockup Window for Teacher Registration Settings -->
-        <div class="mockup-window">
-          <div class="mockup-window-header">
-            <span>⚙️ ตั้งค่าการเปิดรับลงทะเบียนนักเรียน (จำลองหน้าจอคุณครู)</span>
-            <span style="color:#64748b;cursor:pointer;">✕</span>
-          </div>
-          <div class="mockup-window-body">
-            <div style="background:#f8fafc;border:1px solid #e2e8f0;padding:12px;border-radius:8px;margin-bottom:14px;">
-              <strong style="color:#0f172a;font-size:1rem;">วิชา: แคลคูลัสเบื้องต้น (ระดับชั้น ม.5)</strong>
-              <div style="font-size:0.85rem;color:#475569;margin-top:2px;">วันอังคาร 3 พ.ย. 2569 &bull; เวลา 18:30–20:00 น. &bull; ห้องศูนย์การเรียนรู้คณิตศาสตร์</div>
-            </div>
-
-            <!-- Toggle Switch UI Mockup -->
-            <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-              <div>
-                <div style="font-weight:700;color:#166534;font-size:0.95rem;">เปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ด้วยตนเอง</div>
-                <div style="font-size:0.82rem;color:#15803d;">เมื่อเปิดใช้งาน นักเรียนจะเห็นปุ่ม "ลงทะเบียนเข้าเรียน" บนหน้าตารางสอน</div>
-              </div>
-              <div class="mockup-switch-ui">
-                <span style="color:#166534;font-weight:700;">เปิดใช้งาน</span>
-                <span class="mockup-toggle-btn"></span>
-              </div>
-            </div>
-
-            <div style="margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-              <div>
-                <label style="font-weight:700;font-size:0.88rem;color:#0f172a;">จำกัดจำนวนที่นั่งสูงสุด (โควตาคน):</label>
-                <input type="number" class="form-control" value="15" readonly style="margin-top:4px;padding:6px 12px;border:1.5px solid #cbd5e1;border-radius:6px;width:100%;font-weight:700;">
-                <span style="font-size:0.75rem;color:#64748b;">(ใส่ 0 หรือเว้นว่าง หากไม่จำกัดจำนวน)</span>
-              </div>
-              <div>
-                <label style="font-weight:700;font-size:0.88rem;color:#0f172a;">สถานะปัจจุบัน:</label>
-                <div style="margin-top:6px;">
-                  <span class="badge-quota" style="font-size:0.9rem;padding:6px 14px;">🟢 เปิดรับลงทะเบียน (12/15 คน)</span>
-                </div>
-              </div>
-            </div>
-
-            <div style="text-align:right;">
-              <button class="btn btn-outline btn-sm" style="margin-right:8px;">ปิด</button>
-              <button class="btn btn-primary btn-sm" style="font-weight:700;padding:6px 20px;">💾 บันทึกการตั้งค่า</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- STEP 5 -->
-      <div class="guide-card">
-        <div class="guide-step-header">
-          <span class="step-badge step-badge-green">ขั้นตอนที่ 5</span>
-          <h3 class="step-title">การลงทะเบียนนักเรียนแบบเลือกได้หลายห้อง (Multi-Room Selector)</h3>
-        </div>
-        <p>กรณีที่คุณครูต้องการกำหนดหรือคัดเลือกรายชื่อนักเรียนด้วยตนเอง ระบบรองรับการเลือกนักเรียนจากหลายห้องเรียนได้พร้อมกันในหน้าเดียว:</p>
-
-        <div class="mockup-box">
-          <div class="mockup-label">👥 หน้าต่างจัดการรายชื่อนักเรียน (ATTENDANCE MODAL)</div>
-          <div style="background:#fff;border:1px solid #cbd5e1;padding:12px;border-radius:8px;">
-            <div style="font-weight:700;margin-bottom:6px;color:#0f172a;">1. เลือกห้องเรียนที่ต้องการ (เลือกได้หลายห้องพร้อมกัน):</div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
-              <span class="tag-chip tag-chip-blue" style="background:#0284c7;color:#fff;">✓ ม.5/1</span>
-              <span class="tag-chip tag-chip-blue" style="background:#0284c7;color:#fff;">✓ ม.5/2</span>
-              <span class="tag-chip tag-chip-blue">ม.5/3</span>
-              <span class="tag-chip tag-chip-blue">ม.5/4</span>
-              <span class="tag-chip tag-chip-blue">ม.5/5</span>
-              <span class="tag-chip tag-chip-blue">ม.5/6</span>
-              <span class="tag-chip tag-chip-yellow" style="cursor:pointer;">[ เลือกทุกห้อง ]</span>
-              <span class="tag-chip tag-chip-yellow" style="cursor:pointer;">[ ล้างห้อง ]</span>
-            </div>
-            <div style="border-top:1px dashed #e2e8f0;padding-top:8px;display:flex;gap:10px;flex-wrap:wrap;">
-              <span class="tag-chip tag-chip-green" style="cursor:pointer;">✓ ติ๊กทั้งหมดในห้องที่แสดง</span>
-              <span class="tag-chip tag-chip-red" style="cursor:pointer;">✕ ล้างที่เลือกทั้งหมด</span>
-            </div>
-          </div>
-        </div>
-
-        <table style="width:100%;border-collapse:collapse;margin-top:10px;font-size:0.92rem;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.92rem;">
           <tr style="background:#f1f5f9;border:1px solid #cbd5e1;">
-            <th style="padding:8px 12px;text-align:left;width:30%;">ปุ่มฟังก์ชัน</th>
-            <th style="padding:8px 12px;text-align:left;">ประโยชน์และการทำงาน</th>
+            <th style="padding:8px 12px;text-align:left;width:38%;">ปัญหา</th>
+            <th style="padding:8px 12px;text-align:left;">วิธีแก้</th>
           </tr>
           <tr style="border:1px solid #e2e8f0;">
-            <td style="padding:8px 12px;"><strong>ปุ่มเลือกห้อง (1, 2, 3...)</strong></td>
-            <td style="padding:8px 12px;">สามารถคลิกเลือกหลายห้องพร้อมกันได้ รายชื่อเด็กของทุกห้องที่เลือกจะนำมาแสดงรวมกันทันที</td>
+            <td style="padding:8px 12px;">ลืมรหัสผ่าน</td>
+            <td style="padding:8px 12px;">แจ้งครูผู้สอนคนใดก็ได้ หรือผู้ดูแลระบบ เพื่อรีเซ็ตรหัสผ่าน แล้วเข้าสู่ระบบด้วยรหัสใหม่ที่ได้รับ และตั้งรหัสผ่านใหม่</td>
           </tr>
           <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
-            <td style="padding:8px 12px;"><strong>เลือกทุกห้อง / ล้างห้อง</strong></td>
-            <td style="padding:8px 12px;">ช่วยเปิดดูนักเรียนทั้งระดับชั้นในคลิกเดียว หรือรีเซ็ตเพื่อเลือกเฉพาะบางห้อง</td>
+            <td style="padding:8px 12px;">ขึ้นว่า "บัญชีถูกล็อกชั่วคราว"</td>
+            <td style="padding:8px 12px;">ใส่รหัสผิด 5 ครั้งติดกัน ให้รอ 15 นาทีแล้วลองใหม่ หรือขอให้ครูรีเซ็ตรหัสผ่าน (ใช้ได้ทันที)</td>
           </tr>
           <tr style="border:1px solid #e2e8f0;">
-            <td style="padding:8px 12px;"><strong>ติ๊กทั้งหมดในห้องที่แสดง</strong></td>
-            <td style="padding:8px 12px;">ติ๊กเลือกนักเรียนทุกคนในห้องที่กำลังแสดงอยู่ทันที เหมาะสำหรับวิชาที่เรียนทั้งห้อง</td>
+            <td style="padding:8px 12px;">เข้าสู่ระบบด้วย 1234 ไม่ได้</td>
+            <td style="padding:8px 12px;">อาจมีการตั้งรหัสผ่านใหม่ไปแล้ว ถ้าไม่ได้ตั้งเอง ให้แจ้งครูรีเซ็ตรหัสผ่านทันที เพราะอาจมีผู้อื่นเข้าบัญชีของเรา</td>
           </tr>
           <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
-            <td style="padding:8px 12px;"><strong>ระบบจำสถานะข้ามห้อง</strong></td>
-            <td style="padding:8px 12px;">นักเรียนที่ติ๊กเลือกไว้แล้ว จะไม่สูญหายแม้คุณครูจะสลับไปคลิกดูห้องอื่น</td>
+            <td style="padding:8px 12px;">ขึ้นว่า "วิชานี้ไม่ได้เปิดสำหรับระดับชั้นของคุณ"</td>
+            <td style="padding:8px 12px;">ลงทะเบียนได้เฉพาะวิชาของระดับชั้นตนเอง ถ้าข้อมูลชั้นของเราไม่ถูกต้อง ให้แจ้งผู้ดูแลระบบ</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;">
+            <td style="padding:8px 12px;">ไม่มีปุ่มยกเลิกการลงทะเบียน</td>
+            <td style="padding:8px 12px;">ครูปิดรับลงทะเบียนแล้ว หรือผ่านวันเรียนไปแล้ว ให้แจ้งครูผู้สอนโดยตรง</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
+            <td style="padding:8px 12px;">หน้าต่างลงทะเบียนแสดงชื่อคนอื่น</td>
+            <td style="padding:8px 12px;">มีคนลืมออกจากระบบไว้ ให้กด "ไม่ใช่ฉัน / เปลี่ยนบัญชี" แล้วเข้าสู่ระบบด้วยบัญชีของตนเอง</td>
           </tr>
         </table>
       </div>
+
+    </div>
 
   </main>
 
@@ -928,16 +805,17 @@
     <div class="footer-dev">พัฒนาระบบโดย ครูฉวีวรรณ อรุณถาวร และครูชลธีร์ จันทร์ลอย</div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
+  <script src="js/firebase-config.js?v=2569_16"></script>
+  <script src="js/supabase-api.js?v=2569_16"></script>
+  <script src="js/db.js?v=2569_16"></script>
+  <script src="js/auth.js?v=2569_16"></script>
+  <script src="js/student-auth.js?v=2569_18"></script>
   <script>
-    function switchRoleTab(role) {
-      document.getElementById('tab-btn-student').classList.toggle('active', role === 'student');
-      document.getElementById('tab-btn-teacher').classList.toggle('active', role === 'teacher');
-      
-      document.getElementById('panel-student').classList.toggle('active', role === 'student');
-      document.getElementById('panel-teacher').classList.toggle('active', role === 'teacher');
-
-      window.scrollTo({ top: 200, behavior: 'smooth' });
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+      updateNavbarAuth();
+      updateNavbarStudent();
+    });
   </script>
 </body>
 </html>

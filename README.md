@@ -7,23 +7,24 @@
 ├── index.html          ← หน้าหลัก (redirect ไปหน้าตาราง)
 ├── schedule.html       ← หน้าตารางสอนเสริม (สาธารณะ)
 ├── attendance.html     ← หน้าสรุปการเข้าเรียน (สาธารณะ)
-├── manual.html         ← หน้าคู่มือการใช้งานระบบ (สาธารณะ + ดาวน์โหลด PDF)
-├── login.html          ← หน้าเข้าสู่ระบบ
+├── manual.html         ← คู่มือนักเรียน (สาธารณะ + ดาวน์โหลด PDF)
+├── manual-teacher.html ← คู่มือครูผู้สอน (ต้อง login ครู/Admin)
+├── login.html          ← หน้าเข้าสู่ระบบ (นักเรียน / ครูผู้สอน / Admin)
+├── student.html        ← หน้าของนักเรียน: ตั้งรหัสผ่าน ดูประวัติ ยกเลิกลงทะเบียน (ต้อง login นักเรียน)
 ├── teacher.html        ← ระบบครูผู้สอน (ต้อง login)
 ├── admin.html          ← ระบบ Admin (ต้อง login Admin)
-├── 1_คู่มือการใช้งาน_ส่วนของนักเรียน.pdf
-├── 2_คู่มือการใช้งาน_ส่วนของครูหอพัก.pdf
-├── 3_คู่มือการใช้งาน_ส่วนของครูผู้สอน.pdf
-├── คู่มือการใช้งาน_ระบบคลินิกวิชาการ_PCSHSPT.pdf (เล่มรวม 8 หน้า)
+├── คู่มือการใช้งาน_ส่วนของนักเรียน.pdf
+├── คู่มือการใช้งาน_ส่วนของครูผู้สอน.pdf
+├── คู่มือการใช้งาน_ระบบคลินิกวิชาการ_PCSHSPT.pdf (ฉบับรวม)
 ├── assets/
 │   └── logo.png        ← โลโก้โรงเรียน
-├── docs/               ← ไฟล์ HTML/PDF คู่มือฉบับเต็ม
 ├── css/
 │   └── style.css       ← Design System CSS
 └── js/
     ├── firebase-config.js  ← Config + ค่าคงที่
     ├── db.js               ← ฐานข้อมูล (localStorage / Firebase / Supabase)
-    └── auth.js             ← ระบบ Login + เปลี่ยนรหัสผ่าน + Utilities
+    ├── auth.js             ← ระบบ Login ครู/Admin + Utilities
+    └── student-auth.js     ← ระบบบัญชีนักเรียน (login ด้วยรหัสประจำตัว)
 ```
 
 ## 🔑 บัญชีผู้ใช้
