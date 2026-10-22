@@ -282,11 +282,23 @@ class LocalDB {
     return [];
   }
   static setAttendanceForClinic(clinicId, records) {
-    const list = LocalDB.getList('attendance').filter(x => String(x.clinicId) !== String(clinicId));
+    const all = LocalDB.getList('attendance');
+    const existing = all.filter(x => String(x.clinicId) === String(clinicId));
+    const list = all.filter(x => String(x.clinicId) !== String(clinicId));
     let nextIdNum = (LocalDB.get('__id_att') || 0);
     records.forEach(r => {
-      nextIdNum++;
-      if (!r.id) r.id = 'att_' + nextIdNum;
+      // id = คลินิก + นักเรียน → ไม่ชนกันเมื่อครูบันทึกจากคนละเครื่อง (ตัวนับในเบราว์เซอร์ทำให้ id ซ้ำข้ามคลินิกได้)
+      if (r.studentId !== undefined && r.studentId !== null && r.studentId !== '') {
+        r.id = `att_${clinicId}_${r.studentId}`;
+      } else if (!r.id) {
+        nextIdNum++;
+        r.id = 'att_' + nextIdNum;
+      }
+      // รักษาว่าใครเป็นคนลงทะเบียน (นักเรียนลงเอง / ครูลงให้) เมื่อครูบันทึกรายชื่อซ้ำ
+      if (!r.source) {
+        const prev = existing.find(x => String(x.studentId) === String(r.studentId));
+        r.source = (prev && prev.source) || 'teacher';
+      }
       list.push(r);
     });
     LocalDB.set('__id_att', nextIdNum);

@@ -655,7 +655,8 @@ const SupabaseAPI = {
       student_code: String(a.studentCode || a.student_code || ''),
       date: toYMD(a.date),
       status: a.status || 'present',
-      note: a.note || ''
+      note: a.note || '',
+      source: a.source || 'teacher'
     };
   },
 
@@ -667,7 +668,8 @@ const SupabaseAPI = {
       studentCode: row.student_code || '',
       date: toYMD(row.date),
       status: row.status || 'present',
-      note: row.note || ''
+      note: row.note || '',
+      source: row.source || 'teacher'
     };
   },
 

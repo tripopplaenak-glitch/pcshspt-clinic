@@ -19,6 +19,8 @@
     .history-item { border: 1px solid var(--gray-200); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
     .history-item .subject { font-weight: 700; color: var(--blue-deep); }
     .history-item .info { font-size: .84rem; color: var(--gray-600); margin-top: 3px; line-height: 1.5; }
+    .history-item.cancelled { background: #fef2f2; border-color: #fca5a5; }
+    .sub-label { font-weight: 700; color: var(--gray-600); font-size: .9rem; margin: 14px 0 8px; }
     .section-label { font-weight: 700; font-family: 'Kanit', sans-serif; color: var(--blue-deep); margin: 20px 0 10px; font-size: 1rem; }
     .action-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
     .hint { font-size: .8rem; color: var(--gray-500); margin-top: 4px; }
@@ -81,7 +83,7 @@
         <button class="btn btn-outline" onclick="doStudentLogout()">ออกจากระบบ</button>
       </div>
 
-      <div class="section-label">📋 ประวัติการลงทะเบียนของฉัน</div>
+      <div class="section-label">📋 วิชาที่ฉันลงทะเบียน (รวมวิชาที่ครูลงทะเบียนให้)</div>
       <div id="history-list"><div class="empty-state"><div class="spinner"></div></div></div>
     </div>
 
@@ -100,10 +102,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
 <script src="js/firebase-config.js?v=2569_17"></script>
-<script src="js/supabase-api.js?v=2569_17"></script>
-<script src="js/db.js?v=2569_17"></script>
+<script src="js/supabase-api.js?v=2569_19"></script>
+<script src="js/db.js?v=2569_19"></script>
 <script src="js/auth.js?v=2569_17"></script>
-<script src="js/student-auth.js?v=2569_18"></script>
+<script src="js/student-auth.js?v=2569_19"></script>
 <script>
 // รหัสผ่านเดิมสำหรับฟอร์มเปลี่ยนรหัส (login ทำที่หน้า login.html จึงต้องให้นักเรียนพิมพ์รหัสเดิมเอง)
 let justLoggedInPassword = '';
@@ -231,32 +233,52 @@ async function loadHistory() {
       listEl.innerHTML = `
         <div class="empty-state">
           <div class="empty-icon">📭</div>
-          <div class="empty-title">ยังไม่มีประวัติการลงทะเบียน</div>
-          <div class="empty-sub">ไปที่หน้าตารางสอน แล้วกดลงทะเบียนวิชาที่สนใจ</div>
+          <div class="empty-title">ยังไม่มีวิชาที่ลงทะเบียน</div>
+          <div class="empty-sub">ไปที่หน้าตารางสอน แล้วกดลงทะเบียนวิชาที่สนใจ (วิชาที่ครูลงทะเบียนให้ จะแสดงที่นี่ด้วย)</div>
         </div>`;
       return;
     }
-    listEl.innerHTML = res.items.map(it => `
-      <div class="history-item">
-        <div style="flex:1;min-width:200px;">
-          <div class="subject">${getSubjectIcon(it.subject)} ${escapeHtml(it.subject || '–')}</div>
-          ${it.topic ? `<div class="info">🎯 ${escapeHtml(it.topic)}</div>` : ''}
-          <div class="info">
-            📅 ${formatDateThai(it.date)} • 🕐 ${formatClinicTime(it.time)}<br>
-            👩‍🏫 ${escapeHtml(it.teacher || '–')} • 📍 ${escapeHtml(it.room || '–')}
-          </div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-          <span class="badge badge-green">ลงทะเบียนแล้ว</span>
-          ${it.can_cancel
-            ? `<button class="btn btn-danger btn-sm" data-clinic-id="${escapeHtml(it.clinic_id)}" data-subject="${escapeHtml(it.subject || '')}" onclick="cancelRegistration(this.dataset.clinicId, this.dataset.subject)">ยกเลิกการลงทะเบียน</button>`
-            : ''}
-        </div>
-      </div>`).join('');
+    // วิชาที่กำลังจะมาถึง (เรียงจากใกล้สุด) แยกจากวิชาที่ผ่านมาแล้ว (เรียงจากล่าสุด)
+    const today = res.today || todayStr();
+    const upcoming = res.items.filter(it => (it.date || '') >= today);
+    const past = res.items.filter(it => (it.date || '') < today).reverse();
+    listEl.innerHTML =
+      `<div class="sub-label">📅 กำลังจะมาถึง (${upcoming.length})</div>` +
+      (upcoming.length ? upcoming.map(renderHistoryItem).join('') : '<div class="hint" style="margin-bottom:12px;">ยังไม่มีวิชาที่กำลังจะมาถึง</div>') +
+      (past.length ? `<div class="sub-label">🕘 ที่ผ่านมาแล้ว (${past.length})</div>` + past.map(renderHistoryItem).join('') : '');
   } catch (err) {
     console.error('[StudentAuth] history error:', err);
     listEl.innerHTML = '<div class="empty-state"><div class="empty-title">เชื่อมต่อระบบไม่สำเร็จ</div></div>';
   }
+}
+
+function renderHistoryItem(it) {
+  const bySelf = it.source === 'student';
+  const cancelled = it.clinic_status === 'cancelled';
+  let action = '';
+  if (it.can_cancel) {
+    action = `<button class="btn btn-danger btn-sm" data-clinic-id="${escapeHtml(it.clinic_id)}" data-subject="${escapeHtml(it.subject || '')}" onclick="cancelRegistration(this.dataset.clinicId, this.dataset.subject)">ยกเลิกการลงทะเบียน</button>`;
+  } else if (!bySelf) {
+    action = '<div class="hint" style="text-align:right;max-width:190px;">ครูลงทะเบียนให้ ถ้าต้องการยกเลิก กรุณาแจ้งครูผู้สอน</div>';
+  }
+  return `
+    <div class="history-item${cancelled ? ' cancelled' : ''}">
+      <div style="flex:1;min-width:200px;">
+        <div class="subject">${getSubjectIcon(it.subject)} ${escapeHtml(it.subject || '–')}</div>
+        ${it.topic ? `<div class="info">🎯 ${escapeHtml(it.topic)}</div>` : ''}
+        <div class="info">
+          📅 ${formatDateThai(it.date)} • 🕐 ${formatClinicTime(it.time)}<br>
+          👩‍🏫 ${escapeHtml(it.teacher || '–')} • 📍 ${escapeHtml(it.room || '–')}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        ${cancelled ? '<span class="badge badge-red">⛔ งดสอน</span>' : ''}
+        ${bySelf
+          ? '<span class="badge badge-green">✍️ ลงทะเบียนเอง</span>'
+          : '<span class="badge badge-blue">👩‍🏫 ครูลงทะเบียนให้</span>'}
+        ${action}
+      </div>
+    </div>`;
 }
 
 async function cancelRegistration(clinicId, subject) {
