@@ -339,6 +339,19 @@ const SupabaseAPI = {
     }
   },
 
+  // บันทึกหลายแถวพร้อมกัน (แบ่งชุดละ 500) — ถ้าฐานข้อมูลปฏิเสธจะ throw พร้อมข้อความ
+  async upsertRows(table, rows) {
+    if (!this.client) this.init();
+    if (!this.client) throw new Error('ยังไม่ได้เชื่อมต่อฐานข้อมูล');
+    // กันแถว id ซ้ำในชุดเดียวกัน (ฐานข้อมูลจะปฏิเสธทั้งชุด)
+    const unique = [...new Map(rows.map(r => [String(r.id), r])).values()];
+    for (let i = 0; i < unique.length; i += 500) {
+      const { error } = await this.client.from(table).upsert(unique.slice(i, i + 500));
+      if (error) throw new Error(error.message || 'บันทึกข้อมูลไม่สำเร็จ');
+    }
+    return unique.length;
+  },
+
   // --- CRUD Operations ---
   async saveClinic(c) {
     if (!this.client) return;

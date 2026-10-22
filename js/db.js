@@ -24,6 +24,15 @@ class LocalDB {
   static getList(key)    { return LocalDB.get(key) || []; }
   static setList(key, list) { LocalDB.set(key, list); }
   static nextId(key)     { const n = (LocalDB.get('__id_' + key) || 0) + 1; LocalDB.set('__id_' + key, n); return String(n); }
+  // id ใหม่ที่ไม่ชนกับรายการที่มีอยู่ — ตัวนับในเบราว์เซอร์อย่างเดียวชนกับ id ที่สร้างจากเครื่องอื่นได้
+  // (ทำให้บันทึกขึ้นฐานข้อมูลไม่สำเร็จทั้งชุด) จึงนับต่อจาก id ตัวเลขที่สูงที่สุดในรายการด้วย
+  static nextFreeId(listKey, counterKey, list) {
+    const items = list || LocalDB.getList(listKey);
+    const maxInList = items.reduce((m, x) => (/^\d+$/.test(String(x.id)) ? Math.max(m, Number(x.id)) : m), 0);
+    const n = Math.max(LocalDB.get('__id_' + counterKey) || 0, maxInList) + 1;
+    LocalDB.set('__id_' + counterKey, n);
+    return String(n);
+  }
 
   // Teachers
   static getTeachers()            {
@@ -38,23 +47,28 @@ class LocalDB {
     const list = LocalDB.getList('teachers');
     const idx = list.findIndex(x => String(x.id) === String(t.id));
     if (idx >= 0) list[idx] = t;
-    else { t.id = LocalDB.nextId('teacher'); list.push(t); }
+    else { t.id = LocalDB.nextFreeId('teachers', 'teacher', list); list.push(t); }
     LocalDB.setList('teachers', list);
     return t;
   }
   static deleteTeacher(id)        { LocalDB.setList('teachers', LocalDB.getList('teachers').filter(x => String(x.id) !== String(id))); }
+  // คืนค่ารายการที่เพิ่ม/แก้ไข (ใช้ส่งขึ้นฐานข้อมูลเฉพาะส่วนที่เปลี่ยน)
   static importTeachers(arr)      {
     const cur = LocalDB.getList('teachers');
+    const changed = [];
     arr.forEach(t => {
       const existing = cur.find(x => x.name === t.name);
       if (existing) {
         Object.assign(existing, t);
+        changed.push(existing);
       } else {
-        t.id = LocalDB.nextId('teacher');
+        t.id = LocalDB.nextFreeId('teachers', 'teacher', cur);
         cur.push(t);
+        changed.push(t);
       }
     });
     LocalDB.setList('teachers', cur);
+    return changed;
   }
 
   // Staff (เจ้าหน้าที่)
@@ -63,7 +77,7 @@ class LocalDB {
     const list = LocalDB.getStaff();
     const idx = list.findIndex(x => String(x.id) === String(s.id));
     if (idx >= 0) list[idx] = s;
-    else { s.id = LocalDB.nextId('staff'); list.push(s); }
+    else { s.id = LocalDB.nextFreeId('staff', 'staff', list); list.push(s); }
     LocalDB.setList('staff', list);
     return s;
   }
@@ -92,24 +106,29 @@ class LocalDB {
     const list = LocalDB.getStudents();
     const idx = list.findIndex(x => String(x.id) === String(s.id));
     if (idx >= 0) list[idx] = s;
-    else { s.id = LocalDB.nextId('student'); list.push(s); }
+    else { s.id = LocalDB.nextFreeId('students', 'student', list); list.push(s); }
     LocalDB.setList('students', list);
     return s;
   }
   static deleteStudent(id)        { LocalDB.setList('students', LocalDB.getStudents().filter(x => String(x.id) !== String(id))); }
+  // คืนค่ารายการที่เพิ่ม/แก้ไข (ใช้ส่งขึ้นฐานข้อมูลเฉพาะส่วนที่เปลี่ยน)
   static importStudents(arr)      {
     const cur = LocalDB.getStudents();
+    const changed = new Map();
     arr.forEach(s => {
       if (s.studentCode !== undefined) s.studentCode = LocalDB.normalizeStudentCode(s.studentCode);
       const idx = cur.findIndex(x => x.studentCode && x.studentCode === s.studentCode);
       if (idx >= 0) {
         cur[idx] = { ...cur[idx], ...s };
+        changed.set(String(cur[idx].id), cur[idx]);
       } else {
-        s.id = LocalDB.nextId('student');
+        s.id = LocalDB.nextFreeId('students', 'student', cur);
         cur.push(s);
+        changed.set(String(s.id), s);
       }
     });
     LocalDB.setList('students', cur);
+    return [...changed.values()];
   }
 
   // Clinics (schedule slots)
@@ -540,9 +559,12 @@ const DataService = {
     LocalDB.deleteTeacher(id);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.deleteTeacher(id);
   },
+  // ส่งขึ้นฐานข้อมูลเฉพาะรายชื่อที่นำเข้า (ไม่ส่งข้อมูลทั้งเครื่องไปทับ) — ถ้าไม่สำเร็จจะ throw ให้หน้าเว็บแจ้งผู้ใช้
   async importTeachers(arr) {
-    LocalDB.importTeachers(arr);
-    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.uploadAll();
+    const changed = LocalDB.importTeachers(arr);
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+      await SupabaseAPI.upsertRows('teachers', changed.map(t => SupabaseAPI.mapTeacherToDb(t)));
+    }
   },
 
   // --- Staff (เจ้าหน้าที่) ---
@@ -579,9 +601,13 @@ const DataService = {
     LocalDB.deleteStudent(id);
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.deleteStudent(id);
   },
+  // ส่งขึ้นฐานข้อมูลเฉพาะรายชื่อที่นำเข้า (ไม่ส่งข้อมูลทั้งเครื่องไปทับ) — ถ้าไม่สำเร็จจะ throw ให้หน้าเว็บแจ้งผู้ใช้
   async importStudents(arr) {
-    LocalDB.importStudents(arr);
-    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) SupabaseAPI.uploadAll();
+    const changed = LocalDB.importStudents(arr);
+    if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+      await SupabaseAPI.upsertRows('students', changed.map(s => SupabaseAPI.mapStudentToDb(s)));
+    }
+    return changed.length;
   },
   async getStudentsByGrade(grade) {
     const cleanG = String(grade).replace(/\D/g, '');

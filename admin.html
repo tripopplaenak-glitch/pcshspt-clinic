@@ -1476,8 +1476,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
   <script src="js/firebase-config.js?v=2569_16"></script>
-  <script src="js/supabase-api.js?v=2569_19"></script>
-  <script src="js/db.js?v=2569_19"></script>
+  <script src="js/supabase-api.js?v=2569_21"></script>
+  <script src="js/db.js?v=2569_21"></script>
   <script src="js/auth.js?v=2569_16"></script>
   <script src="js/student-auth.js?v=2569_20"></script>
   <script src="js/xlsx.full.min.js"></script>
@@ -3561,6 +3561,7 @@
       }
 
       let count = 0;
+      try {
       if (importMode === 'students') {
         // Dorm name → code mapping (fuzzy match)
         const dormNameMap = {
@@ -3605,6 +3606,7 @@
 
         await DataService.importStudents(students);
         count = students.length;
+        studentAccountCache.at = 0; // นักเรียนใหม่ได้บัญชีอัตโนมัติ → โหลดสถานะบัญชีใหม่
         await loadStudents();
       } else if (importMode === 'staff') {
         // Staff: [seq, name] or [name]
@@ -3639,6 +3641,15 @@
         await DataService.importTeachers(teachersList);
         count = teachersList.length;
         await loadTeachers();
+      }
+      } catch (err) {
+        // ฐานข้อมูลไม่รับข้อมูล → แจ้งชัดเจน และดึงข้อมูลจริงกลับมา (ไม่ให้หน้าจอแสดงข้อมูลที่ไม่ได้บันทึก)
+        console.error('[Import] save failed:', err);
+        showToast('นำเข้าไม่สำเร็จ', `บันทึกขึ้นฐานข้อมูลไม่ได้: ${err.message || err} — ลองออกจากระบบแล้วเข้าใหม่ แล้วนำเข้าอีกครั้ง`, 'error', 9000);
+        await DataService.initSync();
+        if (importMode === 'students') await loadStudents();
+        else if (importMode !== 'staff') await loadTeachers();
+        return;
       }
 
       closeModal('modal-import');
