@@ -102,9 +102,11 @@ function updateNavbarStudent() {
   if (!s || !s.student) return;
   const loginBtn = document.getElementById('nav-login-btn');
   if (loginBtn) {
-    loginBtn.textContent = `🎓 ${s.student.name}`;
+    // แสดงเฉพาะชื่อต้น (ชื่อเต็มยาวเกินไปสำหรับแถบเมนูบนมือถือ/iPad)
+    const firstName = String(s.student.name || '').trim().split(/\s+/)[0];
+    loginBtn.textContent = `🎓 ${firstName}`;
     loginBtn.href = 'student.html';
-    loginBtn.title = 'ประวัติการลงทะเบียน / เปลี่ยนรหัสผ่าน';
+    loginBtn.title = `${s.student.name} — ประวัติการลงทะเบียน / เปลี่ยนรหัสผ่าน`;
   }
   const logoutBtn = document.getElementById('nav-logout-btn');
   if (logoutBtn) {

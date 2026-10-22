@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0">
   <title>นักเรียน — คลินิกวิชาการ PCSHSPT</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=2569_20">
   <style>
     .student-box { max-width: 460px; }
     .student-box.wide { max-width: 760px; }
@@ -20,6 +20,13 @@
     .history-item .subject { font-weight: 700; color: var(--blue-deep); }
     .history-item .info { font-size: .84rem; color: var(--gray-600); margin-top: 3px; line-height: 1.5; }
     .history-item.cancelled { background: #fef2f2; border-color: #fca5a5; }
+    .history-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .history-note { text-align: right; max-width: 190px; }
+    /* มือถือ: ป้าย/ปุ่มเรียงเป็นแถวใต้รายละเอียด ชิดซ้าย อ่านต่อเนื่อง */
+    @media (max-width: 520px) {
+      .history-actions { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; width: 100%; }
+      .history-note { text-align: left; max-width: none; flex-basis: 100%; }
+    }
     .sub-label { font-weight: 700; color: var(--gray-600); font-size: .9rem; margin: 14px 0 8px; }
     .section-label { font-weight: 700; font-family: 'Kanit', sans-serif; color: var(--blue-deep); margin: 20px 0 10px; font-size: 1rem; }
     .action-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
@@ -105,7 +112,7 @@
 <script src="js/supabase-api.js?v=2569_19"></script>
 <script src="js/db.js?v=2569_19"></script>
 <script src="js/auth.js?v=2569_17"></script>
-<script src="js/student-auth.js?v=2569_19"></script>
+<script src="js/student-auth.js?v=2569_20"></script>
 <script>
 // รหัสผ่านเดิมสำหรับฟอร์มเปลี่ยนรหัส (login ทำที่หน้า login.html จึงต้องให้นักเรียนพิมพ์รหัสเดิมเอง)
 let justLoggedInPassword = '';
@@ -259,7 +266,7 @@ function renderHistoryItem(it) {
   if (it.can_cancel) {
     action = `<button class="btn btn-danger btn-sm" data-clinic-id="${escapeHtml(it.clinic_id)}" data-subject="${escapeHtml(it.subject || '')}" onclick="cancelRegistration(this.dataset.clinicId, this.dataset.subject)">ยกเลิกการลงทะเบียน</button>`;
   } else if (!bySelf) {
-    action = '<div class="hint" style="text-align:right;max-width:190px;">ครูลงทะเบียนให้ ถ้าต้องการยกเลิก กรุณาแจ้งครูผู้สอน</div>';
+    action = '<div class="hint history-note">ครูลงทะเบียนให้ ถ้าต้องการยกเลิก กรุณาแจ้งครูผู้สอน</div>';
   }
   return `
     <div class="history-item${cancelled ? ' cancelled' : ''}">
@@ -271,7 +278,7 @@ function renderHistoryItem(it) {
           👩‍🏫 ${escapeHtml(it.teacher || '–')} • 📍 ${escapeHtml(it.room || '–')}
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+      <div class="history-actions">
         ${cancelled ? '<span class="badge badge-red">⛔ งดสอน</span>' : ''}
         ${bySelf
           ? '<span class="badge badge-green">✍️ ลงทะเบียนเอง</span>'

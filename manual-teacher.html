@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>คู่มือครูผู้สอน — คลินิกวิชาการ PCSHSPT</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=2569_20">
   <style>
     .manual-nav-tabs,
     .role-tabs {
@@ -165,6 +165,8 @@
       font-size: 0.95rem;
       padding: 4px 14px;
       border-radius: 8px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .step-badge-green {
       background: #16a34a;
@@ -338,6 +340,18 @@
     @media (max-width: 768px) {
       .manual-tab-btn {
         min-width: 100%;
+      }
+      /* มือถือ: ป้ายขั้นตอนอยู่บรรทัดบน หัวข้ออยู่บรรทัดล่าง / ภาพรวมขั้นตอนแสดง 2 คอลัมน์ */
+      .guide-step-header {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .flow-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      .flow-item {
+        padding: 10px 8px;
       }
       .pdf-download-bar {
         flex-direction: column;

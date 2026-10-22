@@ -237,6 +237,7 @@ h3 { font-size: 1.1rem; }
   border-bottom: 1px solid var(--gray-200);
   display: flex;
   align-items: center;
+  flex-wrap: wrap; /* จอแคบ: ปุ่ม/ช่องเลือกด้านขวาขึ้นบรรทัดใหม่ แทนการบีบหัวข้อ */
   gap: 10px;
   background: var(--gray-50);
 }
@@ -905,10 +906,15 @@ footer strong { color: var(--white); }
   padding: 12px 16px;
   border-radius: var(--radius-md);
   font-size: .875rem;
+  line-height: 1.6;
+  display: block; /* ข้อความผสม (ตัวหนา/ลิงก์) ไหลเป็นย่อหน้าเดียว ไม่แตกเป็นคอลัมน์บนจอแคบ */
+  margin-bottom: 16px;
+}
+/* กล่องแบบ ไอคอน + ข้อความ (<span>ไอคอน</span><div>ข้อความ</div>) วางไอคอนไว้ด้านซ้าย */
+.alert:has(> span:first-child + div) {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  margin-bottom: 16px;
 }
 .alert-info    { background: var(--blue-pale);  color: var(--blue-deep);  border: 1px solid #93c5fd; }
 .alert-success { background: var(--green-pale); color: #065f46; border: 1px solid #6ee7b7; }
@@ -1079,6 +1085,23 @@ footer strong { color: var(--white); }
   }
   .brand-title-short {
     display: block !important;
+  }
+}
+
+/* ─── TABLET (769px – 1100px): ชื่อโรงเรียนแถวบน + เมนูแถวล่าง (ขึ้นบรรทัดใหม่ได้ ไม่ล้นจอ) ─── */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .navbar-inner {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: auto;
+    padding: 8px 20px;
+    gap: 6px;
+  }
+  .navbar-brand { flex: none; }
+  .navbar-nav {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 4px;
   }
 }
 
