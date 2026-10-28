@@ -2931,10 +2931,8 @@
       const status = document.getElementById('clinic-status').value;
       const notes = document.getElementById('clinic-notes').value.trim();
 
-      if (!subject || !teacherId) {
-        showToast('กรุณากรอกข้อมูลสำคัญให้ครบ', 'ระบุวิชาและครูผู้สอน', 'warning');
-        return;
-      }
+      // กรอกไม่ครบก็บันทึกได้ (วิชา/ครู/ห้อง ฯลฯ เว้นว่างได้) — บังคับแค่สัปดาห์หรือวันที่ด้านล่าง
+      // เพราะต้องรู้ว่าคลินิกนี้แสดงในตารางวันไหน
 
       // If date is provided, make sure dayOfWeek matches date!
       if (date) {
@@ -2965,20 +2963,35 @@
         return;
       }
 
-      const obj = { weekId, grade, dayOfWeek, date, subject, teacherId, time: `${ts}–${te}`, room, status, notes, topic };
-      if (id) {
-        obj.id = id;
-        const allClinics = await DataService.getClinics();
-        const existing = allClinics.find(x => String(x.id) === String(id));
-        if (existing) {
-          obj.studentCount = existing.studentCount || 0;
-          obj.studentList = existing.studentList || [];
-          obj.attendanceIds = existing.attendanceIds || [];
-        }
+      const allClinics = await DataService.getClinics();
+      const existing = id ? allClinics.find(x => String(x.id) === String(id)) : null;
+      const teacher = (await DataService.getTeachers()).find(t => String(t.id) === String(teacherId));
+      const fields = {
+        weekId, grade, dayOfWeek, date, subject, subjectName: subject,
+        teacherId, teacherName: teacher ? teacher.name : '',
+        time: (ts && te) ? `${ts}–${te}` : ((existing && existing.time) || '18:30–20:30'),
+        room, status, notes, topic
+      };
+
+      let obj;
+      if (existing) {
+        // แก้ไข: เก็บค่าเดิมของช่องที่ไม่มีในฟอร์มนี้ไว้ทั้งหมด
+        // (เปิดรับลงทะเบียน, โควตาที่นั่ง, รายชื่อนักเรียน ฯลฯ — เดิมถูกล้างทุกครั้งที่กดบันทึก)
+        obj = { ...existing, ...fields, id: existing.id };
       } else {
-        obj.studentCount = 0;
-        obj.studentList = [];
-        obj.attendanceIds = [];
+        // เพิ่มใหม่: ชั้นเดียวกันมีคลินิกได้วันละ 1 วิชา — ถ้ามีอยู่แล้วต้องยืนยันก่อนแทนที่
+        const same = allClinics.find(x =>
+          (x.weekId === weekId || String(x.week_id) === String(weekId)) &&
+          Number(x.grade) === Number(grade) &&
+          (Number(x.dayOfWeek) === Number(dayOfWeek) || (date && toYMD(x.date) === date)));
+        if (same) {
+          const n = Number(same.studentCount) || (Array.isArray(same.studentList) ? same.studentList.length : 0);
+          const ok = confirm(`ม.${grade} วันนี้มีคลินิกอยู่แล้ว: "${same.subject || 'ยังไม่ระบุวิชา'}"` +
+            (n ? ` (มีนักเรียน ${n} คน)` : '') +
+            `\n\nต้องการแทนที่ด้วยรายการใหม่นี้ใช่หรือไม่?\n(ถ้าต้องการแก้รายการเดิม ให้กดยกเลิก แล้วกด ✏️ ที่รายการนั้นแทน)`);
+          if (!ok) return;
+        }
+        obj = { ...fields, studentCount: 0, studentList: [], attendanceIds: [] };
       }
       await DataService.saveClinic(obj);
       closeModal('modal-clinic');
