@@ -116,7 +116,23 @@ const AuthService = {
       window.location.href = 'schedule.html';
       return null;
     }
+    // ตรวจหลังหน้าโหลดเสร็จ (รอให้หน้าเชื่อมต่อฐานข้อมูลก่อน)
+    setTimeout(() => this.verifyServerSession(), 4000);
     return s;
+  },
+
+  // ถ้า session ของ Supabase หลุด (เช่น ล้างข้อมูลเบราว์เซอร์) การบันทึกทุกอย่างจะถูกฐานข้อมูลปฏิเสธ
+  // → แจ้งให้เข้าสู่ระบบใหม่ทันที แทนที่จะปล่อยให้แก้ข้อมูลแล้วบันทึกไม่ขึ้น
+  async verifyServerSession() {
+    const client = (typeof SupabaseAPI !== 'undefined') ? SupabaseAPI.client : null;
+    if (!client) return;
+    try {
+      const { data } = await client.auth.getSession();
+      if (!data || !data.session) {
+        showToast('หมดเวลาเข้าสู่ระบบ', 'กรุณาเข้าสู่ระบบใหม่อีกครั้ง เพื่อให้บันทึกข้อมูลได้', 'warning', 6000);
+        setTimeout(() => this.logout(), 2500);
+      }
+    } catch (e) { console.warn('[Auth] session check failed:', e); }
   }
 };
 

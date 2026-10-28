@@ -300,38 +300,35 @@ const SupabaseAPI = {
       const customData = LocalDB.get('clinic_custom_data') || {};
       (LocalDB.getClinics() || []).forEach(c => {
         if (c.id && (c.time || c.notes)) {
-          customData[String(c.id)] = { time: c.time || '18:30–20:30', notes: c.notes || '' };
+          // รวมกับค่าเดิม (เดิมเขียนทับทั้งรายการ → ล้างการเปิดรับลงทะเบียน/โควตา/หัวข้อของทุกคลินิก)
+          customData[String(c.id)] = { ...(customData[String(c.id)] || {}), time: c.time || '18:30–20:30', notes: c.notes || '' };
         }
       });
 
-      if (teachers.length) await this.client.from('teachers').upsert(teachers);
-      if (students.length) await this.client.from('students').upsert(students);
-      if (staff.length) await this.client.from('staff').upsert(staff);
-      if (weeks.length) await this.client.from('weeks').upsert(weeks);
+      const errors = [];
+      const step = async (what, req) => { const e = await this.write(what, req); if (e) errors.push(what); };
+      if (teachers.length) await step('ครู', this.client.from('teachers').upsert(teachers));
+      if (students.length) await step('นักเรียน', this.client.from('students').upsert(students));
+      if (staff.length) await step('เจ้าหน้าที่', this.client.from('staff').upsert(staff));
+      if (weeks.length) await step('สัปดาห์', this.client.from('weeks').upsert(weeks));
       if (clinics.length) {
-        const { error } = await this.client.from('clinics').upsert(clinics);
-        if (error && (error.code === '42703' || String(error.message).includes('time') || String(error.message).includes('notes'))) {
-          const safeClinics = clinics.map(c => {
-            const sc = { ...c };
-            delete sc.time;
-            delete sc.notes;
-            return sc;
-          });
-          await this.client.from('clinics').upsert(safeClinics);
-        }
+        // ตาราง clinics ไม่มีคอลัมน์ time/notes/topic (เก็บใน clinic_custom_data)
+        const safeClinics = clinics.map(c => { const sc = { ...c }; delete sc.time; delete sc.notes; delete sc.topic; return sc; });
+        await step('คลินิก', this.client.from('clinics').upsert(safeClinics));
       }
-      if (dutyRows.length) await this.client.from('duty_staff').upsert(dutyRows);
+      if (dutyRows.length) await step('เจ้าหน้าที่ประจำวัน', this.client.from('duty_staff').upsert(dutyRows));
 
       const attendance = (LocalDB.getAttendance() || []).map(a => this.mapAttendanceToDb(a));
-      if (attendance.length) await this.client.from('attendance').upsert(attendance);
+      if (attendance.length) await step('รายชื่อเข้าเรียน', this.client.from('attendance').upsert(attendance));
 
-      await this.client.from('settings').upsert([
+      await step('ตั้งค่า', this.client.from('settings').upsert([
         { key: 'school_settings', value: schoolSettings, updated_at: new Date() },
         { key: 'announcements_config', value: annConfig, updated_at: new Date() },
         { key: 'clinic_custom_data', value: customData, updated_at: new Date() },
         { key: 'clinic_templates', value: LocalDB.getClinicTemplates(), updated_at: new Date() }
-      ]);
+      ]));
 
+      if (errors.length) return { success: false, message: 'ส่งข้อมูลไม่สำเร็จบางส่วน: ' + errors.join(', ') };
       return { success: true, message: 'ส่งข้อมูลทั้งหมดขึ้น Supabase เรียบร้อยแล้ว' };
     } catch (err) {
       console.error('[SupabaseAPI] uploadAll error:', err);
@@ -352,13 +349,43 @@ const SupabaseAPI = {
     return unique.length;
   },
 
+  // ─── แจ้งเตือนเมื่อบันทึกขึ้นฐานข้อมูลไม่สำเร็จ ───
+  // เดิมล้มเหลวแบบเงียบ: หน้าจอขึ้น "บันทึกสำเร็จ" แต่ฐานข้อมูลไม่รับ → รีเฟรชแล้วข้อมูลหาย
+  _lastWriteToastAt: 0,
+  reportWriteError(what, error) {
+    if (!error) return false;
+    console.warn(`[SupabaseAPI] ${what} failed:`, error);
+    const denied = error.code === '42501' || /row-level security|permission denied|JWT|not authorized/i.test(error.message || '');
+    if (typeof showToast === 'function' && Date.now() - this._lastWriteToastAt > 3000) {
+      this._lastWriteToastAt = Date.now();
+      showToast('⚠️ บันทึกขึ้นระบบไม่สำเร็จ',
+        denied
+          ? `${what}: หมดเวลาเข้าสู่ระบบ — กรุณาออกจากระบบแล้วเข้าใหม่ แล้วทำรายการนี้อีกครั้ง`
+          : `${what}: ${error.message || error} — กรุณาลองใหม่อีกครั้ง`,
+        'error', 10000);
+    }
+    return true;
+  },
+
+  // ส่งคำสั่งเขียน แล้วแจ้งเตือนถ้าไม่สำเร็จ (คืนค่า error หรือ null)
+  async write(what, request) {
+    try {
+      const { error } = await request;
+      this.reportWriteError(what, error);
+      return error || null;
+    } catch (e) {
+      this.reportWriteError(what, e);
+      return e;
+    }
+  },
+
   // --- CRUD Operations ---
   async saveClinic(c) {
     if (!this.client) return;
     try {
       // 1. Sync custom time, notes, topic & subject to Supabase settings table (works 100% across all devices)
       const customData = LocalDB.get('clinic_custom_data') || {};
-      customData[String(c.id)] = {
+      const entry = {
         time: c.time || '18:30–20:30',
         notes: c.notes || '',
         topic: c.topic || '',
@@ -368,24 +395,33 @@ const SupabaseAPI = {
         allowRegistration: Boolean(c.allowRegistration),
         maxStudents: Number(c.maxStudents) || 0
       };
+      customData[String(c.id)] = entry;
       LocalDB.set('clinic_custom_data', customData);
-      await this.client.from('settings').upsert({
-        key: 'clinic_custom_data',
-        value: customData,
-        updated_at: new Date()
-      });
+      // แก้เฉพาะรายการของคลินิกนี้ที่ฐานข้อมูล (ไม่ส่งค่าของทุกคลินิกไปทับ — เครื่องที่ข้อมูลเก่าจะไม่ทับการแก้ของคนอื่น)
+      const { error: customErr } = await this.client.rpc('set_clinic_custom', { p_clinic_id: String(c.id), p_data: entry });
+      if (customErr) {
+        // ยังไม่ได้รัน SQL ไฟล์ F → ใช้วิธีเดิม (ส่งทั้งก้อน)
+        console.warn('[SupabaseAPI] set_clinic_custom unavailable, falling back:', customErr.message);
+        await this.write('บันทึกการตั้งค่าคลินิก',
+          this.client.from('settings').upsert({ key: 'clinic_custom_data', value: customData, updated_at: new Date() }));
+      }
 
-      // 2. Upsert to clinics table (including time, notes & topic if columns exist, with safe fallback)
+      // 2. Upsert to clinics table — ตาราง clinics ไม่มีคอลัมน์ time/notes/topic (เก็บใน clinic_custom_data แล้ว)
+      //    จำไว้หลังลองครั้งแรก จะได้ไม่ต้องส่งคำขอที่ล้มเหลวทุกครั้ง
       const dbRow = this.mapClinicToDb(c);
+      if (this._clinicExtraColsMissing) { delete dbRow.time; delete dbRow.notes; delete dbRow.topic; }
       const { error } = await this.client.from('clinics').upsert(dbRow);
-      if (error && (error.code === '42703' || String(error.message).includes('time') || String(error.message).includes('notes') || String(error.message).includes('topic'))) {
+      if (error && (error.code === '42703' || error.code === 'PGRST204' || /time|notes|topic/.test(String(error.message)))) {
+        this._clinicExtraColsMissing = true;
         const safeRow = { ...dbRow };
         delete safeRow.time;
         delete safeRow.notes;
         delete safeRow.topic;
-        await this.client.from('clinics').upsert(safeRow);
+        await this.write('บันทึกคลินิก', this.client.from('clinics').upsert(safeRow));
+      } else {
+        this.reportWriteError('บันทึกคลินิก', error);
       }
-    } catch (e) { console.warn('Supabase saveClinic error:', e); }
+    } catch (e) { this.reportWriteError('บันทึกคลินิก', e); }
   },
 
   async deleteClinic(id) {
@@ -395,75 +431,58 @@ const SupabaseAPI = {
       if (customData[String(id)]) {
         delete customData[String(id)];
         LocalDB.set('clinic_custom_data', customData);
-        await this.client.from('settings').upsert({
-          key: 'clinic_custom_data',
-          value: customData,
-          updated_at: new Date()
-        });
       }
-      await this.client.from('attendance').delete().eq('clinic_id', String(id));
-      await this.client.from('clinics').delete().eq('id', String(id));
-    } catch (e) { console.warn('Supabase deleteClinic error:', e); }
+      // ลบเฉพาะรายการของคลินิกนี้ที่ฐานข้อมูล
+      const { error: customErr } = await this.client.rpc('delete_clinic_custom', { p_clinic_id: String(id) });
+      if (customErr) {
+        console.warn('[SupabaseAPI] delete_clinic_custom unavailable, falling back:', customErr.message);
+        await this.write('ลบการตั้งค่าคลินิก',
+          this.client.from('settings').upsert({ key: 'clinic_custom_data', value: customData, updated_at: new Date() }));
+      }
+      await this.write('ลบรายชื่อในคลินิก', this.client.from('attendance').delete().eq('clinic_id', String(id)));
+      await this.write('ลบคลินิก', this.client.from('clinics').delete().eq('id', String(id)));
+    } catch (e) { this.reportWriteError('ลบคลินิก', e); }
   },
 
   async saveWeek(w) {
     if (!this.client) return;
-    try {
-      await this.client.from('weeks').upsert(this.mapWeekToDb(w));
-    } catch (e) { console.warn('Supabase saveWeek error:', e); }
+    await this.write('บันทึกสัปดาห์', this.client.from('weeks').upsert(this.mapWeekToDb(w)));
   },
 
   async deleteWeek(id) {
     if (!this.client) return;
-    try {
-      await this.client.from('weeks').delete().eq('id', String(id));
-    } catch (e) { console.warn('Supabase deleteWeek error:', e); }
+    await this.write('ลบสัปดาห์', this.client.from('weeks').delete().eq('id', String(id)));
   },
 
   async saveTeacher(t) {
     if (!this.client) return;
-    try {
-      await this.client.from('teachers').upsert(this.mapTeacherToDb(t));
-    } catch (e) { console.warn('Supabase saveTeacher error:', e); }
+    await this.write('บันทึกข้อมูลครู', this.client.from('teachers').upsert(this.mapTeacherToDb(t)));
   },
 
   async deleteTeacher(id) {
     if (!this.client) return;
-    try {
-      await this.client.from('teachers').delete().eq('id', String(id));
-    } catch (e) { console.warn('Supabase deleteTeacher error:', e); }
+    await this.write('ลบครู', this.client.from('teachers').delete().eq('id', String(id)));
   },
 
   async saveStudent(s) {
     if (!this.client) return;
-    try {
-      await this.client.from('students').upsert(this.mapStudentToDb(s));
-    } catch (e) { console.warn('Supabase saveStudent error:', e); }
+    await this.write('บันทึกข้อมูลนักเรียน', this.client.from('students').upsert(this.mapStudentToDb(s)));
   },
 
   async deleteStudent(id) {
     if (!this.client) return;
-    try {
-      await this.client.from('students').delete().eq('id', String(id));
-    } catch (e) { console.warn('Supabase deleteStudent error:', e); }
+    await this.write('ลบนักเรียน', this.client.from('students').delete().eq('id', String(id)));
   },
 
   async saveStaff(s) {
     if (!this.client) return;
-    try {
-      if (Array.isArray(s)) {
-        await this.client.from('staff').upsert(s.map(x => this.mapStaffToDb(x)));
-      } else {
-        await this.client.from('staff').upsert(this.mapStaffToDb(s));
-      }
-    } catch (e) { console.warn('Supabase saveStaff error:', e); }
+    const rows = Array.isArray(s) ? s.map(x => this.mapStaffToDb(x)) : this.mapStaffToDb(s);
+    await this.write('บันทึกเจ้าหน้าที่', this.client.from('staff').upsert(rows));
   },
 
   async deleteStaff(id) {
     if (!this.client) return;
-    try {
-      await this.client.from('staff').delete().eq('id', String(id));
-    } catch (e) { console.warn('Supabase deleteStaff error:', e); }
+    await this.write('ลบเจ้าหน้าที่', this.client.from('staff').delete().eq('id', String(id)));
   },
 
   async clearTable(tableName) {
@@ -478,58 +497,39 @@ const SupabaseAPI = {
       } else {
         res = await this.client.from(tableName).delete().neq('id', '___none___');
       }
-      if (res && res.error) {
-        console.warn(`Supabase clearTable(${tableName}) error:`, res.error);
-      }
+      this.reportWriteError(`ล้างข้อมูล (${tableName})`, res && res.error);
     } catch (e) {
-      console.warn(`Supabase clearTable(${tableName}) error:`, e);
+      this.reportWriteError(`ล้างข้อมูล (${tableName})`, e);
     }
   },
 
   async saveDutyStaff(dutyMap, weeks) {
     if (!this.client) return;
-    try {
-      const dutyRows = Object.entries(dutyMap || {}).map(([date, officer]) => ({ date, officer }));
-      if (dutyRows.length) {
-        await this.client.from('duty_staff').upsert(dutyRows);
-      }
-      if (Array.isArray(weeks) && weeks.length) {
-        await this.client.from('weeks').upsert(weeks.map(w => this.mapWeekToDb(w)));
-      }
-    } catch (e) { console.warn('Supabase saveDutyStaff error:', e); }
+    const dutyRows = Object.entries(dutyMap || {}).map(([date, officer]) => ({ date, officer }));
+    if (dutyRows.length) {
+      await this.write('บันทึกเจ้าหน้าที่ประจำวัน', this.client.from('duty_staff').upsert(dutyRows));
+    }
+    if (Array.isArray(weeks) && weeks.length) {
+      await this.write('บันทึกเจ้าหน้าที่ประจำสัปดาห์', this.client.from('weeks').upsert(weeks.map(w => this.mapWeekToDb(w))));
+    }
   },
 
   async saveSettings(settings) {
     if (!this.client) return;
-    try {
-      await this.client.from('settings').upsert({
-        key: 'school_settings',
-        value: settings,
-        updated_at: new Date()
-      });
-    } catch (e) { console.warn('Supabase saveSettings error:', e); }
+    await this.write('บันทึกตั้งค่าปีการศึกษา',
+      this.client.from('settings').upsert({ key: 'school_settings', value: settings, updated_at: new Date() }));
   },
 
   async saveAnnouncementsConfig(cfg) {
     if (!this.client) return;
-    try {
-      await this.client.from('settings').upsert({
-        key: 'announcements_config',
-        value: cfg,
-        updated_at: new Date()
-      });
-    } catch (e) { console.warn('Supabase saveAnnouncementsConfig error:', e); }
+    await this.write('บันทึกประกาศ',
+      this.client.from('settings').upsert({ key: 'announcements_config', value: cfg, updated_at: new Date() }));
   },
 
   async saveClinicTemplates(templates) {
     if (!this.client) return;
-    try {
-      await this.client.from('settings').upsert({
-        key: 'clinic_templates',
-        value: templates,
-        updated_at: new Date()
-      });
-    } catch (e) { console.warn('Supabase saveClinicTemplates error:', e); }
+    await this.write('บันทึก Template',
+      this.client.from('settings').upsert({ key: 'clinic_templates', value: templates, updated_at: new Date() }));
   },
 
   // --- Mappers ---
@@ -686,16 +686,20 @@ const SupabaseAPI = {
     };
   },
 
+  // บันทึกรายชื่อของคลินิก: ใส่/อัปเดตรายชื่อใหม่ก่อน แล้วค่อยลบเฉพาะคนที่ถูกเอาออก
+  // (เดิมลบทั้งคลินิกก่อนแล้วค่อยใส่ใหม่ — ถ้าขั้นใส่ใหม่ล้มเหลว รายชื่อทั้งคลินิกหาย)
   async setAttendanceForClinic(clinicId, records) {
     if (!this.client) return;
-    try {
-      await this.client.from('attendance').delete().eq('clinic_id', String(clinicId));
-      if (records && records.length) {
-        const rows = records.map(r => this.mapAttendanceToDb(r));
-        await this.client.from('attendance').upsert(rows);
-      }
-    } catch (e) {
-      console.warn('Supabase setAttendanceForClinic error:', e);
+    const rows = [...new Map((records || []).map(r => {
+      const row = this.mapAttendanceToDb(r);
+      return [row.id, row];
+    })).values()];
+    if (rows.length) {
+      const upsertErr = await this.write('บันทึกรายชื่อนักเรียน', this.client.from('attendance').upsert(rows));
+      if (upsertErr) return; // ไม่ลบอะไรถ้าบันทึกรายชื่อใหม่ไม่สำเร็จ
     }
+    let del = this.client.from('attendance').delete().eq('clinic_id', String(clinicId));
+    if (rows.length) del = del.not('id', 'in', `(${rows.map(r => `"${String(r.id).replace(/"/g, '')}"`).join(',')})`);
+    await this.write('ลบรายชื่อที่ถูกเอาออก', del);
   }
 };

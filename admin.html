@@ -1476,9 +1476,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
   <script src="js/firebase-config.js?v=2569_16"></script>
-  <script src="js/supabase-api.js?v=2569_21"></script>
+  <script src="js/supabase-api.js?v=2569_22"></script>
   <script src="js/db.js?v=2569_21"></script>
-  <script src="js/auth.js?v=2569_16"></script>
+  <script src="js/auth.js?v=2569_22"></script>
   <script src="js/student-auth.js?v=2569_20"></script>
   <script src="js/xlsx.full.min.js"></script>
   <script>
@@ -4080,6 +4080,9 @@
     }
 
     async function syncDataToSupabase() {
+      if (!confirm('⚠️ ปุ่มนี้จะส่งข้อมูล "ทั้งหมดในเครื่องนี้" ขึ้นไปทับฐานข้อมูล\n\n' +
+        'ถ้าเครื่องนี้ข้อมูลไม่ล่าสุด การแก้ไขของครูท่านอื่นอาจถูกทับหาย\n' +
+        'ปกติไม่จำเป็นต้องกด เพราะทุกการแก้ไขบันทึกขึ้นระบบอัตโนมัติอยู่แล้ว\n\nยืนยันส่งข้อมูลทั้งหมดใช่หรือไม่?')) return;
       const btn = document.getElementById('btn-sync-to-supabase');
       if (btn) btn.disabled = true;
       showToast('กำลังส่งข้อมูล...', 'กำลังอัปโหลดข้อมูลทั้งหมดขึ้น Supabase', 'info');
