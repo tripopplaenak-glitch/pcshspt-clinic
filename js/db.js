@@ -378,7 +378,7 @@ class LocalDB {
     const list = LocalDB.getWeeks();
     const idx = list.findIndex(x => String(x.id) === String(w.id));
     if (idx >= 0) list[idx] = w;
-    else { w.id = LocalDB.nextId('week'); list.push(w); }
+    else { w.id = LocalDB.nextFreeId('weeks', 'week', LocalDB.getList('weeks')); list.push(w); }
     LocalDB.setList('weeks', list);
     return w;
   }
@@ -423,7 +423,7 @@ class LocalDB {
           const thaiStart = typeof formatDateThai === 'function' ? formatDateThai(monStr) : monStr;
           const thaiEnd = typeof formatDateThai === 'function' ? formatDateThai(friStr) : friStr;
           const newWeek = {
-            id: LocalDB.nextId('week'),
+            id: LocalDB.nextFreeId('weeks', 'week', weeks),
             weekId: 'week_' + monStr,
             weekNum: nextWeekNum,
             startDate: monStr,
@@ -624,9 +624,22 @@ const DataService = {
     return LocalDB.getClinicsByGradeAndWeek(grade, weekId);
   },
   async saveClinic(c)       {
+    // ย้ายวันที่คลินิก → ย้ายวันที่ของรายชื่อที่ลงทะเบียนไว้ด้วย
+    // (รายชื่อที่วันที่ไม่ตรงกับคลินิกจะถูกตัดทิ้งตอนดึงข้อมูล → หน้าสรุปการเข้าเรียนไม่แสดงนักเรียนเหล่านั้น)
+    const prev = c.id ? LocalDB.getClinics().find(x => String(x.id) === String(c.id)) : null;
+    const oldDate = prev ? toYMD(prev.date) : '';
+    const newDate = toYMD(c.date);
+    const moved = Boolean(oldDate && newDate && oldDate !== newDate);
+    if (moved && Array.isArray(c.studentList)) c.studentList = c.studentList.map(s => ({ ...s, date: newDate }));
+
     const res = LocalDB.saveClinic(c);
+    if (moved) {
+      LocalDB.setList('attendance', LocalDB.getList('attendance').map(a =>
+        String(a.clinicId) === String(res.id) ? { ...a, date: newDate } : a));
+    }
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
       await SupabaseAPI.saveClinic(res);
+      if (moved) await SupabaseAPI.moveClinicAttendanceDate(res.id, newDate);
     }
     return res;
   },

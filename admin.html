@@ -1475,8 +1475,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
   <script src="js/firebase-config.js?v=2569_16"></script>
-  <script src="js/supabase-api.js?v=2569_22"></script>
-  <script src="js/db.js?v=2569_21"></script>
+  <script src="js/supabase-api.js?v=2569_23"></script>
+  <script src="js/db.js?v=2569_23"></script>
   <script src="js/auth.js?v=2569_22"></script>
   <script src="js/student-auth.js?v=2569_20"></script>
   <script src="js/xlsx.full.min.js"></script>
@@ -1812,9 +1812,21 @@
     }
 
     async function deleteWeek(id) {
-      if (!confirm('ยืนยันลบสัปดาห์นี้?')) return;
+      const week = (await DataService.getWeeks()).find(w => String(w.id) === String(id));
+      if (!week) return;
+      // คลินิกในสัปดาห์นี้ (ถ้าลบแค่สัปดาห์ ระบบจะสร้างสัปดาห์กลับขึ้นมาใหม่เองเพราะยังมีคลินิกค้างอยู่)
+      const s = toYMD(week.startDate), e = toYMD(week.endDate);
+      const clinics = (await DataService.getClinics()).filter(c =>
+        (week.weekId && c.weekId === week.weekId) || (c.date && s && e && toYMD(c.date) >= s && toYMD(c.date) <= e));
+      const students = clinics.reduce((n, c) => n + (Number(c.studentCount) || (Array.isArray(c.studentList) ? c.studentList.length : 0)), 0);
+      const msg = clinics.length
+        ? `ลบ "${week.label || 'สัปดาห์นี้'}" พร้อมคลินิกในสัปดาห์นี้ ${clinics.length} รายการ` +
+          (students ? ` (มีรายชื่อนักเรียนรวม ${students} คน จะถูกลบด้วย)` : '') + '\n\nลบแล้วกู้คืนไม่ได้ ยืนยันใช่หรือไม่?'
+        : `ยืนยันลบ "${week.label || 'สัปดาห์นี้'}" ใช่หรือไม่?`;
+      if (!confirm(msg)) return;
+      for (const c of clinics) await DataService.deleteClinic(c.id);
       await DataService.deleteWeek(id);
-      showToast('ลบเรียบร้อย', '', 'success');
+      showToast('ลบเรียบร้อย', clinics.length ? `ลบสัปดาห์และคลินิก ${clinics.length} รายการแล้ว` : '', 'success');
       await loadWeeksList();
     }
 

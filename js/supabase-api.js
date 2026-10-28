@@ -444,6 +444,13 @@ const SupabaseAPI = {
     } catch (e) { this.reportWriteError('ลบคลินิก', e); }
   },
 
+  // ย้ายวันที่ของรายชื่อทั้งคลินิกตามวันใหม่ของคลินิก
+  async moveClinicAttendanceDate(clinicId, newDate) {
+    if (!this.client) return;
+    await this.write('ย้ายวันที่ของรายชื่อนักเรียน',
+      this.client.from('attendance').update({ date: newDate }).eq('clinic_id', String(clinicId)));
+  },
+
   async saveWeek(w) {
     if (!this.client) return;
     await this.write('บันทึกสัปดาห์', this.client.from('weeks').upsert(this.mapWeekToDb(w)));
