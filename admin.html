@@ -850,7 +850,6 @@
 
                 <div class="flex gap-2 mt-3" style="flex-wrap:wrap;">
                   <button class="btn btn-primary btn-sm" onclick="saveSupabaseSettings()">💾 บันทึกการตั้งค่า Supabase</button>
-                  <button class="btn btn-outline btn-sm" onclick="syncDataToSupabase()" id="btn-sync-to-supabase">🚀 ส่งข้อมูลทั้งหมดขึ้น Supabase</button>
                   <button class="btn btn-outline btn-sm" onclick="syncDataFromSupabase()" id="btn-sync-from-supabase">🔄 ดึงข้อมูลสดจาก Supabase</button>
                 </div>
                 <div id="supabase-status-msg" class="text-xs mt-2" style="font-weight:600;color:#059669;"></div>
@@ -901,7 +900,7 @@
               </div>
               <div class="flex gap-2 mt-2" style="flex-wrap:wrap;">
                 <button class="btn btn-outline btn-sm" onclick="exportAllData()">💾 Export สำรองข้อมูลทั้งหมด (JSON)</button>
-                <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-json-file').click()">📥 Import นำเข้าข้อมูลจากไฟล์ JSON</button>
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('import-json-file').click()">📥 กู้คืนข้อมูลจากไฟล์สำรอง (JSON)</button>
                 <input type="file" id="import-json-file" accept=".json" style="display:none;" onchange="importAllData(event)">
                 <button class="btn btn-danger btn-sm" onclick="clearAllPersonnelData()">🗑️ ล้างรายชื่อบุคลากรทั้งหมด (ครู นักเรียน เจ้าหน้าที่)</button>
                 <button class="btn btn-danger btn-sm" onclick="clearScheduleData()">🗑️ ล้างตารางและสัปดาห์</button>
@@ -3946,6 +3945,7 @@
         school_settings: LocalDB.get('school_settings') || {},
         duty_by_date: LocalDB.get('duty_by_date') || {},
         clinic_templates: LocalDB.getClinicTemplates(),
+        clinic_custom_data: LocalDB.get('clinic_custom_data') || {},
         exportedAt: new Date().toISOString()
       };
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -3963,8 +3963,23 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async e => {
+        let data;
         try {
-          const data = JSON.parse(e.target.result);
+          data = JSON.parse(e.target.result);
+        } catch (err) {
+          showToast('เกิดข้อผิดพลาด', 'ไม่สามารถอ่านไฟล์ JSON ได้: ' + err.message, 'error');
+          return;
+        }
+        // สรุปสิ่งที่อยู่ในไฟล์ แล้วให้ยืนยันก่อนเขียนขึ้นระบบจริง
+        const n = k => (Array.isArray(data[k]) ? data[k].length : 0);
+        const when = data.exportedAt ? new Date(data.exportedAt).toLocaleString('th-TH') : 'ไม่ทราบ';
+        if (!confirm(`กู้คืนข้อมูลจากไฟล์สำรอง (สำรองเมื่อ ${when})\n\n` +
+          `ครู ${n('teachers')} · นักเรียน ${n('students')} · เจ้าหน้าที่ ${n('staff')}\n` +
+          `สัปดาห์ ${n('weeks')} · คลินิก ${n('clinics')} · รายชื่อเข้าเรียน ${n('attendance')}\n\n` +
+          `⚠️ ข้อมูลในไฟล์จะถูกเขียนขึ้นระบบจริง ทับรายการเดิมที่ตรงกัน\n` +
+          `(รายการที่มีในระบบแต่ไม่มีในไฟล์ จะยังอยู่ ไม่ถูกลบ)\n\n` +
+          `แนะนำ: กด "Export สำรองข้อมูลทั้งหมด" เก็บข้อมูลปัจจุบันไว้ก่อน\n\nยืนยันกู้คืนใช่หรือไม่?`)) return;
+        try {
           if (Array.isArray(data.teachers)) LocalDB.setList('teachers', data.teachers);
           if (Array.isArray(data.students)) LocalDB.setList('students', data.students);
           if (Array.isArray(data.staff)) LocalDB.setList('staff', data.staff);
@@ -3976,11 +3991,39 @@
           if (data.school_settings) LocalDB.set('school_settings', data.school_settings);
           if (data.duty_by_date) LocalDB.set('duty_by_date', data.duty_by_date);
           if (Array.isArray(data.clinic_templates)) LocalDB.setList('clinic_templates', data.clinic_templates);
+          // ค่าของคลินิก (เปิดรับลงทะเบียน/โควตา/เวลา/หัวข้อ) — ไฟล์รุ่นเก่าไม่มี จึงสร้างจากข้อมูลคลินิกในไฟล์
+          if (data.clinic_custom_data && typeof data.clinic_custom_data === 'object') {
+            LocalDB.set('clinic_custom_data', data.clinic_custom_data);
+          } else if (Array.isArray(data.clinics)) {
+            const custom = LocalDB.get('clinic_custom_data') || {};
+            data.clinics.forEach(c => {
+              custom[String(c.id)] = {
+                ...(custom[String(c.id)] || {}),
+                time: c.time || '18:30–20:30', notes: c.notes || '', topic: c.topic || '',
+                subject: c.subject || c.subjectName || '', teacherId: String(c.teacherId || ''),
+                teacherName: c.teacherName || '', allowRegistration: Boolean(c.allowRegistration),
+                maxStudents: Number(c.maxStudents) || 0
+              };
+            });
+            LocalDB.set('clinic_custom_data', custom);
+          }
 
-          showToast('นำเข้าสำเร็จ!', 'กู้คืนข้อมูลทั้งหมดจากไฟล์ JSON เรียบร้อยแล้ว', 'success');
+          // เขียนขึ้นระบบจริง (เดิมกู้คืนแค่ในเครื่องนี้ รีเฟรชแล้วกลับเป็นเหมือนเดิม)
+          if (typeof SupabaseAPI === 'undefined' || !SupabaseAPI.isConfigured()) {
+            showToast('กู้คืนไม่สำเร็จ', 'ยังไม่ได้เชื่อมต่อฐานข้อมูล', 'error');
+            return;
+          }
+          showToast('กำลังกู้คืนข้อมูล...', 'กรุณารอสักครู่ อย่าปิดหน้านี้', 'info');
+          const res = await SupabaseAPI.uploadAll();
+          await DataService.initSync(); // ดึงข้อมูลจริงจากระบบกลับมาแสดง
           await loadAdminData();
-        } catch(err) {
-          showToast('เกิดข้อผิดพลาด', 'ไม่สามารถอ่านไฟล์ JSON ได้: ' + err.message, 'error');
+          if (res && res.success) {
+            showToast('กู้คืนสำเร็จ!', 'เขียนข้อมูลจากไฟล์สำรองขึ้นระบบเรียบร้อยแล้ว', 'success');
+          } else {
+            showToast('กู้คืนไม่สำเร็จ', (res && res.message) || 'บันทึกขึ้นระบบไม่ได้', 'error', 10000);
+          }
+        } catch (err) {
+          showToast('เกิดข้อผิดพลาด', 'กู้คืนข้อมูลไม่สำเร็จ: ' + err.message, 'error', 10000);
         }
       };
       reader.readAsText(file, 'UTF-8');
@@ -4077,27 +4120,6 @@
       SupabaseAPI.init();
       loadSupabaseSettings();
       showToast('สำเร็จ', 'บันทึกการตั้งค่า Supabase เรียบร้อยแล้ว', 'success');
-    }
-
-    async function syncDataToSupabase() {
-      if (!confirm('⚠️ ปุ่มนี้จะส่งข้อมูล "ทั้งหมดในเครื่องนี้" ขึ้นไปทับฐานข้อมูล\n\n' +
-        'ถ้าเครื่องนี้ข้อมูลไม่ล่าสุด การแก้ไขของครูท่านอื่นอาจถูกทับหาย\n' +
-        'ปกติไม่จำเป็นต้องกด เพราะทุกการแก้ไขบันทึกขึ้นระบบอัตโนมัติอยู่แล้ว\n\nยืนยันส่งข้อมูลทั้งหมดใช่หรือไม่?')) return;
-      const btn = document.getElementById('btn-sync-to-supabase');
-      if (btn) btn.disabled = true;
-      showToast('กำลังส่งข้อมูล...', 'กำลังอัปโหลดข้อมูลทั้งหมดขึ้น Supabase', 'info');
-      try {
-        const res = await SupabaseAPI.uploadAll();
-        if (res && res.success) {
-          showToast('สำเร็จ', 'ส่งข้อมูลทั้งหมดขึ้น Supabase เรียบร้อยแล้ว', 'success');
-        } else {
-          showToast('ข้อผิดพลาด', res ? res.message : 'ไม่สามารถส่งข้อมูลได้', 'danger');
-        }
-      } catch (err) {
-        showToast('ข้อผิดพลาด', err.message, 'danger');
-      } finally {
-        if (btn) btn.disabled = false;
-      }
     }
 
     async function syncDataFromSupabase() {
