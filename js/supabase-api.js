@@ -186,12 +186,34 @@ const SupabaseAPI = {
     }
   },
 
+  // ดึงทุกแถวของตาราง — Supabase ส่งได้สูงสุด 1,000 แถวต่อครั้ง ส่วนที่เกินจะถูกตัดทิ้งแบบเงียบ ๆ
+  // (รายชื่อเข้าเรียนสะสมทั้งภาคเกิน 1,000 ได้) จึงดึงทีละ 1,000 แถวจนครบ
+  async selectAll(table, orderBy) {
+    const pageSize = 1000;
+    const rows = [];
+    for (let from = 0; ; from += pageSize) {
+      const { data, error } = await this.client.from(table).select('*').order(orderBy).range(from, from + pageSize - 1);
+      if (error) return { data: null, error };
+      rows.push(...data);
+      if (data.length < pageSize) return { data: rows, error: null };
+    }
+  },
+
+  // รายชื่อครู/นักเรียน/เจ้าหน้าที่เปลี่ยนไม่บ่อย (และมีอัปเดตแบบเรียลไทม์อยู่แล้ว) → ดึงใหม่ทุก 10 นาที
+  // ลดปริมาณข้อมูลที่ดึงซ้ำ (นักเรียน 700+ คนเป็นส่วนที่ใหญ่ที่สุด) ไม่ให้เกินโควตาฟรีของ Supabase
+  ROSTER_TTL_MS: 10 * 60 * 1000,
+  _rosterFetchedAt: 0,
+
   // ดึงข้อมูลทั้งหมดจาก Supabase ลงสู่ LocalDB
-  async fetchAll() {
+  // opts.forceRoster = true → ดึงรายชื่อครู/นักเรียน/เจ้าหน้าที่ใหม่ทันที (เช่น หลังนำเข้ารายชื่อ)
+  async fetchAll(opts = {}) {
     if (!this.client) this.init();
     if (!this.client) return false;
 
     try {
+      const needRoster = opts.forceRoster || !this._rosterFetchedAt ||
+        Date.now() - this._rosterFetchedAt > this.ROSTER_TTL_MS || !LocalDB.getStudents().length;
+      const skip = Promise.resolve({ data: null });
       const [
         { data: weeksData },
         { data: clinicsData },
@@ -202,15 +224,16 @@ const SupabaseAPI = {
         { data: settingsData },
         { data: attendanceData }
       ] = await Promise.all([
-        this.client.from('weeks').select('*'),
-        this.client.from('clinics').select('*'),
-        this.client.from('teachers').select('*'),
-        this.client.from('students').select('*'),
-        this.client.from('staff').select('*'),
-        this.client.from('duty_staff').select('*'),
-        this.client.from('settings').select('*'),
-        this.client.from('attendance').select('*')
+        this.selectAll('weeks', 'id'),
+        this.selectAll('clinics', 'id'),
+        needRoster ? this.selectAll('teachers', 'id') : skip,
+        needRoster ? this.selectAll('students', 'id') : skip,
+        needRoster ? this.selectAll('staff', 'id') : skip,
+        this.selectAll('duty_staff', 'date'),
+        this.selectAll('settings', 'key'),
+        this.selectAll('attendance', 'id')
       ]);
+      if (needRoster && Array.isArray(studentsData)) this._rosterFetchedAt = Date.now();
 
       if (Array.isArray(teachersData) && teachersData.length) {
         LocalDB.setList('teachers', teachersData.map(t => this.mapTeacherFromDb(t)));

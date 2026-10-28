@@ -475,8 +475,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
 <script src="js/firebase-config.js?v=2569_16"></script>
-<script src="js/supabase-api.js?v=2569_23"></script>
-<script src="js/db.js?v=2569_23"></script>
+<script src="js/supabase-api.js?v=2569_24"></script>
+<script src="js/db.js?v=2569_24"></script>
 <script src="js/auth.js?v=2569_22"></script>
 <script src="js/student-auth.js?v=2569_20"></script>
 <script>
@@ -523,10 +523,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     refreshScheduleData();
   });
 
-  // 3. Fast background sync interval to catch updates live
+  // 3. Background sync (สำรอง) — การเปลี่ยนแปลงมาถึงทันทีผ่านระบบเรียลไทม์อยู่แล้ว
+  //    จึงดึงซ้ำทุก 60 วินาทีพอ (เดิม 15 วินาที ใช้โควตาข้อมูลของ Supabase สูงมากเมื่อนักเรียนเปิดหน้าค้างไว้)
   setInterval(() => {
     if (!document.hidden) refreshScheduleData();
-  }, 15000);
+  }, 60000);
 });
 
 let isRefreshingSchedule = false;
@@ -1499,7 +1500,7 @@ async function submitStudentRegistration() {
       return;
     }
 
-    await DataService.initSync();
+    await DataService.initSync(true);
 
     closeModal('modal-student-registration');
     showToast('🎉 ลงทะเบียนสำเร็จ!', `นักเรียน "${student.name}" ได้ลงทะเบียนเรียนวิชา "${regTargetClinic.subject}" เรียบร้อยแล้ว`, 'success');

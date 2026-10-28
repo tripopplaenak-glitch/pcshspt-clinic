@@ -1475,8 +1475,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
   <script src="js/firebase-config.js?v=2569_16"></script>
-  <script src="js/supabase-api.js?v=2569_23"></script>
-  <script src="js/db.js?v=2569_23"></script>
+  <script src="js/supabase-api.js?v=2569_24"></script>
+  <script src="js/db.js?v=2569_24"></script>
   <script src="js/auth.js?v=2569_22"></script>
   <script src="js/student-auth.js?v=2569_20"></script>
   <script src="js/xlsx.full.min.js"></script>
@@ -3670,7 +3670,7 @@
         // ฐานข้อมูลไม่รับข้อมูล → แจ้งชัดเจน และดึงข้อมูลจริงกลับมา (ไม่ให้หน้าจอแสดงข้อมูลที่ไม่ได้บันทึก)
         console.error('[Import] save failed:', err);
         showToast('นำเข้าไม่สำเร็จ', `บันทึกขึ้นฐานข้อมูลไม่ได้: ${err.message || err} — ลองออกจากระบบแล้วเข้าใหม่ แล้วนำเข้าอีกครั้ง`, 'error', 9000);
-        await DataService.initSync();
+        await DataService.initSync(true);
         if (importMode === 'students') await loadStudents();
         else if (importMode !== 'staff') await loadTeachers();
         return;
@@ -4027,7 +4027,7 @@
           }
           showToast('กำลังกู้คืนข้อมูล...', 'กรุณารอสักครู่ อย่าปิดหน้านี้', 'info');
           const res = await SupabaseAPI.uploadAll();
-          await DataService.initSync(); // ดึงข้อมูลจริงจากระบบกลับมาแสดง
+          await DataService.initSync(true); // ดึงข้อมูลจริงจากระบบกลับมาแสดง
           await loadAdminData();
           if (res && res.success) {
             showToast('กู้คืนสำเร็จ!', 'เขียนข้อมูลจากไฟล์สำรองขึ้นระบบเรียบร้อยแล้ว', 'success');
@@ -4139,7 +4139,7 @@
       if (btn) btn.disabled = true;
       showToast('กำลังดึงข้อมูล...', 'กำลังโหลดข้อมูลสดจาก Supabase', 'info');
       try {
-        const ok = await SupabaseAPI.fetchAll();
+        const ok = await SupabaseAPI.fetchAll({ forceRoster: true });
         if (ok) {
           await loadAdminData();
           showToast('สำเร็จ', 'ดึงข้อมูลสดจาก Supabase เรียบร้อยแล้ว', 'success');

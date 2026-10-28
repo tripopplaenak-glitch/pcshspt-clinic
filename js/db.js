@@ -733,9 +733,14 @@ const DataService = {
   },
 
   // --- Cloud Sync Helpers ---
-  async initSync() {
+  // ดึงข้อมูลใหม่จากระบบ — สลับแท็บ/กลับมาที่หน้าจอบ่อย ๆ จะไม่ดึงซ้ำถี่กว่าทุก 20 วินาที
+  // (การแก้ไขของคนอื่นมาถึงทันทีผ่านระบบเรียลไทม์อยู่แล้ว) · force = true → ดึงทันทีรวมรายชื่อนักเรียน/ครู
+  _lastSyncAt: 0,
+  async initSync(force = false) {
     if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
-      const ok = await SupabaseAPI.fetchAll();
+      if (!force && Date.now() - this._lastSyncAt < 20000) return false;
+      this._lastSyncAt = Date.now();
+      const ok = await SupabaseAPI.fetchAll({ forceRoster: force });
       if (ok) return true;
     }
     return false;
