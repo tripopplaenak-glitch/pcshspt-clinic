@@ -108,6 +108,62 @@
       }
     }
 
+    /* ─── TAB 3: สรุปคลินิกรายวัน ─── */
+    .daily-filter-bar { flex-wrap: wrap; gap: 10px; }
+    .daily-day-nav, .daily-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .daily-actions { margin-left: auto; }
+    .daily-table { width: 100%; border-collapse: collapse; }
+    .daily-table th { background: var(--blue-deep); color: #fff; padding: 10px; font-size: .85rem; text-align: left; white-space: nowrap; }
+    .daily-table td { padding: 10px; border-bottom: 1px solid var(--gray-200); vertical-align: top; font-size: .9rem; }
+    .daily-row { cursor: pointer; }
+    .daily-row:hover td { background: var(--gray-50); }
+    .daily-row.cancelled td { color: var(--gray-500); }
+    .daily-subject { font-weight: 700; color: var(--blue-deep); }
+    .daily-topic { font-size: .8rem; color: #15803d; margin-top: 2px; }
+    .daily-status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
+    .daily-count-btn { white-space: nowrap; }
+    .daily-detail-row > td { background: #f8fafc; padding: 6px 12px 14px; }
+    .daily-detail-row.hidden { display: none; }
+    .daily-students { width: 100%; border-collapse: collapse; font-size: .84rem; background: #fff; }
+    .daily-students th { background: #e2e8f0; color: var(--gray-700); padding: 6px 8px; text-align: left; font-size: .8rem; white-space: nowrap; }
+    .daily-students td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; }
+    .daily-no-students { color: var(--gray-500); font-size: .85rem; padding: 6px 2px; }
+    @media (max-width: 768px) {
+      .daily-actions { margin-left: 0; width: 100%; }
+      .daily-day-nav { width: 100%; }
+      .daily-day-nav .filter-input { flex: 1; width: auto !important; min-width: 0; }
+      /* มือถือ: ตารางคลินิก → การ์ดทีละคลินิก */
+      #daily-summary-content .daily-table > thead { display: none; }
+      #daily-summary-content .daily-table,
+      #daily-summary-content .daily-table > tbody,
+      #daily-summary-content .daily-table > tbody > tr,
+      #daily-summary-content .daily-table > tbody > tr > td { display: block; width: 100%; }
+      #daily-summary-content .daily-row { padding: 10px 12px 8px; border-top: 1px solid var(--gray-200); }
+      #daily-summary-content .daily-row > td { border: none; padding: 2px 0; font-size: .86rem; }
+      #daily-summary-content .daily-row > td[data-label]::before { content: attr(data-label) ': '; color: var(--gray-500); font-size: .78rem; }
+      #daily-summary-content .daily-row > td.daily-cell-grade::before,
+      #daily-summary-content .daily-row > td.daily-cell-subject::before { content: none; }
+      #daily-summary-content .daily-row > td.daily-cell-count { padding-top: 6px; }
+      #daily-summary-content .daily-detail-row.hidden { display: none; }
+      #daily-summary-content .daily-detail-row > td { padding: 4px 8px 12px; }
+      .daily-students { font-size: .8rem; }
+      .daily-students th, .daily-students td { padding: 4px 5px; }
+    }
+
+    /* ─── แท็บหลัก 3 แท็บ: มือถือเรียงแนวตั้งเต็มความกว้าง (เดิมถูกบีบจนตัวหนังสือแตกหลายบรรทัด) ─── */
+    @media (max-width: 768px) {
+      .tabs-container { flex-direction: column; overflow-x: visible !important; gap: 8px !important; }
+      .tabs-container .btn { width: 100%; justify-content: flex-start; text-align: left; padding: 10px 14px !important; }
+    }
+
+    /* ─── ตัวกรองหอพัก: คอม/iPad ใช้ปุ่ม · มือถือใช้ช่องเลือก ─── */
+    .dorm-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .dorm-select-mobile { display: none; }
+    @media (max-width: 768px) {
+      .dorm-chips { display: none; }
+      .dorm-select-mobile { display: block; width: 100%; }
+    }
+
     /* Mobile-optimized Attendance Table */
     .table-attendance-responsive {
       width: 100%;
@@ -230,6 +286,10 @@
         style="border-radius:10px;font-weight:600;display:flex;align-items:center;gap:8px;padding:10px 20px;font-size:.95rem;">
         <span style="font-size:1.15rem;">📊</span> 2. สรุปแยกรวมทุกระดับชั้น (ม.1–ม.6)
       </button>
+      <button class="btn btn-outline" id="main-tab-daily-btn" onclick="switchMainAttendanceTab('daily')"
+        style="border-radius:10px;font-weight:600;display:flex;align-items:center;gap:8px;padding:10px 20px;font-size:.95rem;">
+        <span style="font-size:1.15rem;">🗓️</span> 3. สรุปคลินิกรายวัน (ม.1–ม.6)
+      </button>
     </div>
 
     <!-- ═════════════════════════════════════════════════════════════ -->
@@ -256,6 +316,13 @@
           <button class="btn btn-outline btn-sm" onclick="printPage()">🖨️ พิมพ์</button>
           <button class="btn btn-primary btn-sm" onclick="downloadAttendancePDF()" id="btn-download-pdf">📥 ดาวน์โหลด PDF</button>
         </div>
+      </div>
+
+      <!-- DORM FILTER (แสดงเมื่อเลือก "แยกหอพัก") — คอม/iPad: ปุ่ม · มือถือ: ช่องเลือก -->
+      <div class="filter-bar hidden" id="dorm-filter-row" style="margin-bottom:16px;">
+        <span class="filter-label">🏠 เลือกหอพัก:</span>
+        <div class="dorm-chips" id="dorm-chips"></div>
+        <select class="filter-select dorm-select-mobile" id="dorm-filter-select" onchange="setDormFilter(this.value)"></select>
       </div>
 
       <!-- STATS -->
@@ -392,6 +459,39 @@
 
     </div>
 
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <!-- ═══ SECTION 3: สรุปคลินิกรายวัน ม.1–ม.6 ═══════════════════════ -->
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <div id="section-daily-tab" class="hidden">
+      <div class="filter-bar daily-filter-bar" style="margin-bottom:16px;">
+        <div class="daily-day-nav">
+          <button class="btn btn-outline btn-sm" onclick="changeDailyDate(-1)" title="วันที่มีคลินิกก่อนหน้า">◀ วันก่อน</button>
+          <input type="date" class="filter-input" id="daily-date" onchange="loadDailySummary()">
+          <button class="btn btn-outline btn-sm" onclick="changeDailyDate(1)" title="วันที่มีคลินิกถัดไป">วันถัดไป ▶</button>
+          <button class="btn btn-outline btn-sm" onclick="setDailyToday()">วันนี้</button>
+        </div>
+        <div class="daily-actions">
+          <button class="btn btn-outline btn-sm" id="btn-daily-toggle-all" onclick="toggleAllDailyStudents()">👥 ดูรายชื่อนักเรียนทั้งหมด</button>
+          <button class="btn btn-outline btn-sm" id="btn-daily-image" onclick="saveDailyImage()">🖼️ บันทึกภาพ</button>
+          <button class="btn btn-outline btn-sm" onclick="printDailySummary()">🖨️ พิมพ์</button>
+          <button class="btn btn-primary btn-sm" id="btn-daily-pdf" onclick="downloadDailyPDF()">📥 ดาวน์โหลด PDF</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header" style="background:var(--blue-pale);border-bottom:1.5px solid var(--blue-light);">
+          <span style="font-size:1.15rem;">🗓️</span>
+          <span class="section-title" style="font-size:1.02rem;color:var(--blue-deep);" id="daily-card-title">สรุปคลินิกวิชาการรายวัน ม.1 – ม.6</span>
+          <span class="badge badge-blue ml-auto" id="daily-total-badge">0 คลินิก · 0 คน</span>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div id="daily-summary-content">
+            <div class="empty-state"><div class="spinner"></div><div class="mt-3">กำลังโหลด...</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <footer>
@@ -462,6 +562,8 @@
           populateSummaryWeekSelects();
           if (currentMainTab === 'summary') {
             await loadCombinedSummary();
+          } else if (currentMainTab === 'daily') {
+            loadDailySummary();
           } else {
             await loadAttendance();
           }
@@ -543,6 +645,8 @@
         populateSummaryWeekSelects();
         if (currentMainTab === 'summary') {
           await loadCombinedSummary();
+        } else if (currentMainTab === 'daily') {
+          loadDailySummary();
         } else {
           await loadAttendance();
         }
@@ -563,6 +667,29 @@
       ['all', 'grade', 'dorm', 'subject'].forEach(m => {
         document.getElementById('chip-' + m).classList.toggle('active', m === mode);
       });
+      document.getElementById('dorm-filter-row').classList.toggle('hidden', mode !== 'dorm');
+      if (mode === 'dorm') renderDormFilterControls();
+      renderTable();
+    }
+
+    // ─── ตัวกรองหอพัก (ใช้เมื่อ "แยกหอพัก")
+    let dormFilter = 'all';
+    const DORM_IDS = ['D1', 'D2', 'D3', 'D4', 'D5', 'D6'];
+
+    function renderDormFilterControls() {
+      const options = [{ id: 'all', label: 'ทุกหอ' }, ...DORM_IDS.map(id => ({ id, label: DORM_MAP[id] || id }))];
+      document.getElementById('dorm-chips').innerHTML = options.map(o =>
+        `<button class="filter-chip${o.id === dormFilter ? ' active' : ''}" data-dorm="${o.id}" onclick="setDormFilter('${o.id}')">${escapeHtml(o.label)}</button>`
+      ).join('');
+      const sel = document.getElementById('dorm-filter-select');
+      sel.innerHTML = options.map(o => `<option value="${o.id}">${o.id === 'all' ? '🏠 ทุกหอ' : escapeHtml(o.label)}</option>`).join('');
+      sel.value = dormFilter;
+    }
+
+    function setDormFilter(dorm) {
+      dormFilter = dorm || 'all';
+      document.querySelectorAll('#dorm-chips .filter-chip').forEach(b => b.classList.toggle('active', b.dataset.dorm === dormFilter));
+      document.getElementById('dorm-filter-select').value = dormFilter;
       renderTable();
     }
 
@@ -586,6 +713,13 @@
           formatDormTitle(r.dormitory).toLowerCase().includes(searchVal)
         );
       }
+
+      // Dorm filter (เฉพาะโหมด "แยกหอพัก")
+      const dormActive = groupBy === 'dorm' && dormFilter !== 'all';
+      if (dormActive) rows = rows.filter(r => r.dormitory === dormFilter);
+      document.getElementById('table-header-title').textContent = dormActive
+        ? `รายชื่อนักเรียนที่เข้าเรียน — ${formatDormTitle(dormFilter)}`
+        : 'รายชื่อนักเรียนที่เข้าเรียน';
 
       // Stats
       const subjects = new Set(rows.map(r => r.subject));
@@ -845,7 +979,8 @@
           <div style="font-size:15pt;font-weight:700;color:#0f172a;font-family:'Kanit',sans-serif;">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
           <div style="font-size:12.5pt;font-weight:600;color:#0284c7;margin-top:2px;">รายงานสรุปการเข้าเรียนคลินิกวิชาการ</div>
           <div style="font-size:9.5pt;color:#334155;margin-top:4px;">
-            <span>📅 วันที่: <strong>${escapeHtml(dateText)}</strong></span> &bull; 
+            <span>📅 วันที่: <strong>${escapeHtml(dateText)}</strong></span> &bull;
+            ${groupBy === 'dorm' && dormFilter !== 'all' ? `<span>🏠 <strong>${escapeHtml(formatDormTitle(dormFilter))}</strong></span> &bull; ` : ''}
             <span>ภาคเรียนที่ <strong>${escapeHtml(sem)}</strong> ปีการศึกษา <strong>${escapeHtml(year)}</strong></span>
           </div>
           <div style="display:flex;justify-content:center;gap:12px;margin-top:8px;font-size:9pt;background:#f8fafc;padding:6px 12px;border-radius:6px;border:1px solid #cbd5e1;">
@@ -981,7 +1116,7 @@
 
       const opt = {
         margin: [8, 8, 8, 8],
-        filename: `สรุปรายชื่อนักเรียนรายบุคคล_${dateVal || 'ทุกวัน'}.pdf`,
+        filename: `สรุปรายชื่อนักเรียนรายบุคคล_${dateVal || 'ทุกวัน'}${groupBy === 'dorm' && dormFilter !== 'all' ? '_' + dormFilter : ''}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
           scale: 2,
@@ -1019,24 +1154,265 @@
 
     function switchMainAttendanceTab(tab) {
       currentMainTab = tab;
-      const btnStudents = document.getElementById('main-tab-students-btn');
-      const btnSummary = document.getElementById('main-tab-summary-btn');
-      const secStudents = document.getElementById('section-students-tab');
-      const secSummary = document.getElementById('section-summary-tab');
+      ['students', 'summary', 'daily'].forEach(t => {
+        const btn = document.getElementById(`main-tab-${t}-btn`);
+        const sec = document.getElementById(`section-${t}-tab`);
+        if (btn) btn.className = t === tab ? 'btn btn-primary' : 'btn btn-outline';
+        if (sec) sec.classList.toggle('hidden', t !== tab);
+      });
+      if (tab === 'students') loadAttendance();
+      else if (tab === 'summary') loadCombinedSummary();
+      else loadDailySummary();
+    }
 
-      if (tab === 'students') {
-        if (btnStudents) btnStudents.className = 'btn btn-primary';
-        if (btnSummary) btnSummary.className = 'btn btn-outline';
-        if (secStudents) secStudents.classList.remove('hidden');
-        if (secSummary) secSummary.classList.add('hidden');
-        loadAttendance();
-      } else {
-        if (btnStudents) btnStudents.className = 'btn btn-outline';
-        if (btnSummary) btnSummary.className = 'btn btn-primary';
-        if (secStudents) secStudents.classList.add('hidden');
-        if (secSummary) secSummary.classList.remove('hidden');
-        loadCombinedSummary();
+    // ═══════════════════════════════════════════════════════════
+    // ─── TAB 3: สรุปคลินิกรายวัน ม.1–ม.6 ───────────────────────
+    // ═══════════════════════════════════════════════════════════
+    let dailyShowAll = false;          // ปุ่ม "ดูรายชื่อนักเรียนทั้งหมด"
+    const dailyOpen = new Set();        // คลินิกที่กดเปิดรายชื่อทีละแถว
+    const THAI_WEEKDAYS = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
+
+    function clinicDatesSorted() {
+      return [...new Set(allClinics.map(c => toYMD(c.date)).filter(Boolean))].sort();
+    }
+
+    // วันเริ่มต้น: วันนี้ถ้ามีคลินิก → วันที่มีคลินิกถัดไป → วันล่าสุดที่มีคลินิก
+    function pickDefaultDailyDate() {
+      const dates = clinicDatesSorted();
+      const today = todayStr();
+      if (!dates.length || dates.includes(today)) return today;
+      return dates.find(d => d > today) || dates[dates.length - 1];
+    }
+
+    function setDailyToday() {
+      document.getElementById('daily-date').value = todayStr();
+      dailyOpen.clear();
+      loadDailySummary();
+    }
+
+    // ◀ / ▶ ข้ามไปวันก่อนหน้า/ถัดไปที่มีคลินิก
+    function changeDailyDate(dir) {
+      const cur = document.getElementById('daily-date').value || todayStr();
+      const dates = clinicDatesSorted();
+      const target = dir > 0 ? dates.find(d => d > cur) : [...dates].reverse().find(d => d < cur);
+      if (!target) {
+        showToast('ไม่มีคลินิก', dir > 0 ? 'ไม่มีวันที่มีคลินิกหลังจากวันนี้' : 'ไม่มีวันที่มีคลินิกก่อนหน้านี้', 'info');
+        return;
       }
+      document.getElementById('daily-date').value = target;
+      dailyOpen.clear();
+      loadDailySummary();
+    }
+
+    function dailyStudentsOf(clinic) {
+      const stuMap = Object.fromEntries(allStudents.map(s => [String(s.id), s]));
+      return (LocalDB.getAttByClinic(clinic.id) || []).map(a => {
+        const s = stuMap[String(a.studentId)] || {};
+        return {
+          name: a.studentName || s.name || '–',
+          grade: Number(a.grade || s.grade) || 0,
+          room: Number(a.room || s.room) || 0,
+          number: Number(a.number || s.number) || 0,
+          dormitory: a.dormitory || s.dormitory || ''
+        };
+      }).sort((x, y) => (x.grade - y.grade) || (x.room - y.room) || (x.number - y.number));
+    }
+
+    function renderDailyStudents(students) {
+      if (!students.length) return '<div class="daily-no-students">ยังไม่มีนักเรียนลงทะเบียน</div>';
+      return `<table class="daily-students">
+        <thead><tr><th>#</th><th>ชื่อ-สกุล</th><th>ชั้น/ห้อง</th><th>เลขที่</th><th>หอพัก</th></tr></thead>
+        <tbody>${students.map((s, i) => `<tr>
+          <td>${i + 1}</td>
+          <td>${escapeHtml(s.name)}</td>
+          <td>ม.${s.grade}/${s.room}</td>
+          <td>${s.number || '–'}</td>
+          <td>${escapeHtml(formatDormitory(s.dormitory))}</td>
+        </tr>`).join('')}</tbody>
+      </table>`;
+    }
+
+    function getDailyData() {
+      const date = document.getElementById('daily-date').value;
+      const teacherMap = Object.fromEntries(allTeachers.map(t => [String(t.id), t.name]));
+      const items = allClinics
+        .filter(c => toYMD(c.date) === date)
+        .sort((a, b) => (Number(a.grade) - Number(b.grade)) ||
+          String(a.time || '').localeCompare(String(b.time || '')) ||
+          String(a.subject || '').localeCompare(String(b.subject || ''), 'th'))
+        .map(c => ({ c, teacher: teacherMap[String(c.teacherId)] || c.teacherName || '', students: dailyStudentsOf(c) }));
+      const total = items.reduce((n, it) => n + it.students.length, 0);
+      const d = parseDateSafe(date);
+      const dayLabel = d ? `วัน${THAI_WEEKDAYS[d.getDay()]}ที่ ${formatDateThaiLong(date)}` : '';
+      return { date, items, total, dayLabel };
+    }
+
+    function loadDailySummary() {
+      const dateEl = document.getElementById('daily-date');
+      if (!dateEl.value) dateEl.value = pickDefaultDailyDate();
+      const { items, total, dayLabel } = getDailyData();
+
+      document.getElementById('daily-card-title').textContent = `สรุปคลินิกวิชาการรายวัน ม.1 – ม.6 · ${dayLabel}`;
+      document.getElementById('daily-total-badge').textContent = `${items.length} คลินิก · ${total} คน`;
+      document.getElementById('btn-daily-toggle-all').textContent = dailyShowAll ? '🙈 ซ่อนรายชื่อนักเรียน' : '👥 ดูรายชื่อนักเรียนทั้งหมด';
+
+      const content = document.getElementById('daily-summary-content');
+      if (!items.length) {
+        content.innerHTML = `<div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <div class="empty-title">ไม่มีคลินิกใน${escapeHtml(dayLabel)}</div>
+          <div style="margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="changeDailyDate(-1)">◀ วันที่มีคลินิกก่อนหน้า</button>
+            <button class="btn btn-primary btn-sm" onclick="changeDailyDate(1)">วันที่มีคลินิกถัดไป ▶</button>
+          </div>
+        </div>`;
+        return;
+      }
+
+      content.innerHTML = `<table class="daily-table">
+        <thead><tr><th>ชั้น</th><th>วิชา / หัวข้อ</th><th>ครูผู้สอน</th><th>เวลา</th><th>ห้อง</th><th>สถานะ</th><th>นักเรียน</th></tr></thead>
+        <tbody>${items.map(it => {
+          const id = escapeHtml(String(it.c.id));
+          const st = getStatusLabel(it.c.status);
+          const open = dailyShowAll || dailyOpen.has(String(it.c.id));
+          return `<tr class="daily-row${it.c.status === 'cancelled' ? ' cancelled' : ''}" data-id="${id}" onclick="toggleDailyRow(this.dataset.id)">
+              <td class="daily-cell-grade" data-label="ชั้น"><span class="badge badge-blue">ม.${escapeHtml(String(it.c.grade))}</span></td>
+              <td class="daily-cell-subject" data-label="วิชา">
+                <div class="daily-subject">${getSubjectIcon(it.c.subject)} ${escapeHtml(it.c.subject || 'ยังไม่ระบุวิชา')}</div>
+                ${it.c.topic ? `<div class="daily-topic">🎯 ${escapeHtml(it.c.topic)}</div>` : ''}
+              </td>
+              <td data-label="ครูผู้สอน">${escapeHtml(it.teacher || '–')}</td>
+              <td data-label="เวลา">${escapeHtml(formatClinicTime(it.c.time))}</td>
+              <td data-label="ห้อง">${escapeHtml(it.c.room || '–')}</td>
+              <td data-label="สถานะ"><span class="daily-status ${st.cls}">${st.icon} ${st.text}</span></td>
+              <td class="daily-cell-count" data-label="นักเรียน"><button type="button" class="btn btn-outline btn-sm daily-count-btn">${it.students.length} คน${it.students.length ? (open ? ' ▾' : ' ▸') : ''}</button></td>
+            </tr>
+            <tr class="daily-detail-row${open ? '' : ' hidden'}" data-detail="${id}"><td colspan="7">${renderDailyStudents(it.students)}</td></tr>`;
+        }).join('')}</tbody>
+      </table>`;
+    }
+
+    function toggleDailyRow(id) {
+      if (dailyOpen.has(id)) dailyOpen.delete(id); else dailyOpen.add(id);
+      if (dailyShowAll && !dailyOpen.has(id)) {
+        // ปิดทีละแถวขณะเปิดทั้งหมดอยู่ → เปลี่ยนเป็นโหมดเลือกเปิดเอง (แถวอื่นยังเปิดอยู่)
+        dailyShowAll = false;
+        document.querySelectorAll('#daily-summary-content .daily-row').forEach(r => { if (r.dataset.id !== id) dailyOpen.add(r.dataset.id); });
+      }
+      loadDailySummary();
+    }
+
+    function toggleAllDailyStudents() {
+      dailyShowAll = !dailyShowAll;
+      dailyOpen.clear();
+      loadDailySummary();
+    }
+
+    // รายงานสำหรับบันทึกภาพ / PDF: หัวรายงาน + ตารางตามที่แสดงอยู่ (รายชื่อที่เปิดไว้จะติดไปด้วย)
+    function buildDailyReport(width) {
+      const { date, items, total, dayLabel } = getDailyData();
+      const s = LocalDB.get('school_settings') || {};
+      const el = document.createElement('div');
+      el.id = 'daily-report-render';
+      el.style.cssText = `width:${width}px;max-width:${width}px;background:#fff;color:#0f172a;padding:16px;box-sizing:border-box;font-family:'Sarabun','Kanit',sans-serif;`;
+      const tableHtml = document.querySelector('#daily-summary-content .daily-table')?.outerHTML || '<div style="padding:20px;text-align:center;color:#64748b;">ไม่มีคลินิกในวันนี้</div>';
+      el.innerHTML = `
+        <div style="text-align:center;border-bottom:2.5px solid #0284c7;padding-bottom:10px;margin-bottom:12px;">
+          <div style="font-size:17px;font-weight:700;font-family:'Kanit',sans-serif;">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
+          <div style="font-size:15px;font-weight:600;color:#0284c7;margin-top:2px;">สรุปคลินิกวิชาการรายวัน ม.1 – ม.6</div>
+          <div style="font-size:13px;margin-top:4px;">📅 <strong>${escapeHtml(dayLabel)}</strong> · ภาคเรียนที่ ${escapeHtml(String(s.semester || APP_CONFIG.semester))} ปีการศึกษา ${escapeHtml(String(s.academicYear || APP_CONFIG.academicYear))}</div>
+          <div style="font-size:13px;margin-top:4px;">รวม <strong>${items.length}</strong> คลินิก · นักเรียน <strong>${total}</strong> คน</div>
+        </div>
+        ${tableHtml}
+        <div style="margin-top:10px;font-size:11px;color:#64748b;text-align:right;">สร้างเมื่อ ${new Date().toLocaleString('th-TH')}</div>`;
+      el.querySelectorAll('.daily-detail-row.hidden').forEach(r => r.remove());
+      el.querySelectorAll('.daily-count-btn').forEach(b => {
+        const span = document.createElement('span');
+        span.textContent = b.textContent.replace(/[▸▾]/g, '').trim();
+        span.style.fontWeight = '700';
+        b.replaceWith(span);
+      });
+      el.querySelectorAll('.daily-table td, .daily-table th').forEach(c => {
+        c.style.border = '1px solid #cbd5e1';
+        c.style.wordBreak = 'break-word'; // ชื่อห้อง/วิชายาวไม่ล้นทับคอลัมน์ข้าง ๆ
+      });
+      el.querySelectorAll('tr').forEach(tr => { tr.style.breakInside = 'avoid'; tr.style.pageBreakInside = 'avoid'; });
+      return { el, date };
+    }
+
+    async function renderDailyOffscreen(width, work) {
+      const { el, date } = buildDailyReport(width);
+      const scroll = [window.scrollX, window.scrollY];
+      window.scrollTo(0, 0);
+      document.body.appendChild(el);
+      try {
+        if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        return await work(el, date);
+      } finally {
+        el.remove();
+        window.scrollTo(scroll[0], scroll[1]);
+      }
+    }
+
+    async function saveDailyImage() {
+      const btn = document.getElementById('btn-daily-image');
+      const label = btn.innerHTML;
+      btn.disabled = true; btn.innerHTML = '⏳ กำลังสร้างภาพ...';
+      try {
+        // กว้าง 734px = พื้นที่กระดาษ A4 ที่เครื่องมือสร้างภาพใช้ (กว้างกว่านี้ภาพจะถูกตัดขอบขวา)
+        await renderDailyOffscreen(734, async (el, date) => {
+          const canvas = await html2pdf().set({ html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 } })
+            .from(el).toCanvas().get('canvas');
+          const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+          const name = `สรุปคลินิกรายวัน_${date}.png`;
+          const file = new File([blob], name, { type: 'image/png' });
+          // มือถือ: เปิดเมนูแชร์ (บันทึกลงคลังภาพได้) · คอม: ดาวน์โหลดไฟล์ภาพ
+          if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && navigator.canShare && navigator.canShare({ files: [file] })) {
+            try { await navigator.share({ files: [file], title: name }); } catch (e) { /* ผู้ใช้กดยกเลิก */ }
+          } else {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = name;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+            showToast('บันทึกภาพสำเร็จ', name, 'success');
+          }
+        });
+      } catch (err) {
+        console.error('Daily image error:', err);
+        showToast('ผิดพลาด', 'ไม่สามารถสร้างภาพได้', 'error');
+      } finally {
+        btn.disabled = false; btn.innerHTML = label;
+      }
+    }
+
+    async function downloadDailyPDF() {
+      const btn = document.getElementById('btn-daily-pdf');
+      const label = btn.innerHTML;
+      btn.disabled = true; btn.innerHTML = '⏳ กำลังสร้าง PDF...';
+      try {
+        await renderDailyOffscreen(734, async (el, date) => {
+          await html2pdf().set({
+            margin: [8, 8, 8, 8],
+            filename: `สรุปคลินิกรายวัน_${date}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['tr'] }
+          }).from(el).save();
+        });
+        showToast('สำเร็จ', 'ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว', 'success');
+      } catch (err) {
+        console.error('Daily PDF error:', err);
+        showToast('ผิดพลาด', 'ไม่สามารถสร้าง PDF ได้ กำลังเปิดหน้าต่างพิมพ์แทน', 'error');
+        window.print();
+      } finally {
+        btn.disabled = false; btn.innerHTML = label;
+      }
+    }
+
+    function printDailySummary() {
+      window.print();
     }
 
     function populateSummaryWeekSelects() {
