@@ -1,0 +1,38 @@
+# สำรองข้อมูลอัตโนมัติทุกสัปดาห์ (เข้ารหัสด้วยรหัสผ่านใน GitHub Secret: BACKUP_PASSWORD)
+# ไฟล์เก็บไว้ 90 วัน — ดาวน์โหลดได้ที่แท็บ Actions › "Backup (สำรองข้อมูลรายสัปดาห์)" › เลือกรอบ › Artifacts
+# กู้คืน: แตกไฟล์ zip แล้วใช้ปุ่ม "กู้คืนข้อมูลจากไฟล์สำรอง" ในหน้า Admin › ตั้งค่า (ระบบจะถามรหัสผ่าน)
+name: Backup (สำรองข้อมูลรายสัปดาห์)
+
+on:
+  schedule:
+    - cron: '0 19 * * 0'   # ทุกวันจันทร์ 02:00 น. (เวลาไทย)
+  workflow_dispatch:        # กดรันเองได้ที่แท็บ Actions
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: ดึงข้อมูลและเข้ารหัส
+        env:
+          BACKUP_PASSWORD: ${{ secrets.BACKUP_PASSWORD }}
+        run: node .github/scripts/backup.mjs
+
+      - name: เก็บไฟล์สำรอง (90 วัน)
+        uses: actions/upload-artifact@v4
+        with:
+          name: clinic-backup-${{ github.run_number }}
+          path: pcshspt_clinic_auto_backup_*.json
+          retention-days: 90
+          if-no-files-found: error

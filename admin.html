@@ -432,6 +432,9 @@
       <!-- MAIN CONTENT -->
       <div class="admin-main">
 
+        <!-- เตือนเมื่อไม่มีการสำรองข้อมูลอัตโนมัติเกิน 7 วัน (checkAutoBackupStatus) -->
+        <div id="auto-backup-warning" class="alert alert-danger hidden" style="margin-bottom:16px;line-height:1.6;"></div>
+
         <!-- ══ TAB: WEEKS ══════════════════════════════════════ -->
         <div id="tab-weeks">
           <div class="section-header">
@@ -895,6 +898,7 @@
               <div class="section-title" style="font-size:1.05rem;">💾 สำรองและล้างข้อมูล</div>
             </div>
             <div class="card-body">
+              <div id="auto-backup-status" class="alert alert-info">⏳ กำลังตรวจสถานะการสำรองอัตโนมัติ...</div>
               <div class="alert alert-warning">
                 ⚠️ การล้างข้อมูลจะไม่สามารถกู้คืนได้ แนะนำให้กด Export สำรองข้อมูลไว้ก่อน
               </div>
@@ -1475,10 +1479,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
   <script src="js/firebase-config.js?v=2569_16"></script>
-  <script src="js/supabase-api.js?v=2569_24"></script>
+  <script src="js/supabase-api.js?v=2569_25"></script>
   <script src="js/db.js?v=2569_24"></script>
-  <script src="js/auth.js?v=2569_22"></script>
-  <script src="js/student-auth.js?v=2569_20"></script>
+  <script src="js/auth.js?v=2569_23"></script>
+  <script src="js/student-auth.js?v=2569_21"></script>
   <script src="js/xlsx.full.min.js"></script>
   <script>
     // ─── AUTH GUARD ───────────────────────────────────────────
@@ -1487,6 +1491,7 @@
       if (!session) return;
       seedDemoData();
       await loadAdminData();
+      checkAutoBackupStatus();
 
       // Connect Supabase Realtime
       if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
@@ -3970,6 +3975,103 @@
       showToast('Export สำเร็จ', 'ดาวน์โหลดไฟล์สำรองข้อมูล JSON เรียบร้อย', 'success');
     }
 
+    // ─── สำรองข้อมูลอัตโนมัติ (GitHub Actions ทุกสัปดาห์ · .github/workflows/backup.yml) ─────
+    const GITHUB_REPO = 'tripopplaenak-glitch/pcshspt-clinic';
+    const AUTO_BACKUP_MAX_AGE_DAYS = 7;
+
+    async function decryptAutoBackup(file) {
+      if (!window.crypto || !crypto.subtle) throw new Error('เบราว์เซอร์นี้ถอดรหัสไม่ได้ (ต้องเปิดหน้าเว็บผ่าน https)');
+      const pw = prompt(`ไฟล์สำรองอัตโนมัติ (${new Date(file.createdAt).toLocaleString('th-TH')}) ถูกเข้ารหัสไว้\n\nกรอก "รหัสผ่านสำรองข้อมูล" (BACKUP_PASSWORD ที่ตั้งไว้ใน GitHub):`);
+      if (!pw) return null;
+      const u8 = b64 => Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+      const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+      const key = await crypto.subtle.deriveKey(
+        { name: 'PBKDF2', hash: file.kdf.hash, salt: u8(file.kdf.salt), iterations: file.kdf.iterations },
+        base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+      let plain;
+      try {
+        plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: u8(file.cipher.iv) }, key, u8(file.data));
+      } catch (e) {
+        throw new Error('รหัสผ่านไม่ถูกต้อง หรือไฟล์เสียหาย');
+      }
+      return autoBackupToExportFormat(JSON.parse(new TextDecoder().decode(plain)));
+    }
+
+    // แถวข้อมูลดิบจากฐานข้อมูล → รูปแบบเดียวกับไฟล์ "Export สำรองข้อมูลทั้งหมด" (ใช้ขั้นตอนกู้คืนเดิมต่อได้)
+    function autoBackupToExportFormat(b) {
+      const t = b.tables || {};
+      const A = SupabaseAPI;
+      const settings = Object.fromEntries((t.settings || []).map(r => [r.key, r.value]));
+      const custom = settings.clinic_custom_data || {};
+      const clinics = (t.clinics || []).map(r => {
+        const c = A.mapClinicFromDb(r);
+        const x = custom[String(c.id)] || {};
+        if (x.time) c.time = x.time;
+        if (x.notes !== undefined && (!c.notes || x.notes)) c.notes = x.notes;
+        if (x.topic !== undefined) c.topic = x.topic;
+        if (x.subject) { c.subject = x.subject; c.subjectName = x.subject; }
+        if (x.allowRegistration !== undefined) c.allowRegistration = x.allowRegistration;
+        if (x.maxStudents !== undefined) c.maxStudents = x.maxStudents;
+        return c;
+      });
+      const duty = {};
+      (t.duty_staff || []).forEach(d => { if (d && d.date) duty[toYMD(d.date)] = d.officer; });
+      return {
+        teachers: (t.teachers || []).map(r => A.mapTeacherFromDb(r)),
+        students: (t.students || []).map(r => A.mapStudentFromDb(r)),
+        staff: (t.staff || []).map(r => A.mapStaffFromDb(r)),
+        weeks: (t.weeks || []).map(r => A.mapWeekFromDb(r)),
+        clinics,
+        attendance: (t.attendance || []).map(r => A.mapAttendanceFromDb(r)),
+        announcements_config: settings.announcements_config,
+        school_settings: settings.school_settings,
+        duty_by_date: duty,
+        clinic_templates: settings.clinic_templates,
+        clinic_custom_data: custom,
+        exportedAt: b.createdAt
+      };
+    }
+
+    // ถามสถานะรอบสำรองล่าสุดจาก GitHub (repo สาธารณะ อ่านได้โดยไม่ต้องล็อกอิน) — เตือนถ้าเกิน 7 วัน
+    async function checkAutoBackupStatus() {
+      const statusEl = document.getElementById('auto-backup-status');
+      const actionsUrl = `https://github.com/${GITHUB_REPO}/actions/workflows/backup.yml`;
+      let last = null, ok = true;
+      try {
+        const cached = JSON.parse(sessionStorage.getItem('auto_backup_status') || 'null');
+        if (cached && Date.now() - cached.at < 60 * 60 * 1000) {
+          last = cached.last;
+        } else {
+          const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/actions/workflows/backup.yml/runs?status=success&per_page=1`);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          const json = await res.json();
+          last = json.workflow_runs && json.workflow_runs[0] ? json.workflow_runs[0].created_at : null;
+          try { sessionStorage.setItem('auto_backup_status', JSON.stringify({ at: Date.now(), last })); } catch (e) {}
+        }
+      } catch (err) {
+        ok = false;
+        console.warn('[backup status]', err);
+      }
+      const ageDays = last ? (Date.now() - new Date(last).getTime()) / 86400000 : Infinity;
+      const stale = ok && ageDays > AUTO_BACKUP_MAX_AGE_DAYS;
+      const lastText = last ? new Date(last).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : 'ยังไม่เคยสำเร็จ';
+      if (statusEl) {
+        statusEl.innerHTML = !ok
+          ? `ℹ️ ตรวจสถานะการสำรองอัตโนมัติไม่ได้ในขณะนี้ — ดูได้ที่ <a href="${actionsUrl}" target="_blank" rel="noopener">GitHub Actions</a>`
+          : `${stale ? '⚠️' : '✅'} สำรองอัตโนมัติล่าสุด: <strong>${lastText}</strong> (ทุกวันจันทร์ 02:00 น. เก็บไว้ 90 วัน) — <a href="${actionsUrl}" target="_blank" rel="noopener">ดาวน์โหลดไฟล์สำรอง</a>`;
+        statusEl.className = 'alert ' + (stale ? 'alert-danger' : ok ? 'alert-success' : 'alert-info');
+      }
+      const banner = document.getElementById('auto-backup-warning');
+      if (banner) {
+        banner.classList.toggle('hidden', !stale);
+        if (stale) {
+          banner.innerHTML = `⚠️ <strong>ไม่มีการสำรองข้อมูลอัตโนมัติเกิน ${AUTO_BACKUP_MAX_AGE_DAYS} วัน</strong> (ล่าสุด: ${lastText})
+            — ตรวจที่ <a href="${actionsUrl}" target="_blank" rel="noopener">GitHub Actions</a> (เช่น ยังไม่ได้ตั้งรหัสผ่าน BACKUP_PASSWORD)
+            และระหว่างนี้กด <a href="#" onclick="exportAllData();return false;">Export สำรองข้อมูลทั้งหมด</a> เก็บไว้ก่อน`;
+        }
+      }
+    }
+
     function importAllData(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -3981,6 +4083,16 @@
         } catch (err) {
           showToast('เกิดข้อผิดพลาด', 'ไม่สามารถอ่านไฟล์ JSON ได้: ' + err.message, 'error');
           return;
+        }
+        // ไฟล์สำรองอัตโนมัติจาก GitHub (เข้ารหัส) → ถามรหัสผ่าน ถอดรหัส แล้วแปลงเป็นรูปแบบเดียวกับไฟล์ Export
+        if (data && data.format === 'pcshspt-clinic-backup-encrypted') {
+          try {
+            data = await decryptAutoBackup(data);
+          } catch (err) {
+            showToast('ถอดรหัสไม่สำเร็จ', err.message || String(err), 'error', 8000);
+            return;
+          }
+          if (!data) return;
         }
         // สรุปสิ่งที่อยู่ในไฟล์ แล้วให้ยืนยันก่อนเขียนขึ้นระบบจริง
         const n = k => (Array.isArray(data[k]) ? data[k].length : 0);

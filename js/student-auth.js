@@ -146,6 +146,20 @@ async function staffResetStudentPasswordUI(code, name) {
   }
 }
 
+// นักเรียนลงทะเบียน/ยกเลิกเองได้ถึง 16:30 น. (เวลาไทย) ของวันเรียน — ฐานข้อมูลตรวจซ้ำอีกชั้น (SQL H)
+// หลังจากนั้นให้แจ้งครูผู้สอน (ครูเพิ่มรายชื่อในหน้าระบบครูได้ตลอด)
+const STUDENT_REG_CUTOFF = '16:30';
+function isStudentRegWindowOpen(dateValue) {
+  const d = toYMD(dateValue);
+  if (!d) return true;
+  const now = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  }).formatToParts(new Date()).reduce((o, p) => (o[p.type] = p.value, o), {});
+  const today = `${now.year}-${now.month}-${now.day}`;
+  return d > today || (d === today && `${now.hour}:${now.minute}` < STUDENT_REG_CUTOFF);
+}
+
 // ข้อความแจ้งผลจากฟังก์ชันลงทะเบียน/ยกเลิก
 const STUDENT_RESULT_MESSAGES = {
   session_expired: 'หมดเวลาเข้าสู่ระบบ กรุณาเข้าสู่ระบบนักเรียนอีกครั้ง',
@@ -155,6 +169,7 @@ const STUDENT_RESULT_MESSAGES = {
   wrong_grade: 'วิชานี้ไม่ได้เปิดสำหรับระดับชั้นของคุณ',
   closed: 'รายวิชานี้ปิดรับลงทะเบียนแล้ว',
   past: 'คลินิกนี้ผ่านไปแล้ว',
+  deadline: 'ปิดรับลงทะเบียน/ยกเลิกแล้ว (ปิดเวลา 16:30 น. ของวันเรียน) หากต้องการเข้าเรียนหรือยกเลิก กรุณาแจ้งครูผู้สอน',
   duplicate: 'คุณลงทะเบียนวิชานี้ไปแล้ว',
   full: 'ที่นั่งเต็มแล้ว',
   not_registered: 'คุณไม่ได้ลงทะเบียนวิชานี้',

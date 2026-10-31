@@ -241,6 +241,43 @@
       flex-wrap: wrap;
     }
 
+    #btn-confirm-student-reg:disabled { opacity: .65; cursor: not-allowed; }
+    #btn-confirm-student-reg.is-full { background: #fee2e2 !important; color: #991b1b !important; border-color: #fca5a5 !important; opacity: 1; }
+
+    /* Week range navigator */
+    .week-range-bar {
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+      gap: 10px 16px; background: var(--white); border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); padding: 12px 16px; margin-bottom: 20px;
+    }
+    .week-range-nav { display: flex; align-items: center; gap: 10px; flex: 1 1 340px; max-width: 560px; min-width: 0; }
+    .week-range-nav .week-btn { padding: 8px 14px; flex-shrink: 0; }
+    .week-range-label {
+      flex: 1; min-width: 0; text-align: center; font-family: 'Kanit', sans-serif;
+      font-weight: 600; font-size: 1rem; color: var(--blue-deep); line-height: 1.3;
+    }
+    .week-range-dates { font-family: 'Sarabun', sans-serif; font-size: .82rem; font-weight: 500; color: var(--gray-500); }
+    .week-range-size { display: flex; align-items: center; gap: 8px; font-size: .88rem; font-weight: 600; color: var(--gray-600); flex-wrap: wrap; }
+    .week-size-group { display: inline-flex; border: 1.5px solid var(--gray-300); border-radius: var(--radius-md); overflow: hidden; }
+    .week-size-btn {
+      min-width: 38px; padding: 6px 0; border: none; background: var(--white); color: var(--gray-700);
+      font-weight: 700; font-size: .9rem; cursor: pointer; font-family: 'Sarabun', sans-serif;
+    }
+    .week-size-btn + .week-size-btn { border-left: 1.5px solid var(--gray-300); }
+    .week-size-btn.active { background: var(--blue-main); color: #fff; }
+    .week-size-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .week-today-btn {
+      padding: 6px 12px; border-radius: var(--radius-md); border: 1.5px solid var(--gray-300);
+      background: var(--white); color: var(--blue-main); font-weight: 600; font-size: .84rem; cursor: pointer; font-family: 'Sarabun', sans-serif;
+    }
+    .week-today-btn:disabled { opacity: .4; cursor: default; }
+    @media (max-width: 600px) {
+      .week-range-bar { padding: 10px 12px; }
+      .week-range-nav { flex-basis: 100%; }
+      .week-range-label { font-size: .92rem; }
+      .week-range-size { width: 100%; justify-content: center; }
+    }
+
     @media (max-width: 480px) {
       .clinic-modal-info-grid {
         grid-template-columns: 1fr !important;
@@ -347,34 +384,29 @@
     <div class="flex gap-2 items-center" style="flex-wrap:wrap;">
       <label class="filter-label">ระดับชั้น:</label>
       <div class="grade-tabs" id="grade-tabs" style="margin-bottom:0;"></div>
-      <div class="flex gap-2" style="margin-left:8px;">
-        <button class="btn btn-outline btn-sm" id="btn-single-week" onclick="setViewMode('single')" title="ดูสัปดาห์เดียว">📄 1 สัปดาห์</button>
-        <button class="btn btn-primary btn-sm" id="btn-multi-week" onclick="setViewMode('multi')" title="ดูหลายสัปดาห์">📚 หลายสัปดาห์</button>
-      </div>
     </div>
   </div>
 
-  <!-- WEEK NAVIGATOR (single mode) -->
-  <div id="week-nav-bar" class="week-nav" style="display:none;">
-    <button class="week-btn" id="btn-prev-week" onclick="changeWeek(-1)">‹ สัปดาห์ก่อนหน้า</button>
-    <div class="week-nav-center">
-      <span>📅</span>
-      <span id="week-label">กำลังโหลด...</span>
-    </div>
-    <button class="week-btn" id="btn-next-week" onclick="changeWeek(1)">สัปดาห์ถัดไป ›</button>
-  </div>
-
-  <!-- MULTI-WEEK PICKER (multi mode) -->
-  <div id="multi-week-bar" class="multi-week-picker">
-    <div class="flex items-center justify-between mb-2">
-      <div style="font-weight:700;font-size:.9rem;color:var(--blue-deep);">
-        🗓️ เลือกสัปดาห์ที่ต้องการดู (สูงสุด 4 สัปดาห์):
+  <!-- WEEK RANGE NAVIGATOR: ◀ ช่วงสัปดาห์ ▶ + แสดง 1/2/3 สัปดาห์ (ขนาดคงที่ ไม่ว่าจะมีกี่สัปดาห์) -->
+  <div id="week-range-bar" class="week-range-bar">
+    <div class="week-range-nav">
+      <button class="week-btn" id="btn-prev-week" onclick="changeWeek(-1)" title="สัปดาห์ก่อนหน้า" aria-label="สัปดาห์ก่อนหน้า">◀</button>
+      <div class="week-range-label">
+        <div id="week-label">กำลังโหลด...</div>
+        <div id="week-range-dates" class="week-range-dates"></div>
       </div>
-      <div id="multi-week-count" style="font-size:.82rem;font-weight:600;color:var(--blue-main);">
-        เลือกแล้ว 0/4 สัปดาห์
-      </div>
+      <button class="week-btn" id="btn-next-week" onclick="changeWeek(1)" title="สัปดาห์ถัดไป" aria-label="สัปดาห์ถัดไป">▶</button>
     </div>
-    <div id="multi-week-pills" class="flex gap-2" style="flex-wrap:wrap;"></div>
+    <div class="week-range-size">
+      <span>แสดง</span>
+      <div class="week-size-group" role="group" aria-label="จำนวนสัปดาห์ที่แสดง">
+        <button type="button" class="week-size-btn" data-size="1" onclick="setWeekWindowSize(1)">1</button>
+        <button type="button" class="week-size-btn" data-size="2" onclick="setWeekWindowSize(2)">2</button>
+        <button type="button" class="week-size-btn" data-size="3" onclick="setWeekWindowSize(3)">3</button>
+      </div>
+      <span>สัปดาห์</span>
+      <button type="button" class="week-today-btn" id="btn-this-week" onclick="goThisWeek()" title="กลับไปสัปดาห์นี้">สัปดาห์นี้</button>
+    </div>
   </div>
 
   <!-- TOP ANNOUNCEMENT -->
@@ -475,12 +507,16 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
 <script src="js/firebase-config.js?v=2569_16"></script>
-<script src="js/supabase-api.js?v=2569_24"></script>
+<script src="js/supabase-api.js?v=2569_25"></script>
 <script src="js/db.js?v=2569_24"></script>
-<script src="js/auth.js?v=2569_22"></script>
-<script src="js/student-auth.js?v=2569_20"></script>
+<script src="js/auth.js?v=2569_23"></script>
+<script src="js/student-auth.js?v=2569_21"></script>
 <script>
 // ─── INIT ─────────────────────────────────────────────────
+// หน้านี้ดูย้อนหลังได้ WEEK_LOOKBACK สัปดาห์ → โหลดเฉพาะข้อมูลตั้งแต่ช่วงนั้น (ข้อมูลไม่โตขึ้นตลอดภาค)
+function scheduleDataSince() { return mondayWeeksAgo(WEEK_LOOKBACK); }
+if (typeof SupabaseAPI !== 'undefined') SupabaseAPI.dataSince = scheduleDataSince;
+
 document.addEventListener('DOMContentLoaded', async () => {
   seedDemoData();
   updateNavbarAuth();
@@ -490,14 +526,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 0. Connect Supabase Realtime WebSockets (< 0.1s instant sync)
   if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
-    SupabaseAPI.init(async () => {
-      // Called instantly whenever any device edits or adds data in Supabase
-      const modal = document.getElementById('modal-clinic-students');
-      if (modal && modal.classList.contains('active')) return;
-      loadSchoolInfo();
-      await loadAnnouncements();
-      await loadWeeks();
-      await renderSchedule();
+    // ครูบันทึกรายชื่อ 30 คน = 30 เหตุการณ์ติดกัน → รวบเป็นการวาดหน้าใหม่ครั้งเดียว
+    let realtimeTimer = null;
+    SupabaseAPI.init(() => {
+      clearTimeout(realtimeTimer);
+      realtimeTimer = setTimeout(async () => {
+        refreshRegSeats();
+        const modal = document.getElementById('modal-clinic-students');
+        if (modal && modal.classList.contains('open')) return;
+        loadSchoolInfo();
+        await loadAnnouncements();
+        await loadWeeks();
+        await renderSchedule();
+      }, 400);
     });
   }
 
@@ -537,7 +578,7 @@ async function refreshScheduleData() {
   if (!hasCloud) return;
   // If student modal is currently open, skip re-render to avoid resetting user's open modal
   const modal = document.getElementById('modal-clinic-students');
-  if (modal && modal.classList.contains('active')) return;
+  if (modal && modal.classList.contains('open')) return;
 
   isRefreshingSchedule = true;
   try {
@@ -566,10 +607,11 @@ function loadSchoolInfo() {
 
 // ─── STATE
 let currentGrade = 1;
-let allWeeks = [];
-let currentWeekIdx = 0;
-let viewMode = 'multi'; // Always default to multi-week
-let selectedMultiWeekIds = []; // Up to 4 weeks
+let allWeeks = [];      // สัปดาห์ทั้งหมดในระบบ
+let visibleWeeks = [];  // สัปดาห์ที่เลือกดูได้ (ย้อนหลังไม่เกิน WEEK_LOOKBACK สัปดาห์)
+let weekWinStartId = null; // สัปดาห์แรกของช่วงที่กำลังแสดง
+const WEEK_SIZE_KEY = 'clinic_schedule_week_size';
+let weekWinSize = (() => { try { const n = Number(localStorage.getItem(WEEK_SIZE_KEY)); return n >= 1 && n <= 3 ? n : 2; } catch (e) { return 2; } })();
 
 // ─── Navbar links based on role
 function updateNavbarLinks() {
@@ -605,123 +647,87 @@ function selectGrade(grade) {
   renderSchedule();
 }
 
-// ─── View Mode
-function setViewMode(mode) {
-  viewMode = mode;
-  document.getElementById('btn-single-week').classList.toggle('btn-primary', mode === 'single');
-  document.getElementById('btn-single-week').classList.toggle('btn-outline', mode !== 'single');
-  document.getElementById('btn-multi-week').classList.toggle('btn-primary', mode === 'multi');
-  document.getElementById('btn-multi-week').classList.toggle('btn-outline', mode !== 'multi');
-  document.getElementById('week-nav-bar').style.display = mode === 'single' ? 'flex' : 'none';
-
-  const multiBar = document.getElementById('multi-week-bar');
-  if (mode === 'multi') {
-    multiBar.classList.remove('hidden');
-    renderMultiWeekPills();
-  } else {
-    multiBar.classList.add('hidden');
-  }
-
-  renderSchedule();
-}
-
 // ─── Load weeks
+//     แสดงเป็นช่วง 1–3 สัปดาห์ต่อกัน (ค่าเริ่มต้น: สัปดาห์นี้ + สัปดาห์หน้า) เลื่อนด้วย ◀ ▶
+//     ย้อนหลังได้ไม่เกิน WEEK_LOOKBACK สัปดาห์ (ข้อมูลเก่ากว่านั้นไม่ได้โหลดมาที่หน้านี้ — ดูได้ที่หน้าสรุปการเข้าเรียน)
 async function loadWeeks() {
   allWeeks = await DataService.getWeeks();
-  if (allWeeks.length === 0) {
-    updateWeekLabel();
-    renderSchedule();
-    return;
-  }
-
-  const today = todayStr();
-  const idx = allWeeks.findIndex(w => {
-    const s = toYMD(w.startDate);
-    const e = toYMD(w.endDate);
-    return s && e && today >= s && today <= e;
-  });
-
-  const allClinics = await DataService.getClinics();
-  const curWeek = idx >= 0 ? allWeeks[idx] : null;
-  const currentWeekClinics = curWeek
-    ? allClinics.filter(c => c.weekId === curWeek.weekId || (c.date && curWeek.startDate && curWeek.endDate && toYMD(c.date) >= toYMD(curWeek.startDate) && toYMD(c.date) <= toYMD(curWeek.endDate)))
-    : [];
-
-  if (idx >= 0 && currentWeekClinics.length > 0) {
-    currentWeekIdx = idx;
-  } else if (idx >= 0 && currentWeekClinics.length === 0) {
-    // Current week has no clinics at all. Find nearest week that has clinics!
-    const weekWithClinicsIdx = allWeeks.findIndex(w => {
-      const s = toYMD(w.startDate);
-      const e = toYMD(w.endDate);
-      return allClinics.some(c => c.weekId === w.weekId || (c.date && s && e && toYMD(c.date) >= s && toYMD(c.date) <= e));
-    });
-    currentWeekIdx = weekWithClinicsIdx >= 0 ? weekWithClinicsIdx : idx;
-  } else {
-    currentWeekIdx = 0;
+  const since = scheduleDataSince();
+  visibleWeeks = allWeeks.filter(w => (toYMD(w.endDate) || '') >= since);
+  if (visibleWeeks.length && !visibleWeeks.some(w => w.weekId === weekWinStartId)) {
+    weekWinStartId = visibleWeeks[thisWeekStartIdx()].weekId;
   }
   updateWeekLabel();
-
-  // Initialize multi-week selection with first up to 4 weeks starting from current
-  if (selectedMultiWeekIds.length === 0) {
-    const start = Math.max(0, currentWeekIdx);
-    selectedMultiWeekIds = allWeeks.slice(start, start + 4).map(w => w.weekId);
-    if (selectedMultiWeekIds.length < 4 && allWeeks.length > selectedMultiWeekIds.length) {
-      selectedMultiWeekIds = allWeeks.slice(0, 4).map(w => w.weekId);
-    }
-  }
-
-  // Always keep default view as multi-week
-  setViewMode('multi');
 }
 
-function renderMultiWeekPills() {
-  const container = document.getElementById('multi-week-pills');
-  container.innerHTML = '';
-  document.getElementById('multi-week-count').textContent = `เลือกแล้ว ${selectedMultiWeekIds.length}/4 สัปดาห์`;
-
-  allWeeks.forEach(w => {
-    const isSelected = selectedMultiWeekIds.includes(w.weekId);
-    const pill = document.createElement('div');
-    pill.className = `week-pill ${isSelected ? 'selected' : ''}`;
-    pill.innerHTML = `<span>${isSelected ? '✓' : '+'}</span> <span>${w.label || ('สัปดาห์ที่ ' + w.weekNum)}</span>`;
-    pill.onclick = () => toggleMultiWeek(w.weekId);
-    container.appendChild(pill);
-  });
+// สัปดาห์ที่มีวันนี้ (หรือสัปดาห์ถัดไปที่ใกล้ที่สุด) — ถ้าพ้นภาคเรียนแล้ว ใช้ช่วงสุดท้าย
+function thisWeekStartIdx() {
+  const today = todayStr();
+  const idx = visibleWeeks.findIndex(w => (toYMD(w.endDate) || '') >= today);
+  return clampWeekStart(idx >= 0 ? idx : visibleWeeks.length - 1);
 }
 
-function toggleMultiWeek(weekId) {
-  const idx = selectedMultiWeekIds.indexOf(weekId);
-  if (idx >= 0) {
-    if (selectedMultiWeekIds.length === 1) {
-      showToast('แจ้งเตือน', 'ต้องเลือกดูอย่างน้อย 1 สัปดาห์', 'info');
-      return;
-    }
-    selectedMultiWeekIds.splice(idx, 1);
-  } else {
-    if (selectedMultiWeekIds.length >= 4) {
-      showToast('เลือกได้สูงสุด 4 สัปดาห์', 'กรุณายกเลิกสัปดาห์อื่นก่อนหากต้องการเปลี่ยนช่วงเวลา', 'warning');
-      return;
-    }
-    selectedMultiWeekIds.push(weekId);
-  }
-  renderMultiWeekPills();
-  renderSchedule();
+function clampWeekStart(idx) {
+  return Math.max(0, Math.min(idx, visibleWeeks.length - weekWinSize));
+}
+
+function currentWeekStartIdx() {
+  const idx = visibleWeeks.findIndex(w => w.weekId === weekWinStartId);
+  return clampWeekStart(idx >= 0 ? idx : thisWeekStartIdx());
+}
+
+function getWeeksToShow() {
+  const start = currentWeekStartIdx();
+  return visibleWeeks.slice(start, start + weekWinSize);
 }
 
 function updateWeekLabel() {
-  if (!allWeeks.length) { document.getElementById('week-label').textContent = 'ยังไม่มีข้อมูลสัปดาห์'; return; }
-  const w = allWeeks[currentWeekIdx];
-  const noClassBadge = w?.noClasses ? ' <span style="color:#ef4444;font-size:.85rem;">(ไม่มีการเรียนการสอน)</span>' : '';
-  document.getElementById('week-label').innerHTML = (w?.label || '') + noClassBadge;
-  document.getElementById('btn-prev-week').disabled = currentWeekIdx <= 0;
-  document.getElementById('btn-next-week').disabled = currentWeekIdx >= allWeeks.length - 1;
+  const labelEl = document.getElementById('week-label');
+  const datesEl = document.getElementById('week-range-dates');
+  document.querySelectorAll('.week-size-btn').forEach(b => {
+    const n = Number(b.dataset.size);
+    b.classList.toggle('active', n === weekWinSize);
+    b.disabled = visibleWeeks.length > 0 && n > visibleWeeks.length && n !== weekWinSize;
+  });
+  if (!visibleWeeks.length) {
+    labelEl.textContent = 'ยังไม่มีข้อมูลสัปดาห์';
+    datesEl.textContent = '';
+    ['btn-prev-week', 'btn-next-week', 'btn-this-week'].forEach(id => document.getElementById(id).disabled = true);
+    return;
+  }
+  const shown = getWeeksToShow();
+  const first = shown[0], last = shown[shown.length - 1];
+  const num = w => w.weekNum || (visibleWeeks.indexOf(w) + 1);
+  labelEl.textContent = shown.length > 1 ? `สัปดาห์ที่ ${num(first)} – ${num(last)}` : `สัปดาห์ที่ ${num(first)}`;
+  datesEl.textContent = `${formatDateThai(first.startDate)} – ${formatDateThai(last.endDate)}`;
+  const start = currentWeekStartIdx();
+  document.getElementById('btn-prev-week').disabled = start <= 0;
+  document.getElementById('btn-next-week').disabled = start >= visibleWeeks.length - weekWinSize;
+  document.getElementById('btn-this-week').disabled = start === thisWeekStartIdx();
 }
 
 function changeWeek(dir) {
-  const newIdx = currentWeekIdx + dir;
-  if (newIdx < 0 || newIdx >= allWeeks.length) return;
-  currentWeekIdx = newIdx;
+  const start = currentWeekStartIdx();
+  const next = clampWeekStart(start + dir);
+  if (next === start) return;
+  weekWinStartId = visibleWeeks[next].weekId;
+  updateWeekLabel();
+  renderSchedule();
+}
+
+function goThisWeek() {
+  if (!visibleWeeks.length) return;
+  weekWinStartId = visibleWeeks[thisWeekStartIdx()].weekId;
+  updateWeekLabel();
+  renderSchedule();
+}
+
+function setWeekWindowSize(n) {
+  if (n === weekWinSize) return;
+  const start = currentWeekStartIdx();
+  weekWinSize = n;
+  try { localStorage.setItem(WEEK_SIZE_KEY, String(n)); } catch (e) {}
+  if (visibleWeeks.length) weekWinStartId = visibleWeeks[clampWeekStart(start)].weekId;
   updateWeekLabel();
   renderSchedule();
 }
@@ -840,92 +846,14 @@ async function renderSchedule() {
   const content = document.getElementById('schedule-content');
   content.innerHTML = '<div class="empty-state"><div class="spinner"></div><div class="mt-3">กำลังโหลด...</div></div>';
 
-  if (!allWeeks.length) {
+  if (!visibleWeeks.length) {
+    ['stat-active', 'stat-cancel', 'stat-teachers'].forEach(id => document.getElementById(id).textContent = 0);
+    document.getElementById('stat-students').textContent = '–';
     content.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">ยังไม่มีตารางสอน</div><div class="empty-sub">แอดมินยังไม่ได้อัปเดตข้อมูลสัปดาห์นี้</div></div>';
     return;
   }
 
-  if (viewMode === 'single') {
-    await renderSingleWeek();
-  } else {
-    await renderMultiWeek();
-  }
-}
-
-// ─── SINGLE WEEK VIEW ─────────────────────────────────────
-async function renderSingleWeek() {
-  const week = allWeeks[currentWeekIdx];
-  if (!week) return;
-
-  const gradeLabel = APP_CONFIG.grades[currentGrade - 1];
-
-  // If marked as NO CLASSES THIS WEEK
-  if (week.noClasses) {
-    document.getElementById('stat-active').textContent   = 0;
-    document.getElementById('stat-cancel').textContent   = 0;
-    document.getElementById('stat-teachers').textContent = 0;
-    document.getElementById('stat-students').textContent = '–';
-
-    document.getElementById('schedule-content').innerHTML = `
-      <div class="flex items-center gap-2 mb-3 text-muted text-sm">
-        🎓 <strong>ระดับชั้น ${gradeLabel}</strong> — ${week.label}
-      </div>
-      <div class="no-classes-card">
-        <div class="icon">🚫</div>
-        <div class="title">สัปดาห์นี้ไม่มีการจัดการเรียนการสอนคลินิกวิชาการ</div>
-        <div class="sub">${week.label}</div>
-      </div>
-    `;
-    return;
-  }
-
-  const clinics = await DataService.getClinicsByGradeAndWeek(currentGrade, week.weekId);
-  const teachers = await DataService.getTeachers();
-  const teacherMap = Object.fromEntries(teachers.map(t => [t.id, t]));
-  const today = todayStr();
-
-  // Build day slots
-  const dayNames = ['จันทร์','อังคาร','พุธ','พฤหัสบดี'];
-  const days = [];
-  const baseD = parseDateSafe(week.startDate) || new Date();
-  for (let i = 0; i < 4; i++) {
-    const d = new Date(baseD);
-    d.setDate(d.getDate() + i);
-    const dStr = toYMD(d);
-    days.push({ name: dayNames[i], date: dStr, dayIdx: i, isToday: dStr === today });
-  }
-
-  // Stats
-  const activeDays = new Set(clinics.filter(c => c.status === 'active').map(c => c.dayOfWeek)).size;
-  const cancelledDays = new Set(clinics.filter(c => c.status === 'cancelled').map(c => c.dayOfWeek)).size;
-  const uniqueTeachers = new Set(clinics.map(c => c.teacherId)).size;
-  const totalStudents = clinics.reduce((s, c) => s + (c.studentCount || 0), 0);
-  document.getElementById('stat-active').textContent   = activeDays;
-  document.getElementById('stat-cancel').textContent   = cancelledDays;
-  document.getElementById('stat-teachers').textContent = uniqueTeachers;
-  document.getElementById('stat-students').textContent = totalStudents || '–';
-
-  const weekDuty = await DataService.getDutyStaffForWeek(week.weekId);
-  const dutyStaffMap = await DataService.getDutyStaffMap();
-
-  // Render day cards
-  const html = `
-    <div class="flex items-center gap-2 mb-3 text-muted text-sm">
-      🎓 <strong>ระดับชั้น ${gradeLabel}</strong> — ${week.label}
-    </div>
-    <div class="days-grid">
-      ${days.map(day => {
-        const dayClinics = clinics.filter(c => {
-          const cYmd = toYMD(c.date);
-          if (cYmd && day.date) return cYmd === day.date;
-          return Number(c.dayOfWeek) === day.dayIdx;
-        });
-        const dutyOfficer = weekDuty[day.dayIdx] || dutyStaffMap[day.date] || '';
-        return renderDayCard(day, dayClinics, teacherMap, dutyOfficer);
-      }).join('')}
-    </div>`;
-
-  document.getElementById('schedule-content').innerHTML = html;
+  await renderMultiWeek();
 }
 
 // ─── MULTI WEEK VIEW ──────────────────────────────────────
@@ -935,8 +863,8 @@ async function renderMultiWeek() {
   const today = todayStr();
   const dutyStaffMap = await DataService.getDutyStaffMap();
 
-  // Only show user-selected weeks (up to 4)
-  const weeksToShow = allWeeks.filter(w => selectedMultiWeekIds.includes(w.weekId));
+  // ช่วงสัปดาห์ที่เลือก (1–3 สัปดาห์ต่อกัน)
+  const weeksToShow = getWeeksToShow();
 
   let html = '';
   let totalActive = 0, totalCancel = 0, totalTch = new Set(), totalStu = 0;
@@ -1023,6 +951,7 @@ function renderDayCard(day, clinics, teacherMap, dutyOfficer) {
         const isRegOpen = Boolean(c.allowRegistration);
         const maxLimit = Number(c.maxStudents) || 0;
         const isRegFull = isRegOpen && maxLimit > 0 && count >= maxLimit;
+        const isRegLate = isRegOpen && c.status !== 'cancelled' && !isStudentRegWindowOpen(c.date);
         return `
           <div class="clinic-slot">
             <div class="clinic-subject">${getSubjectIcon(c.subject)} ${c.subject}</div>
@@ -1040,7 +969,13 @@ function renderDayCard(day, clinics, teacherMap, dutyOfficer) {
               <span class="status-badge ${st.cls}">${st.icon} ${st.text}</span>
               <div class="clinic-slot-actions">
                 ${isRegOpen ? (
-                  isRegFull ? `
+                  isRegLate ? `
+                    <button class="btn-clinic-students" disabled
+                            style="background:#f1f5f9;color:#475569;border:1px solid #cbd5e1;cursor:not-allowed;"
+                            title="นักเรียนลงทะเบียนเองได้ถึง ${STUDENT_REG_CUTOFF} น. ของวันเรียน — หลังจากนั้นกรุณาแจ้งครูผู้สอน">
+                      ⏰ ปิดรับแล้ว (${count}${maxLimit ? '/' + maxLimit : ''})
+                    </button>
+                  ` : isRegFull ? `
                     <button class="btn-clinic-students" disabled 
                             style="background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;cursor:not-allowed;" 
                             title="มีผู้ลงทะเบียนครบตามจำนวนแล้ว (${count}/${maxLimit} คน)">
@@ -1231,7 +1166,9 @@ function renderStudentListTable(list, clinic) {
             ลงทะเบียนแล้ว ${count} คน ${clinic.maxStudents ? `จากที่รับ ${clinic.maxStudents} คน (ว่างอีก ${Math.max(0, clinic.maxStudents - count)} ที่นั่ง)` : ''}
           </div>
         </div>
-        ${clinic.maxStudents && count >= clinic.maxStudents ? `
+        ${!isStudentRegWindowOpen(clinic.date) ? `
+          <span class="badge badge-gray" style="padding:6px 12px;font-size:0.82rem;">⏰ ปิดรับแล้ว (${STUDENT_REG_CUTOFF} น.) — ต้องการเข้าเรียนแจ้งครูผู้สอน</span>
+        ` : clinic.maxStudents && count >= clinic.maxStudents ? `
           <span class="badge badge-red" style="padding:6px 12px;font-size:0.82rem;">⛔ เต็มแล้ว (ปิดรับลงทะเบียน)</span>
         ` : `
           <button class="btn btn-success btn-sm" onclick="closeModal('modal-clinic-students'); openStudentRegistrationModal('${clinic.id}');" style="font-weight:700;padding:6px 16px;border-radius:20px;box-shadow:0 2px 4px rgba(22,163,74,0.25);">
@@ -1339,34 +1276,25 @@ async function openStudentRegistrationModal(clinicId) {
     showToast('ลงทะเบียนไม่ได้', `วิชานี้เปิดสำหรับ ม.${c.grade} (คุณอยู่ ม.${me.grade})`, 'warning');
     return;
   }
-  regTargetClinic = c;
+  if (!isStudentRegWindowOpen(c.date)) {
+    showToast('ปิดรับลงทะเบียนแล้ว', STUDENT_RESULT_MESSAGES.deadline, 'warning');
+    return;
+  }
 
   const teachers = await DataService.getTeachers();
   const t = teachers.find(x => String(x.id) === String(c.teacherId)) || {};
   const teacherName = t.name || c.teacherName || 'ไม่ระบุ';
 
-  // Get current attendance list for this clinic
-  let cAtt = [];
-  if (Array.isArray(c.studentList) && c.studentList.length > 0) {
-    cAtt = c.studentList;
-  } else {
-    const allAttendance = await DataService.getAttendance();
-    const cDate = toYMD(c.date);
-    cAtt = allAttendance.filter(a => {
-      if (!a.clinicId || String(a.clinicId) !== String(c.id)) return false;
-      if (cDate && a.date && toYMD(a.date) !== cDate) return false;
-      return true;
-    });
-  }
-
-  const currentCount = cAtt.length;
+  // นับที่นั่งล่าสุดจากฐานข้อมูลก่อนเปิด (ข้อมูลบนจออาจเก่าไปหลายวินาที)
+  const currentCount = await getLiveRegCount(c);
   const maxLimit = Number(c.maxStudents) || 0;
-  const isFull = maxLimit > 0 && currentCount >= maxLimit;
-
-  if (isFull) {
+  if (maxLimit > 0 && currentCount >= maxLimit) {
     showToast('ที่นั่งเต็มแล้ว', `วิชา ${c.subject} มีผู้ลงทะเบียนครบ ${maxLimit} คนแล้ว`, 'warning');
+    renderSchedule();
     return;
   }
+  regTargetClinic = c;
+  regSeatsFull = false;
 
   document.getElementById('student-reg-clinic-id').value = String(c.id);
 
@@ -1391,14 +1319,10 @@ async function openStudentRegistrationModal(clinicId) {
         <div class="clinic-info-item">🕐 เวลา: <strong>${formatClinicTime(c.time)}</strong></div>
         <div class="clinic-info-item">📍 สถานที่: <strong>${escapeHtml(c.room || '–')}</strong></div>
       </div>
-      <div class="clinic-modal-quota-box">
-        <div class="clinic-quota-row">
-          <span>โควตาที่เปิดรับ: <strong>${maxLimit ? `${maxLimit} คน` : 'ไม่จำกัด'}</strong></span>
-          <span>ลงทะเบียนแล้ว: <strong>${currentCount} คน</strong> ${maxLimit ? `<span class="badge" style="background:#dcfce7;color:#166534;border:1px solid #86efac;font-size:0.75rem;padding:2px 6px;margin-left:4px;">เหลืออีก ${maxLimit - currentCount} ที่นั่ง</span>` : ''}</span>
-        </div>
-      </div>
+      <div class="clinic-modal-quota-box" id="student-reg-quota"></div>
     `;
   }
+  renderRegQuota(currentCount, maxLimit);
 
   // นักเรียนที่ลงทะเบียนได้ = เจ้าของบัญชีที่ login อยู่เท่านั้น
   regGradeStudentsCache = [{
@@ -1412,6 +1336,78 @@ async function openStudentRegistrationModal(clinicId) {
 
   openModal('modal-student-registration');
   await onRegistrationStudentPick();
+  startRegSeatWatch();
+}
+
+// ─── ที่นั่งแบบสด: ระหว่างเปิดหน้าต่างลงทะเบียน นับที่นั่งใหม่ทุก 10 วินาที + ทันทีเมื่อมีคนลงทะเบียน (เรียลไทม์)
+//     ถ้าเต็มระหว่างรอ → ปุ่มยืนยันกดไม่ได้ และขึ้น "เต็มแล้ว" (ฐานข้อมูลกันเกินโควตาอีกชั้นอยู่แล้ว)
+const REG_SEAT_POLL_MS = 10000;
+let regSeatTimer = null;
+let regSeatsFull = false;
+let regRegistering = false;
+
+// จำนวนผู้ลงทะเบียนล่าสุด: ถามฐานข้อมูลโดยตรง (ข้อมูลเล็กมาก) — ถ้าเชื่อมต่อไม่ได้ ใช้ข้อมูลในเครื่อง
+async function getLiveRegCount(c) {
+  if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
+    const n = await SupabaseAPI.countClinicAttendance(c.id);
+    if (typeof n === 'number') return n;
+  }
+  const cDate = toYMD(c.date);
+  const att = (await DataService.getAttendance()).filter(a =>
+    String(a.clinicId) === String(c.id) && !(cDate && a.date && toYMD(a.date) !== cDate));
+  return Math.max(att.length, Array.isArray(c.studentList) ? c.studentList.length : 0);
+}
+
+function renderRegQuota(count, maxLimit) {
+  const el = document.getElementById('student-reg-quota');
+  if (!el) return;
+  const left = Math.max(0, maxLimit - count);
+  const badge = !maxLimit ? ''
+    : left > 0
+      ? `<span class="badge" style="background:#dcfce7;color:#166534;border:1px solid #86efac;font-size:0.75rem;padding:2px 6px;margin-left:4px;">เหลืออีก ${left} ที่นั่ง</span>`
+      : `<span class="badge badge-red" style="font-size:0.75rem;padding:2px 6px;margin-left:4px;">⛔ เต็มแล้ว</span>`;
+  el.innerHTML = `
+    <div class="clinic-quota-row">
+      <span>โควตาที่เปิดรับ: <strong>${maxLimit ? `${maxLimit} คน` : 'ไม่จำกัด'}</strong></span>
+      <span>ลงทะเบียนแล้ว: <strong>${count} คน</strong> ${badge}</span>
+    </div>
+    <div style="font-size:0.75rem;color:#64748b;margin-top:4px;">🔄 จำนวนที่นั่งอัปเดตอัตโนมัติ</div>`;
+}
+
+async function refreshRegSeats() {
+  const modal = document.getElementById('modal-student-registration');
+  if (!modal || !modal.classList.contains('open')) { stopRegSeatWatch(); return; }
+  if (!regTargetClinic || regRegistering) return;
+  // อ่านคลินิกใหม่จากเครื่อง (แอดมิน/ครูอาจเปลี่ยนโควตาหรือปิดรับลงทะเบียนระหว่างนั้น)
+  const fresh = (await DataService.getClinics()).find(x => String(x.id) === String(regTargetClinic.id));
+  if (!fresh || !fresh.allowRegistration || fresh.status === 'cancelled' || !isStudentRegWindowOpen(fresh.date)) {
+    closeRegistrationModalWith('ปิดรับลงทะเบียนแล้ว',
+      !fresh || !fresh.allowRegistration ? STUDENT_RESULT_MESSAGES.closed
+        : fresh.status === 'cancelled' ? 'คลินิกนี้งดสอน' : STUDENT_RESULT_MESSAGES.deadline);
+    return;
+  }
+  regTargetClinic = fresh;
+  const count = await getLiveRegCount(fresh);
+  if (regRegistering || !modal.classList.contains('open')) return;
+  const maxLimit = Number(fresh.maxStudents) || 0;
+  renderRegQuota(count, maxLimit);
+  const wasFull = regSeatsFull;
+  regSeatsFull = maxLimit > 0 && count >= maxLimit;
+  if (regSeatsFull !== wasFull) await onRegistrationStudentPick();
+}
+
+function startRegSeatWatch() {
+  stopRegSeatWatch();
+  regSeatTimer = setInterval(() => { if (!document.hidden) refreshRegSeats(); }, REG_SEAT_POLL_MS);
+}
+function stopRegSeatWatch() {
+  if (regSeatTimer) clearInterval(regSeatTimer);
+  regSeatTimer = null;
+}
+function closeRegistrationModalWith(title, msg) {
+  closeModal('modal-student-registration');
+  showToast(title, msg, 'warning');
+  renderSchedule();
 }
 
 let selectedStudentRegistrationId = '';
@@ -1449,7 +1445,21 @@ async function onRegistrationStudentPick() {
       </div>
     `;
     if (confirmBtn) confirmBtn.disabled = true;
+  } else if (regSeatsFull) {
+    validationBox.innerHTML = `
+      <div class="alert alert-danger" style="margin:0;padding:12px 14px;border-radius:10px;background:#fef2f2;border:1.5px solid #fca5a5;display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:1.3rem;line-height:1;">⛔</span>
+        <div style="flex:1;">
+          <div style="font-weight:700;color:#991b1b;font-size:0.92rem;">ที่นั่งเต็มแล้ว</div>
+          <div style="font-size:0.85rem;color:#b91c1c;margin-top:2px;line-height:1.4;">
+            มีผู้ลงทะเบียนครบตามจำนวนแล้วระหว่างที่คุณเปิดหน้านี้ ถ้ามีคนยกเลิก ปุ่มยืนยันจะกดได้อีกครั้งโดยอัตโนมัติ
+          </div>
+        </div>
+      </div>
+    `;
+    if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.innerHTML = '⛔ เต็มแล้ว'; confirmBtn.classList.add('is-full'); }
   } else {
+    if (confirmBtn) { confirmBtn.innerHTML = '✓ ยืนยันการลงทะเบียน (1 คน)'; confirmBtn.classList.remove('is-full'); }
     validationBox.innerHTML = `
       <div class="alert alert-success" style="margin:0;padding:12px 14px;border-radius:10px;background:#f0fdf4;border:1.5px solid #86efac;display:flex;align-items:flex-start;gap:10px;">
         <span style="font-size:1.3rem;line-height:1;">✅</span>
@@ -1484,6 +1494,7 @@ async function submitStudentRegistration() {
     confirmBtn.innerHTML = '⏳ กำลังบันทึกการลงทะเบียน...';
   }
 
+  regRegistering = true;
   try {
     // ลงทะเบียนในชื่อของบัญชีที่ login อยู่ — ฐานข้อมูลเป็นผู้ตรวจ (ลงชื่อแทนคนอื่นไม่ได้)
     const result = await StudentAuth.register(regTargetClinic.id);
@@ -1493,7 +1504,7 @@ async function submitStudentRegistration() {
       if (result === 'session_expired' || result === 'must_change') {
         closeModal('modal-student-registration');
         goStudentLogin(regTargetClinic.id);
-      } else if (result === 'full' || result === 'closed' || result === 'past') {
+      } else if (result === 'full' || result === 'closed' || result === 'past' || result === 'deadline') {
         closeModal('modal-student-registration');
         await renderSchedule();
       }
@@ -1509,6 +1520,7 @@ async function submitStudentRegistration() {
     console.error('Registration error:', err);
     showToast('เกิดข้อผิดพลาด', 'ไม่สามารถลงทะเบียนได้: ' + (err.message || err), 'error');
   } finally {
+    regRegistering = false;
     if (confirmBtn) {
       confirmBtn.disabled = false;
       confirmBtn.innerHTML = '✓ ยืนยันการลงทะเบียน (1 คน)';

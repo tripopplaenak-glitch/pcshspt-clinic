@@ -492,10 +492,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
 <script src="js/firebase-config.js?v=2569_16"></script>
-<script src="js/supabase-api.js?v=2569_24"></script>
+<script src="js/supabase-api.js?v=2569_25"></script>
 <script src="js/db.js?v=2569_24"></script>
-<script src="js/auth.js?v=2569_22"></script>
-<script src="js/student-auth.js?v=2569_20"></script>
+<script src="js/auth.js?v=2569_23"></script>
+<script src="js/student-auth.js?v=2569_21"></script>
 <script>
 // ─── BOOKING WIDGET HELPER & DRAGGABLE (TOUCH & MOUSE / MOBILE & IPAD) ─────
 let isDraggingBooking = false;
@@ -712,11 +712,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Connect Supabase Realtime for instant updates
   if (typeof SupabaseAPI !== 'undefined' && SupabaseAPI.isConfigured()) {
-    SupabaseAPI.init(async () => {
-      if (!document.querySelector('.modal-overlay.open')) {
-        await loadWeeks();
-        await loadTeacherClinics();
-      }
+    // บันทึกรายชื่อทีละหลายคน = หลายเหตุการณ์ติดกัน → รวบเป็นการวาดหน้าใหม่ครั้งเดียว
+    let realtimeTimer = null;
+    SupabaseAPI.init(() => {
+      clearTimeout(realtimeTimer);
+      realtimeTimer = setTimeout(async () => {
+        if (!document.querySelector('.modal-overlay.open')) {
+          await loadWeeks();
+          await loadTeacherClinics();
+        }
+      }, 400);
     });
   }
 
@@ -751,6 +756,10 @@ async function refreshTeacherClinicsData() {
   }
 }
 
+// หน้าครูดูย้อนหลังได้ WEEK_LOOKBACK สัปดาห์ → โหลดคลินิก/รายชื่อเข้าเรียนเฉพาะตั้งแต่ช่วงนั้น
+function teacherDataSince() { return mondayWeeksAgo(WEEK_LOOKBACK); }
+if (typeof SupabaseAPI !== 'undefined') SupabaseAPI.dataSince = teacherDataSince;
+
 let allWeeks = [];
 let allStudents = [];
 let currentClinic = null;
@@ -766,7 +775,9 @@ function onTeacherWeekChange(val) {
 }
 
 async function loadWeeks() {
-  allWeeks = await DataService.getWeeks();
+  // ดูย้อนหลังได้ WEEK_LOOKBACK สัปดาห์ (เก่ากว่านั้นดูได้ที่หน้า "สรุปการเข้าเรียน")
+  const since = teacherDataSince();
+  allWeeks = (await DataService.getWeeks()).filter(w => (toYMD(w.endDate) || '') >= since);
   const sel = document.getElementById('week-select');
   if (!sel) return;
 
@@ -790,8 +801,9 @@ async function loadWeeks() {
     if (cur && allWeeks.some(w => w.weekId === cur.weekId)) {
       sel.value = cur.weekId;
     } else if (allWeeks.length) {
-      const w1 = allWeeks.find(w => Number(w.weekNum) === 1);
-      sel.value = (w1 || allWeeks[0]).weekId;
+      // ไม่อยู่ในสัปดาห์ใด (เช่น ช่วงปิดภาค) → สัปดาห์ถัดไปที่ใกล้ที่สุด หรือสัปดาห์ล่าสุด
+      const today = todayStr();
+      sel.value = (allWeeks.find(w => (toYMD(w.endDate) || '') >= today) || allWeeks[allWeeks.length - 1]).weekId;
     }
   }
 

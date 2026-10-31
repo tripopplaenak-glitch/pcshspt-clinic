@@ -488,12 +488,12 @@
       <div class="guide-card">
         <div class="guide-step-header">
           <span class="step-badge">ขั้นตอนที่ 2</span>
-          <h3 class="step-title">การเลือกระดับชั้นและโหมดดูหลายสัปดาห์</h3>
+          <h3 class="step-title">การเลือกระดับชั้นและช่วงสัปดาห์</h3>
         </div>
-        <p>เมื่อเข้าสู่หน้า <strong>"📅 ตารางสอน"</strong> ระบบจะตั้งค่าเริ่มต้นเป็น <strong>ม.1</strong> และเปิดโหมด <strong>"📚 หลายสัปดาห์"</strong> ให้อัตโนมัติ เพื่อให้นักเรียนเห็นภาพรวมตารางเรียนล่วงหน้าได้อย่างชัดเจน:</p>
-        
+        <p>เมื่อเข้าสู่หน้า <strong>"📅 ตารางสอน"</strong> ระบบจะตั้งค่าเริ่มต้นเป็น <strong>ม.1</strong> และแสดง <strong>สัปดาห์นี้กับสัปดาห์หน้า</strong> ให้อัตโนมัติ:</p>
+
         <div class="mockup-box">
-          <div class="mockup-label">🖥️ ภาพจำลองแถบเลือกระดับชั้นและโหมดสัปดาห์</div>
+          <div class="mockup-label">🖥️ ภาพจำลองแถบเลือกระดับชั้นและช่วงสัปดาห์</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;">
             <span style="font-weight:700;color:#334155;">ระดับชั้น:</span>
             <span class="tag-chip tag-chip-blue" style="background:#0284c7;color:#fff;font-size:0.9rem;padding:4px 12px;">ม.1 (ค่าเริ่มต้น)</span>
@@ -502,13 +502,25 @@
             <span class="tag-chip tag-chip-blue" style="padding:4px 12px;">ม.4</span>
             <span class="tag-chip tag-chip-blue" style="padding:4px 12px;">ม.5</span>
             <span class="tag-chip tag-chip-blue" style="padding:4px 12px;">ม.6</span>
-            <span style="margin-left:14px;font-weight:700;color:#334155;">โหมดแสดงผล:</span>
-            <span class="tag-chip tag-chip-blue" style="padding:4px 10px;">📄 1 สัปดาห์</span>
-            <span class="tag-chip tag-chip-blue" style="background:#0284c7;color:#fff;padding:4px 12px;">📚 หลายสัปดาห์ (ค่าเริ่มต้น)</span>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between;background:#fff;padding:12px;border-radius:8px;border:1px solid #e2e8f0;margin-top:8px;">
+            <span style="display:flex;align-items:center;gap:10px;">
+              <span class="tag-chip tag-chip-blue" style="padding:4px 10px;">◀</span>
+              <span style="text-align:center;font-weight:700;color:#1e3a8a;">สัปดาห์ที่ 3 – 4<br><span style="font-weight:500;font-size:.8rem;color:#64748b;">16 พ.ย. 2569 – 26 พ.ย. 2569</span></span>
+              <span class="tag-chip tag-chip-blue" style="padding:4px 10px;">▶</span>
+            </span>
+            <span style="display:flex;align-items:center;gap:6px;font-weight:600;color:#475569;">แสดง
+              <span class="tag-chip tag-chip-blue" style="padding:4px 10px;">1</span>
+              <span class="tag-chip tag-chip-blue" style="background:#0284c7;color:#fff;padding:4px 10px;">2</span>
+              <span class="tag-chip tag-chip-blue" style="padding:4px 10px;">3</span> สัปดาห์
+              <span class="tag-chip tag-chip-blue" style="padding:4px 10px;">สัปดาห์นี้</span>
+            </span>
           </div>
         </div>
         <ul>
           <li>สามารถคลิกเปลี่ยนระดับชั้นเป็นชั้นของตนเอง (ม.1 – ม.6) ได้ตลอดเวลา</li>
+          <li>กด <strong>◀ / ▶</strong> เพื่อเลื่อนดูสัปดาห์ก่อนหน้า/ถัดไป (ย้อนหลังได้ 2 สัปดาห์) และกด <strong>"สัปดาห์นี้"</strong> เพื่อกลับมาสัปดาห์ปัจจุบัน</li>
+          <li>เลือก <strong>แสดง 1, 2 หรือ 3 สัปดาห์</strong> พร้อมกันได้ ระบบจะจำค่าที่เลือกไว้ในเครื่อง</li>
           <li>หากมีประกาศงดเรียนหรือสัปดาห์สอบ จะมีแถบข้อความแจ้งเตือนสีเหลืองเด่นชัดอยู่ด้านบน</li>
         </ul>
       </div>
@@ -568,7 +580,11 @@
           </tr>
           <tr style="border:1px solid #e2e8f0;background:#f8fafc;">
             <td style="padding:8px 12px;"><strong><span class="tag-chip tag-chip-red">⛔ เต็มแล้ว</span></strong></td>
-            <td style="padding:8px 12px;">มีผู้ลงทะเบียนครบตามจำนวนโควตาที่ครูกำหนดแล้ว ระบบจะปิดรับสมัครอัตโนมัติ</td>
+            <td style="padding:8px 12px;">มีผู้ลงทะเบียนครบตามจำนวนโควตาที่ครูกำหนดแล้ว ระบบจะปิดรับสมัครอัตโนมัติ (ถ้าเปิดหน้าลงทะเบียนค้างไว้แล้วที่นั่งเต็ม ปุ่มยืนยันจะกดไม่ได้ทันที และกดได้อีกครั้งถ้ามีคนยกเลิก)</td>
+          </tr>
+          <tr style="border:1px solid #e2e8f0;">
+            <td style="padding:8px 12px;"><strong><span class="tag-chip" style="background:#f1f5f9;color:#475569;">⏰ ปิดรับแล้ว</span></strong></td>
+            <td style="padding:8px 12px;">นักเรียนลงทะเบียนเองได้ถึง <strong>16:30 น. ของวันเรียน</strong> หลังจากนั้นถ้ายังต้องการเข้าเรียน ให้ <strong>แจ้งครูผู้สอน</strong> ครูจะเพิ่มชื่อให้ในระบบภายหลัง</td>
           </tr>
         </table>
       </div>
@@ -700,7 +716,7 @@
         <ul>
           <li><strong>📋 ประวัติการลงทะเบียนของฉัน:</strong> แสดงทุกวิชาที่ลงทะเบียนไว้ พร้อมวัน เวลา ครูผู้สอน และห้องเรียน</li>
           <li><strong>ยกเลิกการลงทะเบียน:</strong> กดปุ่มสีแดง <strong>"ยกเลิกการลงทะเบียน"</strong> ในวิชาที่ต้องการ
-            — ยกเลิกได้เฉพาะวิชาที่ <strong>ครูยังเปิดรับลงทะเบียนอยู่</strong> และ <strong>ยังไม่ผ่านวันเรียน</strong>
+            — ยกเลิกได้เฉพาะวิชาที่ <strong>ครูยังเปิดรับลงทะเบียนอยู่</strong> และ <strong>ก่อน 16:30 น. ของวันเรียน</strong>
             (ถ้าไม่มีปุ่มยกเลิก ให้แจ้งครูผู้สอนโดยตรง)</li>
           <li><strong>🔐 เปลี่ยนรหัสผ่าน:</strong> กรอกรหัสผ่านปัจจุบัน แล้วตั้งรหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร)</li>
           <li><strong>ออกจากระบบ:</strong> ควรกดออกจากระบบทุกครั้งเมื่อใช้เครื่องคอมพิวเตอร์หรือโทรศัพท์ของผู้อื่น</li>
@@ -821,10 +837,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
   <script src="js/firebase-config.js?v=2569_16"></script>
-  <script src="js/supabase-api.js?v=2569_24"></script>
+  <script src="js/supabase-api.js?v=2569_25"></script>
   <script src="js/db.js?v=2569_24"></script>
-  <script src="js/auth.js?v=2569_22"></script>
-  <script src="js/student-auth.js?v=2569_20"></script>
+  <script src="js/auth.js?v=2569_23"></script>
+  <script src="js/student-auth.js?v=2569_21"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       updateNavbarAuth();

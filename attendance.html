@@ -502,10 +502,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="js/firebase-config.js?v=2569_16"></script>
-  <script src="js/supabase-api.js?v=2569_24"></script>
+  <script src="js/supabase-api.js?v=2569_25"></script>
   <script src="js/db.js?v=2569_24"></script>
-  <script src="js/auth.js?v=2569_22"></script>
-  <script src="js/student-auth.js?v=2569_20"></script>
+  <script src="js/auth.js?v=2569_23"></script>
+  <script src="js/student-auth.js?v=2569_21"></script>
   <script>
     // ─── DORMITORY HELPER (DORM_MAP is loaded from js/firebase-config.js)
 
@@ -606,11 +606,11 @@
         refreshAttendanceData();
       });
 
-      // 2. Periodic sync every 20 seconds
-      // ดึงซ้ำทุก 60 วินาที (สำรอง) — การเปลี่ยนแปลงมาถึงทันทีผ่านระบบเรียลไทม์อยู่แล้ว
+      // 2. ดึงซ้ำทุก 5 นาที (สำรองกรณีเรียลไทม์หลุด) — การเปลี่ยนแปลงปกติมาถึงทันทีผ่านระบบเรียลไทม์
+      //    หน้านี้ดึงข้อมูลทั้งภาคทุกครั้ง จึงไม่ดึงถี่ เพื่อไม่ให้เกินโควตารับส่งข้อมูลของ Supabase
       setInterval(() => {
         if (!document.hidden) refreshAttendanceData();
-      }, 60000);
+      }, 5 * 60000);
     });
 
     function setTodayDate() {

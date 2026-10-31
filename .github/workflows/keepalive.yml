@@ -1,0 +1,41 @@
+# กัน Supabase (แพ็กเกจฟรี) หยุดโปรเจกต์ชั่วคราวเมื่อไม่มีการใช้งาน 7 วัน
+# → เรียกฐานข้อมูลทุก 3 วัน (ช่วงปิดภาคที่ไม่มีใครเปิดเว็บ ฐานข้อมูลก็ยังไม่ถูกปิด)
+# และกัน GitHub ปิดงานตั้งเวลาอัตโนมัติเมื่อ repo ไม่มีความเคลื่อนไหว 60 วัน
+# (สั่ง "เปิดใช้งาน" workflow ซ้ำผ่าน API แทนการ commit — จะได้ไม่ต้อง Pull ก่อน Push ใน GitHub Desktop)
+name: Keepalive (กัน Supabase หยุดทำงาน)
+
+on:
+  schedule:
+    - cron: '30 1 */3 * *'   # ทุก 3 วัน เวลา 08:30 น. (เวลาไทย)
+  workflow_dispatch:          # กดรันเองได้ที่แท็บ Actions
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: เรียกฐานข้อมูล Supabase
+        env:
+          URL: https://tzxhffzlblkehyzmggdu.supabase.co/rest/v1/settings?select=key&limit=1
+          KEY: sb_publishable_UnAxE0Dr5Z6fGf1zo-nd2g_QKqXOIc9
+        run: |
+          for i in 1 2 3; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "$URL" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+            echo "ครั้งที่ $i: HTTP $code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 20
+          done
+          echo "::error::เรียก Supabase ไม่สำเร็จ — โปรเจกต์อาจถูกหยุดชั่วคราว ให้เข้า supabase.com แล้วกด Restore project"
+          exit 1
+
+      - name: คงสถานะเปิดใช้งานของงานตั้งเวลา
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for wf in keepalive.yml backup.yml; do
+            gh api -X PUT "repos/${{ github.repository }}/actions/workflows/$wf/enable" && echo "enabled $wf"
+          done

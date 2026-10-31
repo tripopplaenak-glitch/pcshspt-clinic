@@ -186,13 +186,26 @@ const SupabaseAPI = {
     }
   },
 
+  // นับจำนวนผู้ลงทะเบียนของคลินิกเดียว (ส่งกลับแค่ตัวเลข ใช้ข้อมูลน้อยมาก) — null ถ้าเชื่อมต่อไม่ได้
+  async countClinicAttendance(clinicId) {
+    if (!this.client) this.init();
+    if (!this.client) return null;
+    try {
+      const { count, error } = await this.client.from('attendance')
+        .select('id', { count: 'exact', head: true }).eq('clinic_id', String(clinicId));
+      return error ? null : count;
+    } catch (e) { return null; }
+  },
+
   // ดึงทุกแถวของตาราง — Supabase ส่งได้สูงสุด 1,000 แถวต่อครั้ง ส่วนที่เกินจะถูกตัดทิ้งแบบเงียบ ๆ
   // (รายชื่อเข้าเรียนสะสมทั้งภาคเกิน 1,000 ได้) จึงดึงทีละ 1,000 แถวจนครบ
-  async selectAll(table, orderBy) {
+  async selectAll(table, orderBy, filter) {
     const pageSize = 1000;
     const rows = [];
     for (let from = 0; ; from += pageSize) {
-      const { data, error } = await this.client.from(table).select('*').order(orderBy).range(from, from + pageSize - 1);
+      let q = this.client.from(table).select('*');
+      if (filter) q = filter(q);
+      const { data, error } = await q.order(orderBy).range(from, from + pageSize - 1);
       if (error) return { data: null, error };
       rows.push(...data);
       if (data.length < pageSize) return { data: rows, error: null };
@@ -204,6 +217,11 @@ const SupabaseAPI = {
   ROSTER_TTL_MS: 10 * 60 * 1000,
   _rosterFetchedAt: 0,
 
+  // หน้าที่ดูแค่ช่วงล่าสุด (ตารางสอน/หน้าครู) ตั้งค่านี้เป็นฟังก์ชันที่คืนวันที่ YYYY-MM-DD
+  // → ดึงคลินิกและรายชื่อเข้าเรียนเฉพาะตั้งแต่วันนั้น ปริมาณข้อมูลจึงไม่โตขึ้นตลอดภาค
+  // (null = ดึงทั้งหมด เช่น หน้าแอดมิน/สรุปการเข้าเรียน)
+  dataSince: null,
+
   // ดึงข้อมูลทั้งหมดจาก Supabase ลงสู่ LocalDB
   // opts.forceRoster = true → ดึงรายชื่อครู/นักเรียน/เจ้าหน้าที่ใหม่ทันที (เช่น หลังนำเข้ารายชื่อ)
   async fetchAll(opts = {}) {
@@ -214,6 +232,8 @@ const SupabaseAPI = {
       const needRoster = opts.forceRoster || !this._rosterFetchedAt ||
         Date.now() - this._rosterFetchedAt > this.ROSTER_TTL_MS || !LocalDB.getStudents().length;
       const skip = Promise.resolve({ data: null });
+      const since = typeof this.dataSince === 'function' ? this.dataSince() : this.dataSince;
+      const recent = since ? (q => q.or(`date.gte.${since},date.is.null`)) : null;
       const [
         { data: weeksData },
         { data: clinicsData },
@@ -225,14 +245,21 @@ const SupabaseAPI = {
         { data: attendanceData }
       ] = await Promise.all([
         this.selectAll('weeks', 'id'),
-        this.selectAll('clinics', 'id'),
+        this.selectAll('clinics', 'id', recent),
         needRoster ? this.selectAll('teachers', 'id') : skip,
         needRoster ? this.selectAll('students', 'id') : skip,
         needRoster ? this.selectAll('staff', 'id') : skip,
         this.selectAll('duty_staff', 'date'),
         this.selectAll('settings', 'key'),
-        this.selectAll('attendance', 'id')
+        this.selectAll('attendance', 'id', recent)
       ]);
+      // ดึงแบบช่วงล่าสุด: เก็บข้อมูลเก่าในเครื่องไว้ตามเดิม (หน้าอื่นในเครื่องเดียวกัน เช่น หน้าสรุป ยังต้องใช้)
+      // แทนที่เฉพาะส่วนตั้งแต่วันที่ since
+      const keepOld = (list, fresh) => {
+        if (!since || !Array.isArray(fresh)) return fresh;
+        const ids = new Set(fresh.map(r => String(r.id)));
+        return list.filter(r => { const d = toYMD(r.date); return d && d < since && !ids.has(String(r.id)); });
+      };
       if (needRoster && Array.isArray(studentsData)) this._rosterFetchedAt = Date.now();
 
       if (Array.isArray(teachersData) && teachersData.length) {
@@ -282,7 +309,7 @@ const SupabaseAPI = {
           if (custom.maxStudents !== undefined) item.maxStudents = custom.maxStudents;
           return item;
         });
-        LocalDB.setList('clinics', clinics);
+        LocalDB.setList('clinics', since ? [...keepOld(LocalDB.getClinics(), clinics), ...clinics] : clinics);
       }
       if (Array.isArray(attendanceData)) {
         const clinicMap = Object.fromEntries((clinicsData || []).map(c => [String(c.id), c]));
@@ -294,7 +321,8 @@ const SupabaseAPI = {
           if (cDate && aDate && cDate !== aDate) return false;
           return true;
         });
-        LocalDB.setList('attendance', cleanAtt.map(a => this.mapAttendanceFromDb(a)));
+        const mappedAtt = cleanAtt.map(a => this.mapAttendanceFromDb(a));
+        LocalDB.setList('attendance', since ? [...keepOld(LocalDB.getAttendance(), mappedAtt), ...mappedAtt] : mappedAtt);
       }
 
       return true;

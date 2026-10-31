@@ -220,6 +220,15 @@ function todayStr() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
+// วันจันทร์ของสัปดาห์นี้ ย้อนหลังไป n สัปดาห์ (YYYY-MM-DD) — ใช้กำหนดว่าหน้าตารางสอน/หน้าครูดูย้อนหลังได้ถึงไหน
+function mondayWeeksAgo(n) {
+  const [y, m, d] = todayStr().split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - ((dt.getUTCDay() + 6) % 7) - 7 * n);
+  return dt.toISOString().slice(0, 10);
+}
+const WEEK_LOOKBACK = 2; // ดูย้อนหลังได้ 2 สัปดาห์
+
 function getDayOfWeek(dateStr) {
   const d = parseDateSafe(dateStr);
   return d ? d.getDay() : 0; // 0=Sun,1=Mon,...6=Sat
