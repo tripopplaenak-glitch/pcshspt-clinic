@@ -1028,6 +1028,10 @@
         br.replaceWith(s);
       });
 
+      // ตัดคลาสตารางสำหรับจอมือถือออก — CSS มือถือ (width:1% !important) เคยบีบคอลัมน์ชั้น/ห้อง/เลขที่/หอพัก
+      // จนตัวหนังสือตกเมื่อกดสร้าง PDF จากโทรศัพท์ (รายงานใช้ความกว้างคงที่ตามกระดาษ A4 แทน)
+      reportDiv.querySelectorAll('table.table-attendance-responsive').forEach(tbl => tbl.classList.remove('table-attendance-responsive'));
+
       // Dynamic column width allocation: ensures exactly 100% table width with no empty gaps
       reportDiv.querySelectorAll('table').forEach(tbl => {
         tbl.style.width = '100%';
@@ -1308,6 +1312,21 @@
       loadDailySummary();
     }
 
+    // ตัวสร้างภาพ/PDF (html2canvas) ตัดบรรทัดภาษาไทยไม่เป็น (ไม่มีช่องว่างระหว่างคำ) → ข้อความยาวล้นทับคอลัมน์ข้าง ๆ
+    // แทรกจุดตัดคำที่มองไม่เห็น (zero-width space) ระหว่างคำไทย ให้ตัดบรรทัดได้ตรงตำแหน่งคำ
+    function addThaiWordBreaks(root) {
+      if (typeof Intl === 'undefined' || !Intl.Segmenter) return;
+      const seg = new Intl.Segmenter('th', { granularity: 'word' });
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const nodes = [];
+      while (walker.nextNode()) nodes.push(walker.currentNode);
+      nodes.forEach(n => {
+        if (/[฀-๿]{6,}/.test(n.nodeValue)) {
+          n.nodeValue = [...seg.segment(n.nodeValue)].map(s => s.segment).join('​');
+        }
+      });
+    }
+
     // รายงานสำหรับบันทึกภาพ / PDF: หัวรายงาน + ตารางตามที่แสดงอยู่ (รายชื่อที่เปิดไว้จะติดไปด้วย)
     function buildDailyReport(width) {
       const { date, items, total, dayLabel } = getDailyData();
@@ -1336,6 +1355,20 @@
         c.style.border = '1px solid #cbd5e1';
         c.style.wordBreak = 'break-word'; // ชื่อห้อง/วิชายาวไม่ล้นทับคอลัมน์ข้าง ๆ
       });
+      // ล็อกความกว้างคอลัมน์ (ไม่ขึ้นกับขนาดจอที่กดสร้าง) — ป้ายชั้นและเวลาไม่ขึ้นบรรทัดใหม่
+      const fixCols = (table, widths) => {
+        if (!table) return;
+        table.style.tableLayout = 'fixed';
+        table.style.width = '100%';
+        const ths = table.querySelectorAll(':scope > thead > tr > th');
+        ths.forEach((th, i) => { if (widths[i]) th.style.setProperty('width', widths[i] + '%', 'important'); });
+      };
+      fixCols(el.querySelector('.daily-table'), [8, 23, 18, 16, 14, 12, 9]);
+      el.querySelectorAll('.daily-students').forEach(t => fixCols(t, [7, 45, 16, 10, 22]));
+      el.querySelectorAll('.daily-table .badge, .daily-status').forEach(b => { b.style.whiteSpace = 'nowrap'; });
+      el.querySelectorAll('.daily-table > tbody > tr.daily-row > td:nth-child(4)').forEach(td => { td.style.whiteSpace = 'nowrap'; });
+      el.querySelectorAll('.daily-table th, .daily-table td').forEach(c => { c.style.fontSize = '12px'; c.style.padding = '7px 6px'; });
+      el.querySelectorAll('.daily-table > tbody > tr.daily-row > td').forEach(addThaiWordBreaks);
       el.querySelectorAll('tr').forEach(tr => { tr.style.breakInside = 'avoid'; tr.style.pageBreakInside = 'avoid'; });
       return { el, date };
     }
