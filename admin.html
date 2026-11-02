@@ -1693,7 +1693,7 @@
         <table>
           <thead>
             <tr>
-              <th>#</th>
+              <th>ลำดับ</th>
               <th>สัปดาห์</th>
               <th>วันเริ่ม</th>
               <th>วันสิ้นสุด</th>
@@ -1977,11 +1977,11 @@
               <th style="width:3.5%;text-align:center;">
                 <input type="checkbox" id="check-all-clinics" onchange="toggleSelectAllClinics(this.checked)" title="เลือกทั้งหมด" style="cursor:pointer;width:15px;height:15px;">
               </th>
-              <th style="width:3%;text-align:center;">#</th>
+              <th style="width:4.5%;text-align:center;white-space:nowrap;">ลำดับ</th>
               <th style="width:4.5%;text-align:center;" title="สัปดาห์">สัปดาห์</th>
               <th style="width:4.5%;text-align:center;">ชั้น</th>
               <th style="width:14%;">วัน / วันที่</th>
-              <th style="width:18%;">วิชา</th>
+              <th style="width:16.5%;">วิชา</th>
               <th style="width:14.5%;">ครูผู้สอน</th>
               <th style="width:10.5%;">เวลา</th>
               <th style="width:9%;">ห้อง</th>
@@ -3301,7 +3301,7 @@
       container.innerHTML = `
     <div class="table-wrapper">
       <table>
-        <thead><tr><th>#</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>ห้อง</th><th>เลขที่</th><th>หอพัก</th><th>รหัสนักเรียน</th><th>บัญชีนักเรียน</th><th>จัดการ</th></tr></thead>
+        <thead><tr><th>ลำดับ</th><th>ชื่อ-สกุล</th><th>ชั้น</th><th>ห้อง</th><th>เลขที่</th><th>หอพัก</th><th>รหัสนักเรียน</th><th>บัญชีนักเรียน</th><th>จัดการ</th></tr></thead>
         <tbody>
           ${students.map((s, i) => {
             const code = normalizeStudentCode(s.studentCode);
@@ -3546,7 +3546,7 @@
       <div class="text-sm font-semibold mb-2">พบข้อมูลพร้อมนำเข้า ${rows.length} รายการ:</div>
       <div class="table-wrapper" style="max-height:180px;overflow-y:auto;">
         <table>
-          <thead><tr><th>#</th><th>ชื่อ-สกุลเจ้าหน้าที่</th></tr></thead>
+          <thead><tr><th>ลำดับ</th><th>ชื่อ-สกุลเจ้าหน้าที่</th></tr></thead>
           <tbody>
             ${rows.slice(0, 10).map(r => `
               <tr>
@@ -3562,7 +3562,7 @@
       <div class="text-sm font-semibold mb-2">พบข้อมูลพร้อมนำเข้า ${rows.length} รายการ:</div>
       <div class="table-wrapper" style="max-height:180px;overflow-y:auto;">
         <table>
-          <thead><tr><th>#</th><th>ชื่อ-สกุลครูผู้สอน</th><th>Email</th></tr></thead>
+          <thead><tr><th>ลำดับ</th><th>ชื่อ-สกุลครูผู้สอน</th><th>Email</th></tr></thead>
           <tbody>
             ${rows.slice(0, 10).map(r => `
               <tr>

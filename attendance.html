@@ -112,17 +112,34 @@
     .daily-filter-bar { flex-wrap: wrap; gap: 10px; }
     .daily-day-nav, .daily-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
     .daily-actions { margin-left: auto; }
-    .daily-table { width: 100%; border-collapse: collapse; }
-    .daily-table th { background: var(--blue-deep); color: #fff; padding: 10px; font-size: .85rem; text-align: left; white-space: nowrap; }
-    .daily-table td { padding: 10px; border-bottom: 1px solid var(--gray-200); vertical-align: top; font-size: .9rem; }
+    /* ตารางเดียว แบ่งกลุ่มด้วยแถบหัว "ม.X" · ใช้ชุดเดียวกันทั้งบนหน้าจอและในภาพ/PDF (สัดส่วนคอลัมน์กำหนดด้วย colgroup) */
+    .daily-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .daily-table col.c-subject { width: 25%; }
+    .daily-table col.c-teacher { width: 21%; }
+    .daily-table col.c-time    { width: 15%; }
+    .daily-table col.c-room    { width: 14%; }
+    .daily-table col.c-status  { width: 13%; }
+    .daily-table col.c-count   { width: 12%; }
+    @media (min-width: 769px) and (max-width: 1100px) {
+      .daily-table > tbody > tr > td { font-size: .82rem; padding: 8px 6px; }
+      .daily-table > thead > tr > th { padding: 9px 6px; font-size: .8rem; }
+    }
+    .daily-table > thead > tr > th { background: var(--blue-deep); color: #fff; padding: 9px 8px; font-size: .84rem; text-align: left; white-space: nowrap; border: 1px solid #1e4a7a; }
+    .daily-table > tbody > tr > td { padding: 8px; border: 1px solid #cbd5e1; vertical-align: middle; font-size: .88rem; }
+    .daily-table .col-time { white-space: nowrap; }
+    .daily-table > tbody > tr.daily-grade-row > td { background: #e0edff; border-left: 4px solid var(--blue-main); padding: 7px 10px; font-weight: 700; color: var(--blue-deep); }
+    .daily-grade-sum { margin-left: 8px; font-size: .8rem; font-weight: 500; color: var(--gray-600); }
     .daily-row { cursor: pointer; }
-    .daily-row:hover td { background: var(--gray-50); }
-    .daily-row.cancelled td { color: var(--gray-500); }
-    .daily-subject { font-weight: 700; color: var(--blue-deep); }
-    .daily-topic { font-size: .8rem; color: #15803d; margin-top: 2px; }
+    .daily-row:hover > td { background: var(--gray-50); }
+    .daily-row.cancelled > td { color: var(--gray-500); }
+    .daily-subject { font-weight: 700; color: var(--blue-deep); line-height: 1.35; word-break: break-word; }
+    .daily-topic { font-size: .72rem; color: var(--gray-500); margin-top: 2px; line-height: 1.35; word-break: break-word; }
+    .daily-meta-mobile { display: none; font-size: .7rem; color: var(--gray-500); margin-top: 2px; line-height: 1.35; }
+    /* ชื่อครู: บรรทัดเดียว — ถ้ายาวเกินช่อง สคริปต์จะลดขนาดตัวอักษรให้พอดี (fitDailyTeachers) */
+    .fit-line { display: block; white-space: nowrap; overflow: hidden; }
     .daily-status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: .78rem; font-weight: 600; white-space: nowrap; }
     .daily-count-btn { white-space: nowrap; }
-    .daily-detail-row > td { background: #f8fafc; padding: 6px 12px 14px; }
+    .daily-table > tbody > tr.daily-detail-row > td { background: #f8fafc; padding: 6px 12px 14px; }
     .daily-detail-row.hidden { display: none; }
     .daily-students { width: 100%; border-collapse: collapse; font-size: .84rem; background: #fff; }
     .daily-students th { background: #e2e8f0; color: var(--gray-700); padding: 6px 8px; text-align: left; font-size: .8rem; white-space: nowrap; }
@@ -132,20 +149,27 @@
       .daily-actions { margin-left: 0; width: 100%; }
       .daily-day-nav { width: 100%; }
       .daily-day-nav .filter-input { flex: 1; width: auto !important; min-width: 0; }
-      /* มือถือ: ตารางคลินิก → การ์ดทีละคลินิก */
-      #daily-summary-content .daily-table > thead { display: none; }
-      #daily-summary-content .daily-table,
-      #daily-summary-content .daily-table > tbody,
-      #daily-summary-content .daily-table > tbody > tr,
-      #daily-summary-content .daily-table > tbody > tr > td { display: block; width: 100%; }
-      #daily-summary-content .daily-row { padding: 10px 12px 8px; border-top: 1px solid var(--gray-200); }
-      #daily-summary-content .daily-row > td { border: none; padding: 2px 0; font-size: .86rem; }
-      #daily-summary-content .daily-row > td[data-label]::before { content: attr(data-label) ': '; color: var(--gray-500); font-size: .78rem; }
-      #daily-summary-content .daily-row > td.daily-cell-grade::before,
-      #daily-summary-content .daily-row > td.daily-cell-subject::before { content: none; }
-      #daily-summary-content .daily-row > td.daily-cell-count { padding-top: 6px; }
-      #daily-summary-content .daily-detail-row.hidden { display: none; }
-      #daily-summary-content .daily-detail-row > td { padding: 4px 8px 12px; }
+      /* มือถือ: ยังเป็นตารางเหมือนคอม แต่ย่อให้พอดีจอ — ซ่อนคอลัมน์เวลา/ห้อง แล้วไปแสดงใต้ชื่อวิชาแทน
+         (กฎทั้งหมดผูกกับ #daily-summary-content เพื่อไม่ให้ภาพ/PDF ที่สร้างจากมือถือเพี้ยนตามจอ) */
+      #daily-summary-content .daily-table col.c-time,
+      #daily-summary-content .daily-table col.c-room,
+      #daily-summary-content .daily-table .col-time,
+      #daily-summary-content .daily-table .col-room { display: none; }
+      #daily-summary-content .daily-table col.c-subject { width: 31%; }
+      #daily-summary-content .daily-table col.c-teacher { width: 33%; }
+      #daily-summary-content .daily-table col.c-status  { width: 19%; }
+      #daily-summary-content .daily-table col.c-count   { width: 17%; }
+      #daily-summary-content .daily-meta-mobile { display: block; }
+      #daily-summary-content .daily-meta-mobile > div { display: flex; gap: 3px; align-items: flex-start; }
+      #daily-summary-content .daily-meta-mobile > div > span:first-child { flex-shrink: 0; }
+      #daily-summary-content .daily-table > thead > tr > th { padding: 7px 4px; font-size: .72rem; }
+      #daily-summary-content .daily-table > tbody > tr > td { padding: 6px 4px; font-size: .78rem; }
+      #daily-summary-content .daily-table > tbody > tr > td.daily-cell-count { padding-left: 2px; padding-right: 2px; text-align: center; }
+      #daily-summary-content .daily-table > tbody > tr.daily-grade-row > td { padding: 6px 8px; font-size: .8rem; }
+      #daily-summary-content .daily-grade-sum { font-size: .72rem; margin-left: 6px; }
+      #daily-summary-content .daily-status { padding: 1px 4px; font-size: .64rem; }
+      #daily-summary-content .daily-count-btn { padding: 2px 5px; font-size: .7rem; }
+      #daily-summary-content .daily-table > tbody > tr.daily-detail-row > td { padding: 4px 6px 10px; }
       .daily-students { font-size: .8rem; }
       .daily-students th, .daily-students td { padding: 4px 5px; }
     }
@@ -786,7 +810,7 @@
       if (sameTeacherName) extraBadges.push(`<span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;font-size:0.85rem;">👩‍🏫 ครูผู้สอน: ${sameTeacherName}</span>`);
 
       const colDefs = [
-        { key: 'no', label: '#', thClass: 'col-compact' },
+        { key: 'no', label: 'ลำดับ', thClass: 'col-compact' },
         { key: 'name', label: 'ชื่อ-สกุล', thClass: 'col-name' },
         { key: 'grade', label: 'ชั้น', thClass: 'col-compact' },
         { key: 'room', label: 'ห้อง', thClass: 'col-compact' },
@@ -876,7 +900,7 @@
         if (sameTeacherName) extraBadges.push(`<span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;">👩‍🏫 ครู${sameTeacherName}</span>`);
 
         const colDefs = [
-          { key: 'no', label: '#', thClass: 'col-compact' },
+          { key: 'no', label: 'ลำดับ', thClass: 'col-compact' },
           { key: 'name', label: 'ชื่อ-สกุล', thClass: 'col-name' },
           !hideGrade && { key: 'grade', label: 'ชั้น', thClass: 'col-compact' },
           { key: 'room', label: 'ห้อง', thClass: 'col-compact' },
@@ -1044,7 +1068,7 @@
         const headerThs = Array.from(tbl.querySelectorAll('thead th'));
         if (headerThs.length > 0) {
           const weightDefs = [
-            { match: '#', weight: 6 },
+            { match: 'ลำดับ', weight: 8 },
             { match: 'ชื่อ-สกุล', weight: 36 },
             { match: 'ชั้น', weight: 8 },
             { match: 'ห้อง', weight: 7 },
@@ -1225,7 +1249,7 @@
     function renderDailyStudents(students) {
       if (!students.length) return '<div class="daily-no-students">ยังไม่มีนักเรียนลงทะเบียน</div>';
       return `<table class="daily-students">
-        <thead><tr><th>#</th><th>ชื่อ-สกุล</th><th>ชั้น/ห้อง</th><th>เลขที่</th><th>หอพัก</th></tr></thead>
+        <thead><tr><th>ลำดับ</th><th>ชื่อ-สกุล</th><th>ชั้น/ห้อง</th><th>เลขที่</th><th>หอพัก</th></tr></thead>
         <tbody>${students.map((s, i) => `<tr>
           <td>${i + 1}</td>
           <td>${escapeHtml(s.name)}</td>
@@ -1273,28 +1297,85 @@
         return;
       }
 
+      // จัดกลุ่มตามระดับชั้น (items เรียงตามชั้นอยู่แล้ว) → แถบหัว "ม.X · n คลินิก · m คน" คั่นแต่ละชั้น
+      const groups = [];
+      items.forEach(it => {
+        const g = Number(it.c.grade);
+        let grp = groups[groups.length - 1];
+        if (!grp || grp.grade !== g) { grp = { grade: g, items: [] }; groups.push(grp); }
+        grp.items.push(it);
+      });
+
+      const rowHtml = it => {
+        const id = escapeHtml(String(it.c.id));
+        const st = getStatusLabel(it.c.status);
+        const open = dailyShowAll || dailyOpen.has(String(it.c.id));
+        const time = formatClinicTime(it.c.time);
+        const teacher = it.teacher || '–';
+        return `<tr class="daily-row${it.c.status === 'cancelled' ? ' cancelled' : ''}" data-id="${id}" onclick="toggleDailyRow(this.dataset.id)">
+            <td class="daily-cell-subject">
+              <div class="daily-subject">${getSubjectIcon(it.c.subject)} ${escapeHtml(it.c.subject || 'ยังไม่ระบุวิชา')}</div>
+              ${it.c.topic ? `<div class="daily-topic">หัวข้อ: ${escapeHtml(it.c.topic)}</div>` : ''}
+              <div class="daily-meta-mobile"><div><span>🕐</span><span>${escapeHtml(time)}</span></div>${it.c.room ? `<div><span>📍</span><span>${escapeHtml(it.c.room)}</span></div>` : ''}</div>
+            </td>
+            <td class="daily-cell-teacher"><div class="fit-line" data-full="${escapeHtml(teacher)}" title="${escapeHtml(teacher)}">${escapeHtml(teacher)}</div></td>
+            <td class="col-time">${escapeHtml(time)}</td>
+            <td class="col-room">${escapeHtml(it.c.room || '–')}</td>
+            <td class="daily-cell-status"><span class="daily-status ${st.cls}">${st.icon} ${st.text}</span></td>
+            <td class="daily-cell-count"><button type="button" class="btn btn-outline btn-sm daily-count-btn">${it.students.length} คน${it.students.length ? (open ? ' ▾' : ' ▸') : ''}</button></td>
+          </tr>
+          <tr class="daily-detail-row${open ? '' : ' hidden'}" data-detail="${id}"><td colspan="6">${renderDailyStudents(it.students)}</td></tr>`;
+      };
+
       content.innerHTML = `<table class="daily-table">
-        <thead><tr><th>ชั้น</th><th>วิชา / หัวข้อ</th><th>ครูผู้สอน</th><th>เวลา</th><th>ห้อง</th><th>สถานะ</th><th>นักเรียน</th></tr></thead>
-        <tbody>${items.map(it => {
-          const id = escapeHtml(String(it.c.id));
-          const st = getStatusLabel(it.c.status);
-          const open = dailyShowAll || dailyOpen.has(String(it.c.id));
-          return `<tr class="daily-row${it.c.status === 'cancelled' ? ' cancelled' : ''}" data-id="${id}" onclick="toggleDailyRow(this.dataset.id)">
-              <td class="daily-cell-grade" data-label="ชั้น"><span class="badge badge-blue">ม.${escapeHtml(String(it.c.grade))}</span></td>
-              <td class="daily-cell-subject" data-label="วิชา">
-                <div class="daily-subject">${getSubjectIcon(it.c.subject)} ${escapeHtml(it.c.subject || 'ยังไม่ระบุวิชา')}</div>
-                ${it.c.topic ? `<div class="daily-topic">🎯 ${escapeHtml(it.c.topic)}</div>` : ''}
-              </td>
-              <td data-label="ครูผู้สอน">${escapeHtml(it.teacher || '–')}</td>
-              <td data-label="เวลา">${escapeHtml(formatClinicTime(it.c.time))}</td>
-              <td data-label="ห้อง">${escapeHtml(it.c.room || '–')}</td>
-              <td data-label="สถานะ"><span class="daily-status ${st.cls}">${st.icon} ${st.text}</span></td>
-              <td class="daily-cell-count" data-label="นักเรียน"><button type="button" class="btn btn-outline btn-sm daily-count-btn">${it.students.length} คน${it.students.length ? (open ? ' ▾' : ' ▸') : ''}</button></td>
-            </tr>
-            <tr class="daily-detail-row${open ? '' : ' hidden'}" data-detail="${id}"><td colspan="7">${renderDailyStudents(it.students)}</td></tr>`;
-        }).join('')}</tbody>
+        <colgroup><col class="c-subject"><col class="c-teacher"><col class="c-time"><col class="c-room"><col class="c-status"><col class="c-count"></colgroup>
+        <thead><tr><th>วิชา / หัวข้อ</th><th>ครูผู้สอน</th><th class="col-time">เวลา</th><th class="col-room">ห้อง</th><th>สถานะ</th><th>นักเรียน</th></tr></thead>
+        <tbody>${groups.map(g => `
+          <tr class="daily-grade-row"><td colspan="6">ม.${g.grade}<span class="daily-grade-sum">${g.items.length} คลินิก · ${g.items.reduce((n, it) => n + it.students.length, 0)} คน</span></td></tr>
+          ${g.items.map(rowHtml).join('')}`).join('')}</tbody>
       </table>`;
+      fitDailyTeachersSoon();
     }
+
+    // ─── ชื่อครูบรรทัดเดียว: ลดขนาดตัวอักษรทีละน้อยจนพอดีช่อง (ต่ำสุด minPx) ───────────────
+    // ยังไม่พอ → ย่อคำนำหน้า "นางสาว" เป็น "น.ส." แล้วลองใหม่ · ยังไม่พอจริง ๆ ค่อยยอมให้ขึ้นบรรทัดที่สอง (ไม่ตัดชื่อทิ้ง)
+    function fitDailyTeachers(root, minPx) {
+      root.querySelectorAll('.fit-line').forEach(el => {
+        if (!el.clientWidth) return; // ซ่อนอยู่ (เช่น แท็บอื่น)
+        const full = el.dataset.full || el.textContent;
+        const fits = () => el.scrollWidth <= el.clientWidth + 0.5;
+        const shrink = base => {
+          let size = base;
+          el.style.fontSize = size + 'px';
+          while (!fits() && size > minPx) { size -= 0.5; el.style.fontSize = size + 'px'; }
+          return fits();
+        };
+        el.textContent = full;
+        el.style.whiteSpace = 'nowrap';
+        el.style.fontSize = '';
+        const base = parseFloat(getComputedStyle(el).fontSize) || 14;
+        if (shrink(base)) return;
+        const short = full.replace(/^นางสาว\s*/, 'น.ส.');
+        if (short !== full) {
+          el.textContent = short;
+          if (shrink(base)) return;
+        }
+        el.textContent = full;
+        el.style.whiteSpace = 'normal';
+        el.style.fontSize = (minPx + 1) + 'px';
+      });
+    }
+
+    let fitDailyTimer = null;
+    function fitDailyTeachersSoon() {
+      clearTimeout(fitDailyTimer);
+      fitDailyTimer = setTimeout(() => {
+        const root = document.getElementById('daily-summary-content');
+        if (root) fitDailyTeachers(root, window.innerWidth <= 768 ? 9 : 10);
+      }, 30);
+    }
+    window.addEventListener('resize', () => { if (currentMainTab === 'daily') fitDailyTeachersSoon(); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (currentMainTab === 'daily') fitDailyTeachersSoon(); });
 
     function toggleDailyRow(id) {
       if (dailyOpen.has(id)) dailyOpen.delete(id); else dailyOpen.add(id);
@@ -1351,24 +1432,26 @@
         span.style.fontWeight = '700';
         b.replaceWith(span);
       });
-      el.querySelectorAll('.daily-table td, .daily-table th').forEach(c => {
-        c.style.border = '1px solid #cbd5e1';
+      // ตารางหลักใช้สไตล์/สัดส่วนคอลัมน์ชุดเดียวกับหน้าจอ (colgroup + CSS ของ .daily-table) — กฎมือถือผูกกับ #daily-summary-content
+      // ตารางนี้อยู่นอกกล่องนั้น จึงออกมาเป็นรูปแบบเต็ม (มีเวลา/ห้อง) เหมือนกันทุกเครื่องที่กดสร้าง
+      el.querySelectorAll('.daily-table > thead > tr > th, .daily-table > tbody > tr.daily-row > td').forEach(c => {
+        c.style.fontSize = '12px';
+        c.style.padding = '7px 6px';
         c.style.wordBreak = 'break-word'; // ชื่อห้อง/วิชายาวไม่ล้นทับคอลัมน์ข้าง ๆ
       });
-      // ล็อกความกว้างคอลัมน์ (ไม่ขึ้นกับขนาดจอที่กดสร้าง) — ป้ายชั้นและเวลาไม่ขึ้นบรรทัดใหม่
-      const fixCols = (table, widths) => {
-        if (!table) return;
-        table.style.tableLayout = 'fixed';
-        table.style.width = '100%';
-        const ths = table.querySelectorAll(':scope > thead > tr > th');
-        ths.forEach((th, i) => { if (widths[i]) th.style.setProperty('width', widths[i] + '%', 'important'); });
-      };
-      fixCols(el.querySelector('.daily-table'), [8, 23, 18, 16, 14, 12, 9]);
-      el.querySelectorAll('.daily-students').forEach(t => fixCols(t, [7, 45, 16, 10, 22]));
+      el.querySelectorAll('.daily-table > tbody > tr.daily-grade-row > td').forEach(c => { c.style.fontSize = '12.5px'; });
+      el.querySelectorAll('.daily-table .daily-topic').forEach(t => { t.style.fontSize = '10.5px'; });
+      // ชื่อครู: คืนค่าเดิมก่อน (หน้าจออาจย่อขนาด/ย่อคำนำหน้าไว้แล้ว) แล้วปรับใหม่ตามความกว้างของรายงาน (fitDailyTeachers ใน renderDailyOffscreen)
+      el.querySelectorAll('.fit-line').forEach(t => { t.textContent = t.dataset.full || t.textContent; t.style.fontSize = ''; t.style.whiteSpace = 'nowrap'; });
+      // ตารางรายชื่อนักเรียนที่กางไว้
+      el.querySelectorAll('.daily-students').forEach(t => {
+        t.style.tableLayout = 'fixed';
+        t.style.width = '100%';
+        t.querySelectorAll(':scope > thead > tr > th').forEach((th, i) => { const w = [9, 43, 16, 10, 22][i]; if (w) th.style.setProperty('width', w + '%', 'important'); });
+        t.querySelectorAll('th, td').forEach(c => { c.style.border = '1px solid #cbd5e1'; c.style.fontSize = '12px'; c.style.padding = '5px 6px'; });
+      });
       el.querySelectorAll('.daily-table .badge, .daily-status').forEach(b => { b.style.whiteSpace = 'nowrap'; });
-      el.querySelectorAll('.daily-table > tbody > tr.daily-row > td:nth-child(4)').forEach(td => { td.style.whiteSpace = 'nowrap'; });
-      el.querySelectorAll('.daily-table th, .daily-table td').forEach(c => { c.style.fontSize = '12px'; c.style.padding = '7px 6px'; });
-      el.querySelectorAll('.daily-table > tbody > tr.daily-row > td').forEach(addThaiWordBreaks);
+      el.querySelectorAll('.daily-table > tbody > tr.daily-row > td.daily-cell-subject, .daily-table > tbody > tr.daily-row > td.col-room').forEach(addThaiWordBreaks);
       el.querySelectorAll('tr').forEach(tr => { tr.style.breakInside = 'avoid'; tr.style.pageBreakInside = 'avoid'; });
       return { el, date };
     }
@@ -1380,6 +1463,7 @@
       document.body.appendChild(el);
       try {
         if (document.fonts && document.fonts.ready) await document.fonts.ready;
+        fitDailyTeachers(el, 10); // ชื่อครูบรรทัดเดียว ย่อขนาดให้พอดีความกว้างของรายงาน
         return await work(el, date);
       } finally {
         el.remove();
