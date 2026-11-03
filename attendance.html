@@ -1009,7 +1009,7 @@
 
         html += `
       <div style="margin-bottom:24px;border:1px solid var(--gray-200);border-radius:var(--radius-md);overflow:hidden;background:var(--white);">
-        <div style="background:var(--blue-pale);border-left:5px solid var(--blue-main);padding:10px 16px;font-family:'Kanit',sans-serif;font-weight:700;color:var(--blue-deep);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <div class="att-group-head" style="background:var(--blue-pale);border-left:5px solid var(--blue-main);padding:10px 16px;font-family:'Kanit',sans-serif;font-weight:700;color:var(--blue-deep);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span style="font-size:1.15rem;">${groupIcon}</span>
           <span style="font-size:1rem;">${labelFn(groupRows)}</span>
           ${extraBadges.length ? `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">${extraBadges.join('')}</div>` : ''}
@@ -1050,6 +1050,66 @@
 
     function printPage() {
       window.print();
+    }
+
+    // ─── PDF แท็บ 1: กว้างคอลัมน์ตามความยาวข้อความจริง (เดิมแบ่งสัดส่วนตายตัว → ชื่อ-สกุลเหลือที่ว่างมาก แต่ชื่อครูถูกตัด)
+    // 1) วัดความยาวข้อความที่ยาวที่สุดของแต่ละคอลัมน์ (บรรทัดเดียว)
+    // 2) พอดีกระดาษ → แบ่งที่เหลือให้ทุกคอลัมน์เท่า ๆ กัน (คอลัมน์ชิดกัน ไม่มีช่องว่างก้อนใหญ่)
+    //    ไม่พอ → คอลัมน์สั้น (ลำดับ/ชั้น/ห้อง/หอ/✓) ได้ตามจริง · ชื่อ-สกุลได้ตามจริง · วิชา/ครูแบ่งที่เหลือ
+    // 3) ช่องที่ยังยาวเกิน (ส่วนใหญ่ชื่อครู) → ลดขนาดตัวอักษรเฉพาะช่องนั้นจนพอดี
+    function fitReportTableColumns(root) {
+      const textW = el => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().width; };
+      root.querySelectorAll('table').forEach(tbl => {
+        const ths = [...tbl.querySelectorAll(':scope > thead > tr > th')];
+        const rows = [...tbl.querySelectorAll(':scope > tbody > tr')];
+        if (!ths.length || !rows.length) return;
+        const total = tbl.clientWidth;
+        const PAD = 12; // ระยะขอบในช่อง + เส้นขอบ
+        const natural = ths.map((th, j) => {
+          let w = textW(th);
+          rows.forEach(tr => { const td = tr.children[j]; if (td) w = Math.max(w, textW(td)); });
+          return Math.ceil(w) + PAD;
+        });
+        const flex = ths.map(th => th.classList.contains('col-name') || th.classList.contains('col-info'));
+        const sum = natural.reduce((a, b) => a + b, 0);
+        let widths;
+        if (sum <= total) {
+          const extra = (total - sum) / natural.length;
+          widths = natural.map(w => w + extra);
+        } else {
+          // ไม่พอ: คอลัมน์สั้นได้ตามจริง → ที่เหลือแบ่งตามลำดับความสำคัญ ชื่อ-สกุล → ครูผู้สอน → วิชา (ได้ที่เหลือ)
+          widths = natural.slice();
+          const fixed = natural.reduce((a, w, j) => a + (flex[j] ? 0 : w), 0);
+          let remaining = Math.max(0, total - fixed);
+          const idxOf = test => ths.findIndex((th, j) => flex[j] && test(th));
+          const order = [
+            idxOf(th => th.classList.contains('col-name')),
+            idxOf(th => th.textContent.includes('ครูผู้สอน')),
+            idxOf(th => th.textContent.includes('วิชา'))
+          ].filter(j => j >= 0);
+          const MIN_W = 80;
+          order.forEach((j, k) => {
+            const after = order.length - k - 1;
+            const w = after === 0 ? remaining : Math.min(natural[j], remaining - after * MIN_W);
+            widths[j] = Math.max(MIN_W, w);
+            remaining -= widths[j];
+          });
+        }
+        ths.forEach((th, j) => { th.style.width = widths[j].toFixed(1) + 'px'; });
+        // ช่องที่ยังยาวเกิน:
+        //  • วิชา (มีวันที่ต่อท้ายตอนดูทุกวัน) → ขึ้นบรรทัดใหม่ในช่อง
+        //  • ชื่อครู/ชื่อนักเรียน → ลดตัวอักษรเฉพาะช่องนั้น (ต่ำสุด 7px) ยังไม่พอจริง ๆ ค่อยขึ้นบรรทัดใหม่ — ไม่ตัดข้อความทิ้ง
+        const subjIdx = ths.findIndex(th => th.textContent.includes('วิชา'));
+        const wrap = td => { td.style.whiteSpace = 'normal'; td.style.wordBreak = 'break-word'; addThaiWordBreaks(td); };
+        rows.forEach(tr => [...tr.children].forEach((td, j) => {
+          if (!flex[j] || td.scrollWidth <= td.clientWidth + 0.5) return;
+          if (j === subjIdx) { wrap(td); return; }
+          const base = parseFloat(getComputedStyle(td).fontSize) || 10;
+          let size = base;
+          while (td.scrollWidth > td.clientWidth + 0.5 && size > 7) { size -= 0.25; td.style.fontSize = size + 'px'; }
+          if (td.scrollWidth > td.clientWidth + 0.5) { td.style.fontSize = base + 'px'; wrap(td); }
+        }));
+      });
     }
 
     async function downloadAttendancePDF() {
@@ -1245,6 +1305,7 @@
       if (document.fonts && document.fonts.ready) {
         await document.fonts.ready;
       }
+      fitReportTableColumns(reportDiv);
 
       const opt = {
         margin: [8, 8, 8, 8],
@@ -1258,7 +1319,7 @@
           scrollX: 0
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['tr', '.card-header', '.stats-row'] }
+        pagebreak: { mode: ['css', 'legacy'], avoid: ['tr', '.att-group-head', '.card-header', '.stats-row'] } // ไม่ใช้ avoid-all: กล่องรายชื่อทั้งก้อนเคยถูกดันไปหน้าใหม่ เหลือหน้าแรกว่าง
       };
 
       try {
@@ -1624,7 +1685,7 @@
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-            pagebreak: { mode: ['avoid-all', 'css', 'legacy'], avoid: ['tr'] }
+            pagebreak: { mode: ['css', 'legacy'], avoid: ['tr'] }
           }).from(el).save();
         });
         showToast('สำเร็จ', 'ดาวน์โหลดไฟล์ PDF เรียบร้อยแล้ว', 'success');
@@ -2170,6 +2231,22 @@
         await document.fonts.ready;
       }
 
+      // ชื่อวิชา/ชื่อครูที่ยาวเกินช่อง (เดิมถูกตัดเป็น "...") → ลดตัวอักษรเฉพาะบรรทัดนั้น (ต่ำสุด 7.5px)
+      // ยังไม่พอจริง ๆ → ขึ้นบรรทัดใหม่ในช่อง ไม่ตัดข้อความทิ้ง
+      reportDiv.querySelectorAll('.print-cell-box > div').forEach(d => {
+        if (d.scrollWidth <= d.clientWidth + 0.5) return;
+        const base = parseFloat(getComputedStyle(d).fontSize) || 9.6;
+        let size = base;
+        while (d.scrollWidth > d.clientWidth + 0.5 && size > 7.5) { size -= 0.25; d.style.fontSize = size + 'px'; }
+        if (d.scrollWidth > d.clientWidth + 0.5) {
+          d.style.fontSize = Math.max(size, 8) + 'px';
+          d.style.whiteSpace = 'normal';
+          d.style.overflow = 'visible';
+          d.style.wordBreak = 'break-word';
+          addThaiWordBreaks(d);
+        }
+      });
+
       const opt = {
         margin: [8, 8, 8, 8],
         filename: `สรุปตารางคลินิกวิชาการ_ทุกระดับชั้น_${isLandscape ? 'แนวนอน_' : 'แนวตั้ง_'}${todayStr()}.pdf`,
@@ -2187,7 +2264,7 @@
           orientation: isLandscape ? 'landscape' : 'portrait'
         },
         pagebreak: {
-          mode: ['avoid-all', 'css', 'legacy'],
+          mode: ['css', 'legacy'], // ไม่ใช้ avoid-all: เคยดันเนื้อหาทั้งก้อนไปหน้าใหม่ เหลือหน้าแรกว่าง
           avoid: ['.matrix-week-block', 'tr', 'tfoot tr']
         }
       };
