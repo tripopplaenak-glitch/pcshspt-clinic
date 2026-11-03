@@ -188,6 +188,29 @@
     .mode-chips { display: flex; gap: 6px; flex-wrap: wrap; }
     .mode-chip-count { font-weight: 500; opacity: .85; }
     .mode-chip-count:empty { display: none; }
+
+    /* ─── ตารางรายชื่อ (แท็บ 1): ชื่อ/วิชา/ครูบรรทัดเดียว · เลื่อนซ้าย-ขวาได้ · ล็อก "ลำดับ + ชื่อ" ไว้ด้านซ้าย ─── */
+    .att-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .table-attendance-responsive .nowrap { white-space: nowrap !important; }
+    .table-attendance-responsive .col-sticky-1,
+    .table-attendance-responsive .col-sticky-2 { position: sticky; left: 0; z-index: 2; background: var(--white); }
+    .table-attendance-responsive tr:nth-child(even) td.col-sticky-1,
+    .table-attendance-responsive tr:nth-child(even) td.col-sticky-2 { background: #fafbfc; }
+    .table-attendance-responsive th.col-sticky-1,
+    .table-attendance-responsive th.col-sticky-2 { z-index: 3; background: var(--blue-deep); }
+    .table-attendance-responsive .col-sticky-2 { box-shadow: inset -1px 0 0 var(--gray-200); }
+    .table-attendance-responsive .mode-tick { font-weight: 800; font-size: 1rem; }
+    .mode-tick.onsite { color: #16a34a; }
+    .mode-tick.online { color: #7e22ce; }
+    .scroll-hint { display: none; }
+    @media (max-width: 768px) {
+      .scroll-hint { display: block; text-align: right; font-size: .75rem; color: var(--gray-500); padding: 6px 10px 2px; }
+    }
+    @media print {
+      .att-scroll { overflow: visible !important; }
+      .table-attendance-responsive .nowrap { white-space: normal !important; }
+      .table-attendance-responsive .col-sticky-1, .table-attendance-responsive .col-sticky-2 { position: static !important; box-shadow: none !important; }
+    }
     @media (max-width: 768px) {
       .mode-filter-bar { flex-direction: column; align-items: stretch !important; }
       .mode-chips { display: grid; grid-template-columns: 1fr 1fr; }
@@ -567,10 +590,34 @@
       return dormId.startsWith('D') ? `หอพัก ${dormId}` : `หอพัก ${dormId}`;
     }
 
+    // ช่องหอพักในตาราง: แสดงแค่ชื่อหอ (เช่น "บุษกร") — ไม่มีคำว่า "หอพัก" และรหัส D1–D6
     function formatDormBadge(dormId) {
       const name = (typeof formatDormitory === 'function' ? formatDormitory(dormId) : null) || DORM_MAP[dormId] || (APP_CONFIG.dormitories.find(x => x.id === dormId)?.name) || dormId;
-      return `<span class="badge badge-blue">หอพัก ${name}</span>`;
+      const short = String(name || '–').replace(/^D\d+\s*/i, '').trim() || name;
+      return `<span class="badge badge-blue">${escapeHtml(short)}</span>`;
     }
+
+    // คอลัมน์ "ออนไซต์ | ออนไลน์" (แสดงเฉพาะโหมดรวม) — ติ๊ก ✓ ช่องที่ตรงกับรูปแบบการเรียนของนักเรียนคนนั้น
+    const MODE_TICK_COLS = [
+      { key: 'onsite', label: 'ออนไซต์', thClass: 'col-compact' },
+      { key: 'online', label: 'ออนไลน์', thClass: 'col-compact' }
+    ];
+    function modeTickCells(r) {
+      if (modeFilter !== 'all') return '';
+      const online = r.mode === 'online';
+      return `<td class="col-compact"><span class="mode-tick onsite">${online ? '' : '✓'}</span></td>` +
+             `<td class="col-compact"><span class="mode-tick online">${online ? '✓' : ''}</span></td>`;
+    }
+
+    // ล็อกคอลัมน์ "ชื่อ-สกุล" ต่อจากคอลัมน์ "ลำดับ" — ระยะซ้ายต้องเท่าความกว้างจริงของคอลัมน์แรก
+    function applyStickyColumns(root) {
+      (root || document).querySelectorAll('table.table-attendance-responsive').forEach(tbl => {
+        const first = tbl.querySelector('thead th.col-sticky-1');
+        const w = first ? first.getBoundingClientRect().width : 0;
+        tbl.querySelectorAll('.col-sticky-2').forEach(c => { c.style.left = w + 'px'; });
+      });
+    }
+    window.addEventListener('resize', () => applyStickyColumns(document.getElementById('attendance-content')));
 
     function loadSchoolInfo() {
       const s = LocalDB.get('school_settings') || {};
@@ -839,7 +886,8 @@
           []);
       }
 
-      content.innerHTML = html;
+      content.innerHTML = `<div class="scroll-hint screen-only">เลื่อนดูด้านขวา ➡</div>` + html;
+      applyStickyColumns(content);
     }
 
     function renderFlatTable(rows, teacherMap) {
@@ -856,14 +904,15 @@
       if (sameTeacherName) extraBadges.push(`<span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;font-size:0.85rem;">👩‍🏫 ครูผู้สอน: ${sameTeacherName}</span>`);
 
       const colDefs = [
-        { key: 'no', label: 'ลำดับ', thClass: 'col-compact' },
-        { key: 'name', label: 'ชื่อ-สกุล', thClass: 'col-name' },
+        { key: 'no', label: 'ลำดับ', thClass: 'col-compact col-sticky-1' },
+        { key: 'name', label: 'ชื่อ-สกุล', thClass: 'col-name col-sticky-2 nowrap' },
         { key: 'grade', label: 'ชั้น', thClass: 'col-compact' },
         { key: 'room', label: 'ห้อง', thClass: 'col-compact' },
         { key: 'num', label: 'เลขที่', thClass: 'col-compact' },
         { key: 'dorm', label: 'หอพัก', thClass: 'col-compact' },
-        !hideSubject && { key: 'subject', label: 'วิชาที่เรียน', thClass: 'col-info' },
-        !hideTeacher && { key: 'teacher', label: 'ครูผู้สอน', thClass: 'col-info' }
+        ...(modeFilter === 'all' ? MODE_TICK_COLS : []),
+        !hideSubject && { key: 'subject', label: 'วิชาที่เรียน', thClass: 'col-info nowrap' },
+        !hideTeacher && { key: 'teacher', label: 'ครูผู้สอน', thClass: 'col-info nowrap' }
       ].filter(Boolean);
 
       return `
@@ -872,7 +921,7 @@
         <span style="font-size:0.85rem;color:#64748b;font-weight:600;">สรุปข้อมูลในวันที่เลือก:</span>
         ${extraBadges.join('')}
       </div>` : ''}
-      <table class="table-attendance-responsive" style="width:100%;margin:0;">
+      <div class="att-scroll"><table class="table-attendance-responsive" style="width:100%;margin:0;">
         <thead>
           <tr>
             ${colDefs.map(c => `<th class="${c.thClass}">${c.label}</th>`).join('')}
@@ -882,18 +931,19 @@
           ${rows.map((r, i) => {
             const t = teacherMap[r.teacherId] || {};
             return `<tr>
-              <td class="col-compact">${i + 1}</td>
-              <td class="col-name"><strong>${r.studentName || '–'}</strong>${modeFilter === 'all' && r.mode === 'online' ? ' <span class="badge badge-online" style="font-size:0.7rem;padding:1px 6px;">💻 ออนไลน์</span>' : ''}</td>
+              <td class="col-compact col-sticky-1">${i + 1}</td>
+              <td class="col-name col-sticky-2 nowrap"><strong>${escapeHtml(r.studentName || '–')}</strong></td>
               <td class="col-compact"><span class="badge badge-blue" style="font-size:0.75rem;padding:2px 5px;">ม.${r.grade}</span></td>
               <td class="col-compact">${r.room || '–'}</td>
               <td class="col-compact">${r.number || '–'}</td>
               <td class="col-compact">${formatDormBadge(r.dormitory)}</td>
-              ${!hideSubject ? `<td class="col-info">${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>` : ''}
-              ${!hideTeacher ? `<td class="col-info">${t.name || '–'}</td>` : ''}
+              ${modeTickCells(r)}
+              ${!hideSubject ? `<td class="col-info nowrap">${escapeHtml(r.subject || '–')}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>` : ''}
+              ${!hideTeacher ? `<td class="col-info nowrap">${escapeHtml(t.name || '–')}</td>` : ''}
             </tr>`;
           }).join('')}
         </tbody>
-      </table>`;
+      </table></div>`;
     }
 
     function renderGroupedTable(rows, teacherMap, groupKey, keyFn, labelFn, order) {
@@ -946,14 +996,15 @@
         if (sameTeacherName) extraBadges.push(`<span class="badge" style="background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd;">👩‍🏫 ครู${sameTeacherName}</span>`);
 
         const colDefs = [
-          { key: 'no', label: 'ลำดับ', thClass: 'col-compact' },
-          { key: 'name', label: 'ชื่อ-สกุล', thClass: 'col-name' },
+          { key: 'no', label: 'ลำดับ', thClass: 'col-compact col-sticky-1' },
+          { key: 'name', label: 'ชื่อ-สกุล', thClass: 'col-name col-sticky-2 nowrap' },
           !hideGrade && { key: 'grade', label: 'ชั้น', thClass: 'col-compact' },
           { key: 'room', label: 'ห้อง', thClass: 'col-compact' },
           { key: 'num', label: 'เลขที่', thClass: 'col-compact' },
           !hideDorm && { key: 'dorm', label: 'หอพัก', thClass: 'col-compact' },
-          !hideSubject && { key: 'subject', label: 'วิชาที่เรียน', thClass: 'col-info' },
-          !hideTeacher && { key: 'teacher', label: 'ครูผู้สอน', thClass: 'col-info' }
+          ...(modeFilter === 'all' ? MODE_TICK_COLS : []),
+          !hideSubject && { key: 'subject', label: 'วิชาที่เรียน', thClass: 'col-info nowrap' },
+          !hideTeacher && { key: 'teacher', label: 'ครูผู้สอน', thClass: 'col-info nowrap' }
         ].filter(Boolean);
 
         html += `
@@ -964,7 +1015,7 @@
           ${extraBadges.length ? `<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">${extraBadges.join('')}</div>` : ''}
           <span class="badge badge-blue" style="margin-left:auto;">${groupRows.length} คน</span>
         </div>
-        <table class="table-attendance-responsive" style="width:100%;margin:0;">
+        <div class="att-scroll"><table class="table-attendance-responsive" style="width:100%;margin:0;">
           <thead>
             <tr>
               ${colDefs.map(c => `<th class="${c.thClass}">${c.label}</th>`).join('')}
@@ -974,18 +1025,19 @@
             ${groupRows.map((r, i) => {
               const t = teacherMap[r.teacherId] || {};
               return `<tr>
-                <td class="col-compact">${i + 1}</td>
-                <td class="col-name"><strong>${r.studentName || '–'}</strong>${modeFilter === 'all' && r.mode === 'online' ? ' <span class="badge badge-online" style="font-size:0.7rem;padding:1px 6px;">💻 ออนไลน์</span>' : ''}</td>
+                <td class="col-compact col-sticky-1">${i + 1}</td>
+                <td class="col-name col-sticky-2 nowrap"><strong>${escapeHtml(r.studentName || '–')}</strong></td>
                 ${!hideGrade ? `<td class="col-compact"><span class="badge badge-blue" style="font-size:0.75rem;padding:2px 5px;">ม.${r.grade}</span></td>` : ''}
                 <td class="col-compact">${r.room || '–'}</td>
                 <td class="col-compact">${r.number || '–'}</td>
                 ${!hideDorm ? `<td class="col-compact">${formatDormBadge(r.dormitory)}</td>` : ''}
-                ${!hideSubject ? `<td class="col-info">${getSubjectIcon(r.subject)} ${r.subject || '–'}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>` : ''}
-                ${!hideTeacher ? `<td class="col-info">${t.name || '–'}</td>` : ''}
+                ${modeTickCells(r)}
+                ${!hideSubject ? `<td class="col-info nowrap">${escapeHtml(r.subject || '–')}${showDate && r.date ? `<br><span style="font-size:0.75rem;color:#64748b;font-weight:500;">📅 ${formatDateThai(r.date)}</span>` : ''}</td>` : ''}
+                ${!hideTeacher ? `<td class="col-info nowrap">${escapeHtml(t.name || '–')}</td>` : ''}
               </tr>`;
             }).join('')}
           </tbody>
-        </table>
+        </table></div>
       </div>`;
       });
       return html;
@@ -1102,6 +1154,9 @@
       // ตัดคลาสตารางสำหรับจอมือถือออก — CSS มือถือ (width:1% !important) เคยบีบคอลัมน์ชั้น/ห้อง/เลขที่/หอพัก
       // จนตัวหนังสือตกเมื่อกดสร้าง PDF จากโทรศัพท์ (รายงานใช้ความกว้างคงที่ตามกระดาษ A4 แทน)
       reportDiv.querySelectorAll('table.table-attendance-responsive').forEach(tbl => tbl.classList.remove('table-attendance-responsive'));
+      // กระดาษเลื่อนซ้าย-ขวาไม่ได้ → ปิดการเลื่อน/ล็อกคอลัมน์ ให้ข้อความยาวขึ้นบรรทัดใหม่ในช่องได้ตามปกติ
+      reportDiv.querySelectorAll('.att-scroll').forEach(el => { el.style.overflow = 'visible'; });
+      reportDiv.querySelectorAll('.col-sticky-2').forEach(el => { el.style.left = ''; el.style.boxShadow = 'none'; });
 
       // Dynamic column width allocation: ensures exactly 100% table width with no empty gaps
       reportDiv.querySelectorAll('table').forEach(tbl => {
@@ -1120,7 +1175,9 @@
             { match: 'ชั้น', weight: 8 },
             { match: 'ห้อง', weight: 7 },
             { match: 'เลขที่', weight: 7 },
-            { match: 'หอพัก', weight: 18 },
+            { match: 'หอพัก', weight: 12 },
+            { match: 'ออนไซต์', weight: 8 },
+            { match: 'ออนไลน์', weight: 8 },
             { match: 'วิชา', weight: 20 },
             { match: 'ครูผู้สอน', weight: 18 }
           ];
