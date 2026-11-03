@@ -9,7 +9,7 @@
   <meta http-equiv="Expires" content="0">
   <title>ระบบ Admin — คลินิกวิชาการ PCSHSPT</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
-  <link rel="stylesheet" href="css/style.css?v=2569_20">
+  <link rel="stylesheet" href="css/style.css?v=2569_21">
   <style>
     .admin-layout {
       display: grid;
@@ -1048,8 +1048,11 @@
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">ห้อง/สถานที่</label>
-            <input type="text" class="form-control" id="clinic-room" placeholder="เช่น ห้อง 2208">
+            <label class="form-label">รูปแบบการสอน</label>
+            <select class="form-control" id="clinic-mode" onchange="syncRoomFieldWithMode('clinic-mode', 'clinic-room-group')">
+              <option value="onsite">🏫 ออนไซต์ (มาเรียนที่โรงเรียน)</option>
+              <option value="online">💻 ออนไลน์</option>
+            </select>
           </div>
           <div class="form-group">
             <label class="form-label">สถานะ</label>
@@ -1059,6 +1062,10 @@
               <option value="pending">⏳ รอยืนยัน</option>
             </select>
           </div>
+        </div>
+        <div class="form-group" id="clinic-room-group">
+          <label class="form-label">ห้อง/สถานที่</label>
+          <input type="text" class="form-control" id="clinic-room" placeholder="เช่น ห้อง 2208">
         </div>
         <div class="form-group">
           <label class="form-label">🎯 หัวข้อการสอน / เรื่องที่ติว (Topic / Objective)</label>
@@ -1479,10 +1486,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
   <script src="js/firebase-config.js?v=2569_16"></script>
-  <script src="js/supabase-api.js?v=2569_25"></script>
-  <script src="js/db.js?v=2569_24"></script>
+  <script src="js/supabase-api.js?v=2569_26"></script>
+  <script src="js/db.js?v=2569_25"></script>
   <script src="js/auth.js?v=2569_23"></script>
-  <script src="js/student-auth.js?v=2569_21"></script>
+  <script src="js/student-auth.js?v=2569_22"></script>
   <script src="js/xlsx.full.min.js"></script>
   <script>
     // ─── AUTH GUARD ───────────────────────────────────────────
@@ -1900,7 +1907,7 @@
               <td title="${escapeHtml(c.subject)}"><strong>${getSubjectIcon(c.subject)} ${escapeHtml(c.subject)}</strong>${c.topic ? ` <span class="text-xs" style="color:#16a34a;font-weight:600;margin-left:3px;" title="${escapeHtml(c.topic)}">🎯 ${escapeHtml(c.topic)}</span>` : ''}</td>
               <td title="${escapeHtml(t.name || '–')}">${escapeHtml(t.name || '–')}</td>
               <td class="text-xs" title="${timeClean} น.">${timeClean} น.</td>
-              <td title="${escapeHtml(c.room || '–')}">${escapeHtml(c.room || '–')}</td>
+              <td title="${escapeHtml(clinicPlaceText(c) || '–')}">${isOnlineClinic(c) ? '<span class="badge badge-online" style="font-size:.72rem;padding:2px 6px;">💻 ออนไลน์</span>' : escapeHtml(c.room || '–')}</td>
               <td title="${st.text}"><span class="status-badge ${st.cls}">${st.icon} ${st.text}</span></td>
               <td style="text-align:center;"><span class="badge ${c.studentCount ? 'badge-blue' : 'badge-gray'}" style="font-weight:700;padding:2px 5px;">${c.studentCount || 0}</span></td>
               <td style="text-align:center;">
@@ -1960,7 +1967,7 @@
             <div style="display:flex;justify-content:space-between;align-items:center;font-size:0.78rem;color:var(--gray-500);border-top:1px dashed var(--gray-200);padding-top:6px;margin-top:2px;">
               <span>📅 วัน${dayNames[c.dayOfWeek] || '–'} (${formatDateThai(c.date)})</span>
               <span>⏰ ${timeClean} น.</span>
-              <span>📍 ${escapeHtml(c.room || '–')}</span>
+              <span>${isOnlineClinic(c) ? '💻 ออนไลน์' : `📍 ${escapeHtml(c.room || '–')}`}</span>
               <span class="badge ${c.studentCount ? 'badge-blue' : 'badge-gray'}" style="font-weight:700;">👥 ${c.studentCount || 0} คน</span>
             </div>
           </div>
@@ -2015,6 +2022,8 @@
       document.getElementById('clinic-edit-id').value = '';
       document.getElementById('clinic-subject').value = '';
       document.getElementById('clinic-room').value = '';
+      document.getElementById('clinic-mode').value = 'onsite';
+      syncRoomFieldWithMode('clinic-mode', 'clinic-room-group');
       document.getElementById('clinic-topic').value = '';
       document.getElementById('clinic-notes').value = '';
       await populateWeekSelects();
@@ -2067,8 +2076,11 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label" style="font-size:.8rem;">ห้อง/สถานที่</label>
-          <input type="text" class="form-control" id="batch-room-${i}" placeholder="เช่น 2208">
+          <label class="form-label" style="font-size:.8rem;">รูปแบบการสอน</label>
+          <select class="form-control" id="batch-mode-${i}" onchange="syncRoomFieldWithMode('batch-mode-${i}', 'batch-room-group-${i}')">
+            <option value="onsite" selected>🏫 ออนไซต์</option>
+            <option value="online">💻 ออนไลน์</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label" style="font-size:.8rem;">สถานะ</label>
@@ -2078,6 +2090,10 @@
             <option value="cancelled">⛔ งดสอน</option>
           </select>
         </div>
+      </div>
+      <div class="form-group" id="batch-room-group-${i}">
+        <label class="form-label" style="font-size:.8rem;">ห้อง/สถานที่</label>
+        <input type="text" class="form-control" id="batch-room-${i}" placeholder="เช่น 2208">
       </div>
     </div>
   `).join('');
@@ -2109,8 +2125,9 @@
         const teacherObj = (batchTeachersList || []).find(t => String(t.id) === String(teacherId));
         const teacherName = teacherObj ? teacherObj.name : '';
         const room = document.getElementById(`batch-room-${i}`)?.value.trim() || '';
+        const mode = normalizeClinicMode(document.getElementById(`batch-mode-${i}`)?.value);
         const status = document.getElementById(`batch-status-${i}`)?.value || 'pending';
-        days.push({ dayOfWeek: i, subject, teacherId, teacherName, room, status });
+        days.push({ dayOfWeek: i, subject, teacherId, teacherName, room, mode, status });
       }
       batchGradeBuffers[g] = days;
     }
@@ -2135,6 +2152,8 @@
 
         if (subjEl) subjEl.value = dayData.subject || '';
         if (roomEl) roomEl.value = dayData.room || '';
+        const modeEl = document.getElementById(`batch-mode-${i}`);
+        if (modeEl) { modeEl.value = normalizeClinicMode(dayData.mode); syncRoomFieldWithMode(`batch-mode-${i}`, `batch-room-group-${i}`); }
         if (statusEl) statusEl.value = dayData.status || 'pending';
         if (teacherSel) teacherSel.value = dayData.teacherId || '';
         if (searchEl) searchEl.value = '';
@@ -2326,6 +2345,8 @@
         if (c) {
           if (subjEl) subjEl.value = c.subject || c.subjectName || '';
           if (roomEl) roomEl.value = c.room || '';
+          const modeEl = document.getElementById(`batch-mode-${i}`);
+          if (modeEl) { modeEl.value = normalizeClinicMode(c.mode); syncRoomFieldWithMode(`batch-mode-${i}`, `batch-room-group-${i}`); }
           if (statusEl) statusEl.value = c.status || 'active';
           if (teacherSel) teacherSel.value = c.teacherId || c.teacher_id || '';
           if (c.time && c.time.includes('–')) {
@@ -2427,8 +2448,11 @@
               (Number(c.dayOfWeek) === i || (c.date && toYMD(c.date) === dateStr))
             );
 
+            // มีคลินิกเดิมในช่องนี้ → เก็บค่าที่ฟอร์มนี้ไม่ได้แก้ไว้ (เปิดรับลงทะเบียน/โควตา ฯลฯ — เดิมถูกล้างเป็นปิดรับทุกครั้ง)
             const obj = {
+              ...(existing || {}),
               id: existing ? existing.id : undefined,
+              mode: normalizeClinicMode(dayItem.mode),
               weekId,
               grade: g,
               dayOfWeek: i,
@@ -2531,7 +2555,7 @@
               if (d && d.subject) {
                 return `<div style="font-size:.8rem;color:var(--gray-700);padding:3px 0;display:flex;justify-content:space-between;">
                   <span><strong>วัน${dayName}:</strong> ${escapeHtml(d.subject)}</span>
-                  <span style="color:var(--gray-500);">${escapeHtml(d.teacherName || '')} ${d.room ? `(${escapeHtml(d.room)})` : ''}</span>
+                  <span style="color:var(--gray-500);">${escapeHtml(d.teacherName || '')} ${d.mode === 'online' ? '(💻 ออนไลน์)' : d.room ? `(${escapeHtml(d.room)})` : ''}</span>
                 </div>`;
               }
               return `<div style="font-size:.8rem;color:var(--gray-400);padding:3px 0;"><strong>วัน${dayName}:</strong> – ว่าง –</div>`;
@@ -2677,8 +2701,9 @@
         const teacherObj = (batchTeachersList || []).find(t => String(t.id) === String(teacherId));
         const teacherName = teacherObj ? teacherObj.name : '';
         const room = document.getElementById(`tpl-room-${i}`)?.value.trim() || '';
+        const mode = normalizeClinicMode(document.getElementById(`tpl-mode-${i}`)?.value);
         const status = document.getElementById(`tpl-status-${i}`)?.value || 'pending';
-        days.push({ dayOfWeek: i, subject, teacherId, teacherName, room, status });
+        days.push({ dayOfWeek: i, subject, teacherId, teacherName, room, mode, status });
       }
       tplMultiGradeData[tplEditingGrade] = days;
     }
@@ -2716,8 +2741,11 @@
             </div>
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label" style="font-size:.8rem;">ห้อง/สถานที่</label>
-                <input type="text" class="form-control" id="tpl-room-${i}" placeholder="เช่น 2208" value="${escapeHtml(dayItem.room || '')}">
+                <label class="form-label" style="font-size:.8rem;">รูปแบบการสอน</label>
+                <select class="form-control" id="tpl-mode-${i}" onchange="syncRoomFieldWithMode('tpl-mode-${i}', 'tpl-room-group-${i}')">
+                  <option value="onsite" ${dayItem.mode !== 'online' ? 'selected' : ''}>🏫 ออนไซต์</option>
+                  <option value="online" ${dayItem.mode === 'online' ? 'selected' : ''}>💻 ออนไลน์</option>
+                </select>
               </div>
               <div class="form-group">
                 <label class="form-label" style="font-size:.8rem;">สถานะ</label>
@@ -2727,6 +2755,10 @@
                   <option value="cancelled" ${dayItem.status === 'cancelled' ? 'selected' : ''}>⛔ งดสอน</option>
                 </select>
               </div>
+            </div>
+            <div class="form-group${dayItem.mode === 'online' ? ' hidden' : ''}" id="tpl-room-group-${i}">
+              <label class="form-label" style="font-size:.8rem;">ห้อง/สถานที่</label>
+              <input type="text" class="form-control" id="tpl-room-${i}" placeholder="เช่น 2208" value="${escapeHtml(dayItem.room || '')}">
             </div>
           </div>
         `;
@@ -2943,6 +2975,7 @@
       const ts = document.getElementById('clinic-time-start').value;
       const te = document.getElementById('clinic-time-end').value;
       const room = document.getElementById('clinic-room').value.trim();
+      const mode = normalizeClinicMode(document.getElementById('clinic-mode').value);
       const topic = (document.getElementById('clinic-topic')?.value || '').trim();
       const status = document.getElementById('clinic-status').value;
       const notes = document.getElementById('clinic-notes').value.trim();
@@ -2986,7 +3019,7 @@
         weekId, grade, dayOfWeek, date, subject, subjectName: subject,
         teacherId, teacherName: teacher ? teacher.name : '',
         time: (ts && te) ? `${ts}–${te}` : ((existing && existing.time) || '18:30–20:30'),
-        room, status, notes, topic
+        room, mode, status, notes, topic // ออนไลน์: ห้องเดิมยังเก็บไว้ (ไม่แสดง) เผื่อเปลี่ยนกลับเป็นออนไซต์
       };
 
       let obj;
@@ -3035,6 +3068,8 @@
       document.getElementById('clinic-time-start').value = ts;
       document.getElementById('clinic-time-end').value = te;
       document.getElementById('clinic-room').value = c.room || '';
+      document.getElementById('clinic-mode').value = normalizeClinicMode(c.mode);
+      syncRoomFieldWithMode('clinic-mode', 'clinic-room-group');
       document.getElementById('clinic-topic').value = c.topic || '';
       document.getElementById('clinic-status').value = c.status || 'active';
       document.getElementById('clinic-notes').value = c.notes || '';
@@ -4009,6 +4044,7 @@
         if (x.time) c.time = x.time;
         if (x.notes !== undefined && (!c.notes || x.notes)) c.notes = x.notes;
         if (x.topic !== undefined) c.topic = x.topic;
+        c.mode = normalizeClinicMode(x.mode);
         if (x.subject) { c.subject = x.subject; c.subjectName = x.subject; }
         if (x.allowRegistration !== undefined) c.allowRegistration = x.allowRegistration;
         if (x.maxStudents !== undefined) c.maxStudents = x.maxStudents;
@@ -4126,7 +4162,8 @@
                 time: c.time || '18:30–20:30', notes: c.notes || '', topic: c.topic || '',
                 subject: c.subject || c.subjectName || '', teacherId: String(c.teacherId || ''),
                 teacherName: c.teacherName || '', allowRegistration: Boolean(c.allowRegistration),
-                maxStudents: Number(c.maxStudents) || 0
+                maxStudents: Number(c.maxStudents) || 0,
+                ...(c.mode ? { mode: normalizeClinicMode(c.mode) } : {})
               };
             });
             LocalDB.set('clinic_custom_data', custom);

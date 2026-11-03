@@ -91,6 +91,7 @@ const SupabaseAPI = {
         if (custom.notes !== undefined && (!mapped.notes || custom.notes)) mapped.notes = custom.notes;
         if (custom.topic !== undefined) mapped.topic = custom.topic;
         if (custom.subject) { mapped.subject = custom.subject; mapped.subjectName = custom.subject; }
+        mapped.mode = normalizeClinicMode(custom.mode);
         const idx = clinics.findIndex(c => String(c.id) === String(mapped.id));
         if (idx >= 0) clinics[idx] = mapped;
         else clinics.push(mapped);
@@ -167,6 +168,7 @@ const SupabaseAPI = {
             if (custom.notes !== undefined && (!c.notes || custom.notes)) c.notes = custom.notes;
             if (custom.topic !== undefined) c.topic = custom.topic;
             if (custom.subject) { c.subject = custom.subject; c.subjectName = custom.subject; }
+            c.mode = normalizeClinicMode(custom.mode);
             return c;
           });
           LocalDB.setList('clinics', clinics);
@@ -305,6 +307,7 @@ const SupabaseAPI = {
           if (custom.notes !== undefined && (!item.notes || custom.notes)) item.notes = custom.notes;
           if (custom.topic !== undefined) item.topic = custom.topic;
           if (custom.subject) { item.subject = custom.subject; item.subjectName = custom.subject; }
+          item.mode = normalizeClinicMode(custom.mode);
           if (custom.allowRegistration !== undefined) item.allowRegistration = custom.allowRegistration;
           if (custom.maxStudents !== undefined) item.maxStudents = custom.maxStudents;
           return item;
@@ -446,7 +449,9 @@ const SupabaseAPI = {
         allowRegistration: Boolean(c.allowRegistration),
         maxStudents: Number(c.maxStudents) || 0
       };
-      customData[String(c.id)] = entry;
+      // รูปแบบการสอน: ส่งเฉพาะเมื่อรู้ค่า — ถ้าไม่ส่ง ฐานข้อมูลจะเก็บค่าเดิมไว้ (set_clinic_custom รวมค่า ไม่ทับทั้งรายการ)
+      if (c.mode !== undefined) entry.mode = normalizeClinicMode(c.mode);
+      customData[String(c.id)] = { ...(customData[String(c.id)] || {}), ...entry };
       LocalDB.set('clinic_custom_data', customData);
       // แก้เฉพาะรายการของคลินิกนี้ที่ฐานข้อมูล (ไม่ส่งค่าของทุกคลินิกไปทับ — เครื่องที่ข้อมูลเก่าจะไม่ทับการแก้ของคนอื่น)
       const { error: customErr } = await this.client.rpc('set_clinic_custom', { p_clinic_id: String(c.id), p_data: entry });

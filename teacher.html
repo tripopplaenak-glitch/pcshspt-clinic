@@ -8,7 +8,7 @@
   <meta http-equiv="Expires" content="0">
   <title>ระบบครูผู้สอน — คลินิกวิชาการ PCSHSPT</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
-  <link rel="stylesheet" href="css/style.css?v=2569_20">
+  <link rel="stylesheet" href="css/style.css?v=2569_21">
   <style>
     /* ─── FLOATING BOOKING WIDGET (DRAGGABLE ON MOBILE & IPAD) ─── */
     .booking-widget-wrapper {
@@ -366,6 +366,13 @@
         </div>
       </div>
       <div class="form-group">
+        <label class="form-label">รูปแบบการสอน</label>
+        <select class="form-control" id="edit-mode" onchange="syncRoomFieldWithMode('edit-mode', 'edit-room-group')">
+          <option value="onsite">🏫 ออนไซต์ (มาเรียนที่โรงเรียน)</option>
+          <option value="online">💻 ออนไลน์ (ไม่ต้องระบุสถานที่)</option>
+        </select>
+      </div>
+      <div class="form-group" id="edit-room-group">
         <label class="form-label">สถานที่สอน (ห้อง)</label>
         <input type="text" class="form-control" id="edit-room" placeholder="เช่น ห้อง 2208">
       </div>
@@ -386,12 +393,12 @@
       <!-- Registration Settings inside Edit Modal -->
       <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:12px 14px;margin-top:10px;">
         <div style="font-weight:700;font-size:0.88rem;color:#166534;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-          <span>📝</span> <span>การรับลงทะเบียนนักเรียนออนไลน์</span>
+          <span>📝</span> <span>การรับลงทะเบียนนักเรียนผ่านเว็บ</span>
         </div>
         <div style="margin-bottom:8px;">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:0.85rem;color:#166534;">
             <input type="checkbox" id="edit-allow-registration" style="width:18px;height:18px;accent-color:#16a34a;">
-            <span>เปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ผ่านหน้าแรก</span>
+            <span>เปิดให้นักเรียนลงทะเบียนเรียนผ่านเว็บผ่านหน้าแรก</span>
           </label>
         </div>
         <div class="form-group" style="margin-bottom:0;">
@@ -426,7 +433,7 @@
       <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:14px;margin-bottom:16px;">
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:700;color:#166534;font-size:0.95rem;margin-bottom:6px;">
           <input type="checkbox" id="reg-allow-toggle" style="width:20px;height:20px;accent-color:#16a34a;">
-          <span>เปิดให้นักเรียนลงทะเบียนเรียนออนไลน์ผ่านหน้าแรก</span>
+          <span>เปิดให้นักเรียนลงทะเบียนเรียนผ่านเว็บผ่านหน้าแรก</span>
         </label>
         <div style="font-size:0.8rem;color:#15803d;margin-left:30px;">
           เมื่อเปิดใช้งาน นักเรียนจะเห็นปุ่ม <strong>"ลงทะเบียนเรียน"</strong> บนหน้าตารางสอนและสามารถเลือกชื่อเพื่อลงทะเบียนได้
@@ -492,10 +499,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
 <script src="js/firebase-config.js?v=2569_16"></script>
-<script src="js/supabase-api.js?v=2569_25"></script>
-<script src="js/db.js?v=2569_24"></script>
+<script src="js/supabase-api.js?v=2569_26"></script>
+<script src="js/db.js?v=2569_25"></script>
 <script src="js/auth.js?v=2569_23"></script>
-<script src="js/student-auth.js?v=2569_21"></script>
+<script src="js/student-auth.js?v=2569_22"></script>
 <script>
 // ─── BOOKING WIDGET HELPER & DRAGGABLE (TOUCH & MOUSE / MOBILE & IPAD) ─────
 let isDraggingBooking = false;
@@ -887,13 +894,15 @@ function escapeHtml(str) {
 function generateGoogleCalendarUrl(clinic, teacherName) {
   if (!clinic) return '#';
   const title = `คลินิกวิชาการ: ${clinic.subject || 'วิชาการ'} (ม.${clinic.grade || 1})`;
-  const loc = `${clinic.room ? clinic.room + ' ' : ''}โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี`;
+  const online = isOnlineClinic(clinic);
+  const loc = online ? 'เรียนออนไลน์' : `${clinic.room ? clinic.room + ' ' : ''}โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี`;
   
   let details = `กิจกรรมคลินิกวิชาการ โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี\n`;
   details += `วิชา: ${clinic.subject || '–'} (ระดับชั้น ม.${clinic.grade || 1})\n`;
   details += `ครูผู้สอน: ${teacherName || '–'}\n`;
   if (clinic.topic) details += `หัวข้อการสอน / เรื่องที่ติว: ${clinic.topic}\n`;
-  if (clinic.room)  details += `ห้องเรียน: ${clinic.room}\n`;
+  if (online) details += `รูปแบบ: เรียนออนไลน์ (รับลิงก์ห้องเรียนจากครูผู้สอน)\n`;
+  else if (clinic.room) details += `ห้องเรียน: ${clinic.room}\n`;
   if (clinic.time)  details += `เวลา: ${clinic.time}\n`;
   if (clinic.notes) details += `หมายเหตุ: ${clinic.notes}\n`;
 
@@ -955,7 +964,7 @@ function renderClinicCard(c, teacherMap) {
         <div class="clinic-meta" style="margin-bottom:10px;">
           <span>👩‍🏫 ${teacherDisplayName}</span>
           <span>🕐 ${typeof formatClinicTime === 'function' ? formatClinicTime(c.time) : (c.time || '18:30–20:30 น.')}</span>
-          ${c.room ? `<span>📍 ${c.room}</span>` : ''}
+          ${isOnlineClinic(c) ? '<span class="badge badge-online">💻 เรียนออนไลน์</span>' : c.room ? `<span>📍 ${escapeHtml(c.room)}</span>` : ''}
           <span>👥 ${c.studentCount || 0} คน</span>
         </div>
         <div class="flex items-center justify-between" style="flex-wrap:wrap;gap:8px;">
@@ -1189,6 +1198,8 @@ async function openEditClinic(clinicId) {
   document.getElementById('edit-time-start').value = ts;
   document.getElementById('edit-time-end').value   = te;
   document.getElementById('edit-room').value   = c.room || '';
+  document.getElementById('edit-mode').value   = normalizeClinicMode(c.mode);
+  syncRoomFieldWithMode('edit-mode', 'edit-room-group');
   document.getElementById('edit-topic').value  = c.topic || '';
   document.getElementById('edit-status').value = c.status || 'active';
 
@@ -1210,6 +1221,7 @@ async function saveClinicEdit() {
   const ts      = document.getElementById('edit-time-start').value;
   const te      = document.getElementById('edit-time-end').value;
   const room    = document.getElementById('edit-room').value.trim();
+  const mode    = normalizeClinicMode(document.getElementById('edit-mode')?.value);
   const topic   = (document.getElementById('edit-topic')?.value || '').trim();
   const status  = document.getElementById('edit-status').value;
   const allowRegistration = document.getElementById('edit-allow-registration')?.checked;
@@ -1265,7 +1277,8 @@ async function saveClinicEdit() {
   c.teacherName = teacherName;
   c.teacher_name = teacherName;
   c.time = `${ts}–${te}`;
-  c.room = room;
+  c.room = room; // ออนไลน์: ห้องเดิมยังเก็บไว้ (ไม่แสดง) เผื่อเปลี่ยนกลับเป็นออนไซต์
+  c.mode = mode;
   c.topic = topic;
   c.status = status;
   c.allowRegistration = Boolean(allowRegistration);
@@ -1324,7 +1337,7 @@ async function openRegistrationSettings(clinicId) {
         <span>👩‍🏫 ครูผู้สอน: <strong>${escapeHtml(tName)}</strong></span>
         <span>📅 ${formatDateThai(c.date)}</span>
         <span>🕐 ${typeof formatClinicTime === 'function' ? formatClinicTime(c.time) : (c.time || '18:30–20:30 น.')}</span>
-        ${c.room ? `<span>📍 ${escapeHtml(c.room)}</span>` : ''}
+        ${isOnlineClinic(c) ? '<span>💻 เรียนออนไลน์</span>' : c.room ? `<span>📍 ${escapeHtml(c.room)}</span>` : ''}
       </div>
     `;
   }

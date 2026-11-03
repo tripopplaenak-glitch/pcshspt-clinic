@@ -78,7 +78,24 @@ const StudentAuth = {
 
   register(clinicId) { return this.callWithToken('student_register', { p_clinic_id: String(clinicId) }); },
   cancel(clinicId)   { return this.callWithToken('student_cancel',   { p_clinic_id: String(clinicId) }); },
-  history()          { return this.callWithToken('student_history',  {}); },
+  // ประวัติ + รูปแบบการสอน (ออนไลน์/ออนไซต์) ของแต่ละวิชา — ฟังก์ชันในฐานข้อมูลไม่ได้ส่งค่านี้มา
+  // จึงอ่านจาก clinic_custom_data (เปิดให้อ่านได้อยู่แล้ว) ไม่ต้องแก้ SQL
+  async history() {
+    const res = await this.callWithToken('student_history', {});
+    if (res && res.ok && Array.isArray(res.items)) {
+      const custom = await this.clinicCustomData();
+      res.items.forEach(it => { it.mode = normalizeClinicMode((custom[String(it.clinic_id)] || {}).mode); });
+    }
+    return res;
+  },
+  async clinicCustomData() {
+    try {
+      const client = SupabaseAPI.client || SupabaseAPI.init();
+      const { data, error } = await client.from('settings').select('value').eq('key', 'clinic_custom_data').maybeSingle();
+      if (!error && data && data.value) return data.value;
+    } catch (e) { /* ใช้ข้อมูลในเครื่องแทน */ }
+    return LocalDB.get('clinic_custom_data') || {};
+  },
 
   // ─── สำหรับครู/Admin (ต้อง login ระบบครูอยู่)
   async staffResetPassword(code) {

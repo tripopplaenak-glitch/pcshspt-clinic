@@ -17,6 +17,20 @@ function initDB() {
   return false;
 }
 
+// ─── รูปแบบการสอนของคลินิก: 'onsite' (มาเรียนที่โรงเรียน · ค่าเริ่มต้น) / 'online' (เรียนออนไลน์) ───
+// เก็บใน clinic_custom_data[clinicId].mode — ไม่ต้องเพิ่มคอลัมน์ในฐานข้อมูล · คลินิกเดิมที่ไม่มีค่านี้ = ออนไซต์
+function normalizeClinicMode(mode) { return mode === 'online' ? 'online' : 'onsite'; }
+function isOnlineClinic(c) { return Boolean(c) && normalizeClinicMode(c.mode) === 'online'; }
+// ข้อความสถานที่สำหรับแสดงผล: ออนไลน์ → "เรียนออนไลน์" (ไม่แสดงห้อง) · ออนไซต์ → ห้อง (ว่าง = '')
+function clinicPlaceText(c) { return isOnlineClinic(c) ? 'เรียนออนไลน์' : ((c && c.room) || ''); }
+const CLINIC_MODE_LABEL = { onsite: '🏫 ออนไซต์', online: '💻 ออนไลน์' };
+// ฟอร์ม: เลือก "ออนไลน์" → ซ่อนช่องห้อง/สถานที่ (ค่าห้องเดิมยังเก็บไว้ เปลี่ยนกลับเป็นออนไซต์แล้วห้องเดิมกลับมา)
+function syncRoomFieldWithMode(selectId, roomWrapId) {
+  const sel = document.getElementById(selectId);
+  const wrap = document.getElementById(roomWrapId);
+  if (sel && wrap) wrap.classList.toggle('hidden', sel.value === 'online');
+}
+
 // ─── LOCALSTORAGE FALLBACK DB ─────────────────────────────
 class LocalDB {
   static get(key)        { try { return JSON.parse(localStorage.getItem('pccpt_' + key)) || null; } catch { return null; } }
@@ -147,7 +161,9 @@ class LocalDB {
         teacherName: custom.teacherName !== undefined && custom.teacherName !== '' ? custom.teacherName : (c.teacherName || c.teacher_name || ''),
         time: c.time || custom.time || '18:30–20:30',
         notes: c.notes !== undefined && c.notes !== '' ? c.notes : (custom.notes || ''),
-        topic: c.topic !== undefined && c.topic !== '' ? c.topic : (custom.topic || '')
+        topic: c.topic !== undefined && c.topic !== '' ? c.topic : (custom.topic || ''),
+        // รูปแบบการสอน: ค่าในฐานข้อมูล (clinic_custom_data) เป็นหลัก · คลินิกเดิมที่ไม่เคยตั้ง = ออนไซต์
+        mode: normalizeClinicMode(custom.mode || c.mode)
       };
     });
   }
@@ -202,6 +218,8 @@ class LocalDB {
     if (c.id) {
       const customData = LocalDB.get('clinic_custom_data') || {};
       customData[String(c.id)] = {
+        ...(customData[String(c.id)] || {}), // เก็บค่าอื่นที่มีอยู่เดิมไว้ (ไม่ทับทั้งรายการ)
+        mode: normalizeClinicMode(c.mode),
         time: c.time,
         notes: c.notes || '',
         topic: c.topic || '',
@@ -267,7 +285,8 @@ class LocalDB {
         number: a.number || s.number || '–',
         dormitory: a.dormitory || s.dormitory || 'D1',
         subject: a.subject || c.subject || c.subjectName || '–',
-        teacherId: a.teacherId || c.teacherId || ''
+        teacherId: a.teacherId || c.teacherId || '',
+        mode: normalizeClinicMode(c.mode) // รูปแบบการสอนของคลินิกที่นักเรียนคนนี้ลงไว้
       };
     });
   }

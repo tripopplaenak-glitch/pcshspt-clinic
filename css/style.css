@@ -871,6 +871,8 @@ footer strong { color: var(--white); }
 .badge-gold   { background: var(--gold-pale);   color: var(--gold-main); }
 .badge-red    { background: var(--red-pale);    color: var(--red-main); }
 .badge-gray   { background: var(--gray-200);    color: var(--gray-600); }
+/* ป้าย "💻 ออนไลน์" — คลินิกที่สอนออนไลน์ (ใช้แทนสถานที่) */
+.badge-online { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; white-space: nowrap; }
 
 /* ─── TABS ───────────────────────────────────────── */
 .tab-bar {

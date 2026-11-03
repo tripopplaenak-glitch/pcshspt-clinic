@@ -9,7 +9,7 @@
   <meta http-equiv="Expires" content="0">
   <title>สรุปการเข้าเรียน — คลินิกวิชาการ PCSHSPT</title>
   <link rel="icon" href="assets/logo.png" type="image/png">
-  <link rel="stylesheet" href="css/style.css?v=2569_20">
+  <link rel="stylesheet" href="css/style.css?v=2569_21">
   <style>
     @media screen {
       body:not(.generating-pdf) .print-only { display: none !important; }
@@ -145,6 +145,9 @@
     .daily-students th { background: #e2e8f0; color: var(--gray-700); padding: 6px 8px; text-align: left; font-size: .8rem; white-space: nowrap; }
     .daily-students td { padding: 5px 8px; border-bottom: 1px solid #e5e7eb; }
     .daily-no-students { color: var(--gray-500); font-size: .85rem; padding: 6px 2px; }
+    .daily-mode-caption { display: inline-block; font-size: .78rem; font-weight: 700; padding: 3px 10px; border-radius: 12px; margin: 2px 0 6px; }
+    .daily-mode-caption.online { background: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+    .daily-mode-caption.onsite { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
     @media (max-width: 768px) {
       .daily-actions { margin-left: 0; width: 100%; }
       .daily-day-nav { width: 100%; }
@@ -182,6 +185,15 @@
 
     /* ─── ตัวกรองหอพัก: คอม/iPad ใช้ปุ่ม · มือถือใช้ช่องเลือก ─── */
     .dorm-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mode-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .mode-chip-count { font-weight: 500; opacity: .85; }
+    .mode-chip-count:empty { display: none; }
+    @media (max-width: 768px) {
+      .mode-filter-bar { flex-direction: column; align-items: stretch !important; }
+      .mode-chips { display: grid; grid-template-columns: 1fr 1fr; }
+      .mode-chips .filter-chip { text-align: center; justify-content: center; }
+      .mode-chips #mode-chip-all { grid-column: 1 / -1; }
+    }
     .dorm-select-mobile { display: none; }
     @media (max-width: 768px) {
       .dorm-chips { display: none; }
@@ -339,6 +351,16 @@
             oninput="renderTable()" style="width:200px;">
           <button class="btn btn-outline btn-sm" onclick="printPage()">🖨️ พิมพ์</button>
           <button class="btn btn-primary btn-sm" onclick="downloadAttendancePDF()" id="btn-download-pdf">📥 ดาวน์โหลด PDF</button>
+        </div>
+      </div>
+
+      <!-- รูปแบบการเรียน: ค่าเริ่มต้น "ออนไซต์" — ครูหอพักใช้เช็คว่าใครออกจากหอมาเรียนที่โรงเรียน -->
+      <div class="filter-bar mode-filter-bar" id="mode-filter-row" style="margin-bottom:16px;">
+        <span class="filter-label">📍 รายชื่อนักเรียน:</span>
+        <div class="mode-chips">
+          <button class="filter-chip active" id="mode-chip-onsite" onclick="setModeFilter('onsite')">🏫 ออนไซต์ <span class="mode-chip-count" id="mode-count-onsite"></span></button>
+          <button class="filter-chip" id="mode-chip-online" onclick="setModeFilter('online')">💻 ออนไลน์ <span class="mode-chip-count" id="mode-count-online"></span></button>
+          <button class="filter-chip" id="mode-chip-all" onclick="setModeFilter('all')">รวมออนไซต์ + ออนไลน์ <span class="mode-chip-count" id="mode-count-all"></span></button>
         </div>
       </div>
 
@@ -526,10 +548,10 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0/dist/umd/supabase.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <script src="js/firebase-config.js?v=2569_16"></script>
-  <script src="js/supabase-api.js?v=2569_25"></script>
-  <script src="js/db.js?v=2569_24"></script>
+  <script src="js/supabase-api.js?v=2569_26"></script>
+  <script src="js/db.js?v=2569_25"></script>
   <script src="js/auth.js?v=2569_23"></script>
-  <script src="js/student-auth.js?v=2569_21"></script>
+  <script src="js/student-auth.js?v=2569_22"></script>
   <script>
     // ─── DORMITORY HELPER (DORM_MAP is loaded from js/firebase-config.js)
 
@@ -696,6 +718,19 @@
       renderTable();
     }
 
+    // ─── ตัวกรองรูปแบบการเรียน: 'onsite' (ค่าเริ่มต้นทุกครั้งที่เปิดหน้า) / 'online' / 'all'
+    let modeFilter = 'onsite';
+    const MODE_FILTER_TITLE = {
+      onsite: 'รายชื่อนักเรียนออนไซต์ (มาเรียนที่โรงเรียน)',
+      online: 'รายชื่อนักเรียนออนไลน์',
+      all: 'รายชื่อนักเรียนรวม ออนไซต์ + ออนไลน์'
+    };
+    function setModeFilter(mode) {
+      modeFilter = ['onsite', 'online', 'all'].includes(mode) ? mode : 'onsite';
+      ['onsite', 'online', 'all'].forEach(m => document.getElementById('mode-chip-' + m).classList.toggle('active', m === modeFilter));
+      renderTable();
+    }
+
     // ─── ตัวกรองหอพัก (ใช้เมื่อ "แยกหอพัก")
     let dormFilter = 'all';
     const DORM_IDS = ['D1', 'D2', 'D3', 'D4', 'D5', 'D6'];
@@ -741,9 +776,17 @@
       // Dorm filter (เฉพาะโหมด "แยกหอพัก")
       const dormActive = groupBy === 'dorm' && dormFilter !== 'all';
       if (dormActive) rows = rows.filter(r => r.dormitory === dormFilter);
-      document.getElementById('table-header-title').textContent = dormActive
-        ? `รายชื่อนักเรียนที่เข้าเรียน — ${formatDormTitle(dormFilter)}`
-        : 'รายชื่อนักเรียนที่เข้าเรียน';
+
+      // รูปแบบการเรียน (นับจำนวนบนปุ่มจากรายชื่อหลังกรองค้นหา/หอพักแล้ว)
+      const onlineCount = rows.filter(r => r.mode === 'online').length;
+      const beforeModeCount = rows.length;
+      document.getElementById('mode-count-onsite').textContent = `(${rows.length - onlineCount})`;
+      document.getElementById('mode-count-online').textContent = `(${onlineCount})`;
+      document.getElementById('mode-count-all').textContent = `(${rows.length})`;
+      if (modeFilter !== 'all') rows = rows.filter(r => (r.mode === 'online') === (modeFilter === 'online'));
+
+      document.getElementById('table-header-title').textContent = MODE_FILTER_TITLE[modeFilter] +
+        (dormActive ? ` — ${formatDormTitle(dormFilter)}` : '');
 
       // Stats
       const subjects = new Set(rows.map(r => r.subject));
@@ -762,8 +805,11 @@
         const dateStr = document.getElementById('filter-date').value;
         content.innerHTML = `<div class="empty-state">
       <div class="empty-icon">📭</div>
-      <div class="empty-title">ไม่มีข้อมูลการเข้าเรียนในวันที่เลือก</div>
-      <div class="empty-sub">${dateStr ? `วันที่ ${formatDateThai(dateStr)}` : ''} ยังไม่มีรายชื่อนักเรียน</div>
+      <div class="empty-title">${modeFilter === 'all' ? 'ไม่มีข้อมูลการเข้าเรียนในวันที่เลือก' : `ไม่มีนักเรียน${modeFilter === 'online' ? 'ออนไลน์' : 'ออนไซต์'}ในวันที่เลือก`}</div>
+      <div class="empty-sub">${dateStr ? `วันที่ ${formatDateThai(dateStr)}` : ''} ${
+        modeFilter === 'onsite' && onlineCount ? `(มีนักเรียนออนไลน์ ${onlineCount} คน — กด "💻 ออนไลน์" เพื่อดู)`
+        : modeFilter === 'online' && beforeModeCount ? `(มีนักเรียนออนไซต์ ${beforeModeCount - onlineCount} คน — กด "🏫 ออนไซต์" เพื่อดู)`
+        : 'ยังไม่มีรายชื่อนักเรียน'}</div>
       <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn btn-primary btn-sm" onclick="showLatestDateWithData()">📅 ไปยังวันที่มีข้อมูลล่าสุด</button>
         <button class="btn btn-outline btn-sm" onclick="showAllDates()">📋 ดูข้อมูลทั้งหมดทุกวัน</button>
@@ -837,7 +883,7 @@
             const t = teacherMap[r.teacherId] || {};
             return `<tr>
               <td class="col-compact">${i + 1}</td>
-              <td class="col-name"><strong>${r.studentName || '–'}</strong></td>
+              <td class="col-name"><strong>${r.studentName || '–'}</strong>${modeFilter === 'all' && r.mode === 'online' ? ' <span class="badge badge-online" style="font-size:0.7rem;padding:1px 6px;">💻 ออนไลน์</span>' : ''}</td>
               <td class="col-compact"><span class="badge badge-blue" style="font-size:0.75rem;padding:2px 5px;">ม.${r.grade}</span></td>
               <td class="col-compact">${r.room || '–'}</td>
               <td class="col-compact">${r.number || '–'}</td>
@@ -929,7 +975,7 @@
               const t = teacherMap[r.teacherId] || {};
               return `<tr>
                 <td class="col-compact">${i + 1}</td>
-                <td class="col-name"><strong>${r.studentName || '–'}</strong></td>
+                <td class="col-name"><strong>${r.studentName || '–'}</strong>${modeFilter === 'all' && r.mode === 'online' ? ' <span class="badge badge-online" style="font-size:0.7rem;padding:1px 6px;">💻 ออนไลน์</span>' : ''}</td>
                 ${!hideGrade ? `<td class="col-compact"><span class="badge badge-blue" style="font-size:0.75rem;padding:2px 5px;">ม.${r.grade}</span></td>` : ''}
                 <td class="col-compact">${r.room || '–'}</td>
                 <td class="col-compact">${r.number || '–'}</td>
@@ -1002,6 +1048,7 @@
         <div style="text-align:center;border-bottom:2.5px solid #0284c7;padding:10px 14px 12px;margin-bottom:12px;">
           <div style="font-size:15pt;font-weight:700;color:#0f172a;font-family:'Kanit',sans-serif;">โรงเรียนวิทยาศาสตร์จุฬาภรณราชวิทยาลัย ปทุมธานี</div>
           <div style="font-size:12.5pt;font-weight:600;color:#0284c7;margin-top:2px;">รายงานสรุปการเข้าเรียนคลินิกวิชาการ</div>
+          <div style="font-size:11pt;font-weight:700;color:${modeFilter === 'online' ? '#7e22ce' : modeFilter === 'onsite' ? '#166534' : '#0f172a'};margin-top:2px;">${modeFilter === 'online' ? '💻' : modeFilter === 'onsite' ? '🏫' : '📋'} ${escapeHtml(MODE_FILTER_TITLE[modeFilter])}</div>
           <div style="font-size:9.5pt;color:#334155;margin-top:4px;">
             <span>📅 วันที่: <strong>${escapeHtml(dateText)}</strong></span> &bull;
             ${groupBy === 'dorm' && dormFilter !== 'all' ? `<span>🏠 <strong>${escapeHtml(formatDormTitle(dormFilter))}</strong></span> &bull; ` : ''}
@@ -1144,7 +1191,7 @@
 
       const opt = {
         margin: [8, 8, 8, 8],
-        filename: `สรุปรายชื่อนักเรียนรายบุคคล_${dateVal || 'ทุกวัน'}${groupBy === 'dorm' && dormFilter !== 'all' ? '_' + dormFilter : ''}.pdf`,
+        filename: `สรุปรายชื่อนักเรียนรายบุคคล_${{ onsite: 'ออนไซต์', online: 'ออนไลน์', all: 'รวม' }[modeFilter]}_${dateVal || 'ทุกวัน'}${groupBy === 'dorm' && dormFilter !== 'all' ? '_' + dormFilter : ''}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
         html2canvas: {
           scale: 2,
@@ -1246,9 +1293,13 @@
       }).sort((x, y) => (x.grade - y.grade) || (x.room - y.room) || (x.number - y.number));
     }
 
-    function renderDailyStudents(students) {
-      if (!students.length) return '<div class="daily-no-students">ยังไม่มีนักเรียนลงทะเบียน</div>';
-      return `<table class="daily-students">
+    // online = คลินิกนี้สอนออนไลน์ → ป้ายบอกรูปแบบการเรียนเหนือรายชื่อ (ครูหอพักแยกได้ว่าใครต้องออกจากหอมาเรียน)
+    function renderDailyStudents(students, online) {
+      const caption = online
+        ? '<div class="daily-mode-caption online">💻 เรียนออนไลน์ — นักเรียนไม่ต้องมาที่โรงเรียน</div>'
+        : '<div class="daily-mode-caption onsite">🏫 เรียนออนไซต์ — นักเรียนมาเรียนที่โรงเรียน</div>';
+      if (!students.length) return caption + '<div class="daily-no-students">ยังไม่มีนักเรียนลงทะเบียน</div>';
+      return caption + `<table class="daily-students">
         <thead><tr><th>ลำดับ</th><th>ชื่อ-สกุล</th><th>ชั้น/ห้อง</th><th>เลขที่</th><th>หอพัก</th></tr></thead>
         <tbody>${students.map((s, i) => `<tr>
           <td>${i + 1}</td>
@@ -1312,19 +1363,20 @@
         const open = dailyShowAll || dailyOpen.has(String(it.c.id));
         const time = formatClinicTime(it.c.time);
         const teacher = it.teacher || '–';
+        const online = isOnlineClinic(it.c);
         return `<tr class="daily-row${it.c.status === 'cancelled' ? ' cancelled' : ''}" data-id="${id}" onclick="toggleDailyRow(this.dataset.id)">
             <td class="daily-cell-subject">
               <div class="daily-subject">${getSubjectIcon(it.c.subject)} ${escapeHtml(it.c.subject || 'ยังไม่ระบุวิชา')}</div>
               ${it.c.topic ? `<div class="daily-topic">หัวข้อ: ${escapeHtml(it.c.topic)}</div>` : ''}
-              <div class="daily-meta-mobile"><div><span>🕐</span><span>${escapeHtml(time)}</span></div>${it.c.room ? `<div><span>📍</span><span>${escapeHtml(it.c.room)}</span></div>` : ''}</div>
+              <div class="daily-meta-mobile"><div><span>🕐</span><span>${escapeHtml(time)}</span></div>${online ? '<div><span>💻</span><span>เรียนออนไลน์</span></div>' : it.c.room ? `<div><span>📍</span><span>${escapeHtml(it.c.room)}</span></div>` : ''}</div>
             </td>
             <td class="daily-cell-teacher"><div class="fit-line" data-full="${escapeHtml(teacher)}" title="${escapeHtml(teacher)}">${escapeHtml(teacher)}</div></td>
             <td class="col-time">${escapeHtml(time)}</td>
-            <td class="col-room">${escapeHtml(it.c.room || '–')}</td>
+            <td class="col-room">${online ? '<span class="badge badge-online">💻 ออนไลน์</span>' : escapeHtml(it.c.room || '–')}</td>
             <td class="daily-cell-status"><span class="daily-status ${st.cls}">${st.icon} ${st.text}</span></td>
             <td class="daily-cell-count"><button type="button" class="btn btn-outline btn-sm daily-count-btn">${it.students.length} คน${it.students.length ? (open ? ' ▾' : ' ▸') : ''}</button></td>
           </tr>
-          <tr class="daily-detail-row${open ? '' : ' hidden'}" data-detail="${id}"><td colspan="6">${renderDailyStudents(it.students)}</td></tr>`;
+          <tr class="daily-detail-row${open ? '' : ' hidden'}" data-detail="${id}"><td colspan="6">${renderDailyStudents(it.students, online)}</td></tr>`;
       };
 
       content.innerHTML = `<table class="daily-table">
@@ -1816,7 +1868,7 @@
                         </div>
                         <div style="color:#334155;font-size:.78rem;margin-bottom:2px;">👩‍🏫 ${teacher}</div>
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
-                          <span style="font-size:.75rem;color:#64748b;">📍 ${room || '–'}</span>
+                          ${isOnlineClinic(c) ? '<span class="badge badge-online" style="font-size:.7rem;padding:1px 6px;">💻 ออนไลน์</span>' : `<span style="font-size:.75rem;color:#64748b;">📍 ${room || '–'}</span>`}
                           <span class="badge ${sCount > 0 ? 'badge-blue' : ''}" style="${sCount > 0 ? '' : 'background:#e2e8f0;color:#475569;'} font-size:.76rem;font-weight:700;padding:2px 6px;">
                             👥 ${sCount} คน
                           </span>
@@ -1835,7 +1887,7 @@
                     ` : `
                       <div class="print-cell-box print-cell-2lines" style="margin-bottom:3px;padding:1px 0;line-height:1.25;font-size:7.2pt;border-bottom:${cIdx < cellClinics.length - 1 ? '1px dashed #cbd5e1' : 'none'};">
                         <div style="font-weight:700;color:#000;">${subj} <span style="color:#0284c7;font-weight:700;">(${sCount} คน)</span></div>
-                        <div style="color:#475569;font-size:6.8pt;">${teacher}</div>
+                        <div style="color:#475569;font-size:6.8pt;">${teacher}${isOnlineClinic(c) ? ' <span style="color:#7e22ce;font-weight:700;">· ออนไลน์</span>' : ''}</div>
                       </div>
                     `}
                   </div>
